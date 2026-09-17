@@ -6,10 +6,10 @@
   <title>MechCalc - Engineering Toolbox</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex">
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col md:flex-row">
 
-  <!-- Sidebar -->
-  <aside class="w-64 bg-slate-950 border-r border-slate-800 p-6 flex flex-col justify-between hidden md:flex shrink-0">
+  <!-- Desktop Sidebar (Hidden on Mobile) -->
+  <aside class="w-64 bg-slate-950 border-r border-slate-800 p-6 flex-col justify-between hidden md:flex shrink-0">
     <div>
       <div class="flex items-center gap-2 mb-8">
         <span class="text-xl font-bold tracking-tight text-blue-500">Mech<span class="text-white">Calc</span></span>
@@ -35,15 +35,31 @@
     </div>
   </aside>
 
+  <!-- Mobile Top Nav (Visible ONLY on Mobile) -->
+  <div class="md:hidden bg-slate-950 border-b border-slate-800 p-3 sticky top-0 z-50">
+    <div class="flex items-center justify-between mb-2.5 px-1">
+      <span class="text-lg font-bold tracking-tight text-blue-500">Mech<span class="text-white">Calc</span></span>
+      <span class="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded">v0.6</span>
+    </div>
+    <div class="grid grid-cols-2 gap-2">
+      <button id="navBtnFitsMobile" class="text-center py-2 px-2 rounded-lg bg-blue-600 text-white font-medium text-xs transition-colors">
+        <span data-i18n="navFits">Tolerances & Fits</span>
+      </button>
+      <button id="navBtnBeltsMobile" class="text-center py-2 px-2 rounded-lg bg-slate-800/80 text-slate-300 font-medium text-xs transition-colors">
+        <span data-i18n="navBelts">Belts & Pulleys</span>
+      </button>
+    </div>
+  </div>
+
   <!-- Main Content Area -->
-  <main class="flex-1 p-6 md:p-10 max-w-4xl overflow-y-auto">
-    <!-- Top Header (Fixed Height to Prevent Layout Shift) -->
+  <main class="flex-1 p-4 md:p-10 max-w-4xl overflow-y-auto">
+    <!-- Top Header -->
     <header class="flex justify-between items-start gap-4 mb-8 min-h-[72px]">
       <div class="flex-1 pr-2">
         <h1 class="text-2xl font-bold tracking-tight text-white mb-1 leading-tight" id="moduleTitle">ISO Fit & Tolerance Selector</h1>
         <p class="text-sm text-slate-400 leading-snug" id="moduleSubtitle">H7 Hole-Basis System. Interactive matrix, reverse lookup, and unit conversion.</p>
       </div>
-      <div class="flex items-center gap-3 shrink-0 pt-0.5">
+      <div class="flex items-center gap-2 md:gap-3 shrink-0 pt-0.5">
         <!-- Units Toggle -->
         <div class="flex items-center bg-slate-800/80 p-1 rounded-lg border border-slate-700 text-xs font-semibold">
           <button id="unitMetric" class="px-2.5 py-1 rounded bg-blue-600 text-white transition-colors">mm</button>
@@ -601,6 +617,9 @@
       activeModule = mod;
       const bFits = document.getElementById('navBtnFits');
       const bBelts = document.getElementById('navBtnBelts');
+      const bFitsM = document.getElementById('navBtnFitsMobile');
+      const bBeltsM = document.getElementById('navBtnBeltsMobile');
+
       const dFits = document.getElementById('dotFits');
       const dBelts = document.getElementById('dotBelts');
       const sFits = document.getElementById('moduleFitsSection');
@@ -610,20 +629,30 @@
       const t = translations[currentLang];
 
       if (mod === 'fits') {
+        // Desktop
         bFits.className = "w-full text-left px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-sm flex items-center justify-between transition-colors";
         bBelts.className = "w-full text-left px-3 py-2 rounded-lg text-slate-400 hover:text-white font-medium text-sm flex items-center justify-between transition-colors";
         dFits.className = "w-2 h-2 rounded-full bg-blue-300";
         dBelts.className = "w-2 h-2 rounded-full bg-transparent";
+        // Mobile
+        bFitsM.className = "text-center py-2 px-2 rounded-lg bg-blue-600 text-white font-medium text-xs transition-colors";
+        bBeltsM.className = "text-center py-2 px-2 rounded-lg bg-slate-800/80 text-slate-300 font-medium text-xs transition-colors";
+
         sFits.classList.remove('hidden');
         sBelts.classList.add('hidden');
         titleEl.innerText = t.pageTitleFits;
         subEl.innerText = t.pageSubtitleFits;
         if (typeof calculateFits === 'function') calculateFits();
       } else {
+        // Desktop
         bBelts.className = "w-full text-left px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-sm flex items-center justify-between transition-colors";
         bFits.className = "w-full text-left px-3 py-2 rounded-lg text-slate-400 hover:text-white font-medium text-sm flex items-center justify-between transition-colors";
         dBelts.className = "w-2 h-2 rounded-full bg-blue-300";
         dFits.className = "w-2 h-2 rounded-full bg-transparent";
+        // Mobile
+        bBeltsM.className = "text-center py-2 px-2 rounded-lg bg-blue-600 text-white font-medium text-xs transition-colors";
+        bFitsM.className = "text-center py-2 px-2 rounded-lg bg-slate-800/80 text-slate-300 font-medium text-xs transition-colors";
+
         sBelts.classList.remove('hidden');
         sFits.classList.add('hidden');
         titleEl.innerText = t.pageTitleBelts;
@@ -760,6 +789,8 @@
     // Attach Event Listeners
     document.getElementById('navBtnFits').addEventListener('click', () => switchModule('fits'));
     document.getElementById('navBtnBelts').addEventListener('click', () => switchModule('belts'));
+    document.getElementById('navBtnFitsMobile').addEventListener('click', () => switchModule('fits'));
+    document.getElementById('navBtnBeltsMobile').addEventListener('click', () => switchModule('belts'));
 
     document.getElementById('nominalDiameter').addEventListener('input', () => { if (typeof calculateFits === 'function') calculateFits(); });
     document.getElementById('fitType').addEventListener('change', () => { if (typeof calculateFits === 'function') calculateFits(); });
