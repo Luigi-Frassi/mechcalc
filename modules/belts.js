@@ -1,5 +1,5 @@
 // ==========================================
-// MODULE 2: TIMING BELTS & PULLEYS (ISO 5296 / DIN 7721)
+// MODULE 2: SYNCHRONOUS TIMING BELTS (ISO 5296 / DIN 7721)
 // ==========================================
 
 const catalogWidths = {
@@ -58,11 +58,11 @@ function drawBeltScheme(dp1, dp2, C) {
   const largeArc2 = (R2 >= R1) ? 1 : 0;
 
   const beltPath = `
-    M ${p1_top_x} ${p1_top_y}
-    L ${p2_top_x} ${p2_top_y}
-    A ${R2} ${R2} 0 ${largeArc2} 1 ${p2_bot_x} ${p2_bot_y}
-    L ${p1_bot_x} ${p1_bot_y}
-    A ${R1} ${R1} 0 ${largeArc1} 1 ${p1_top_x} ${p1_top_y}
+    M ${p1_top_x}${p1_top_y}
+    L ${p2_top_x}${p2_top_y}
+    A ${R2} ${R2} 0${largeArc2} 1 ${p2_bot_x}${p2_bot_y}
+    L ${p1_bot_x}${p1_bot_y}
+    A ${R1} ${R1} 0${largeArc1} 1 ${p1_top_x}${p1_top_y}
     Z
   `;
 
@@ -103,7 +103,7 @@ function calculateBelts() {
   const c0Input = parseFloat(document.getElementById('desiredCenter').value) || 150;
   const t = translations[currentLang];
 
-  // Gestione puleggia z2: da input diretto oppure da target tau
+  // Gestione puleggia z2: inserimento diretto oppure da target tau
   let z2 = 40;
   if (currentRatioMethod === 'teeth') {
     z2 = parseInt(document.getElementById('pulleyZ2').value) || 40;
@@ -114,7 +114,7 @@ function calculateBelts() {
     const actualTau = z2 / z1;
     const errPct = ((actualTau - targetTau) / targetTau) * 100;
     const signErr = errPct >= 0 ? `+` : ``;
-    document.getElementById('tauFeedback').innerText = `z₂: ${z2} (${currentLang === 'it' ? 'effettivo' : 'actual'} τ: ${actualTau.toFixed(2)}, Δ: ${signErr}${errPct.toFixed(1)}%)`;
+    document.getElementById('tauFeedback').innerText = `z₂: ${z2} (${currentLang === 'it' ? 'effettivo' : 'actual'} τ:${actualTau.toFixed(2)}, Δ: ${signErr}${errPct.toFixed(1)}%)`;
   }
 
   const P_kW = parseFloat(document.getElementById('motorPower').value) || 1.5;
@@ -173,7 +173,7 @@ function calculateBelts() {
     exactC_mm = (B + Math.sqrt(rad)) / 16;
   }
 
-  // 3. Denti in presa e fattori correttivi da catalogo (c1 e c2)
+  // 3. Denti in presa e fattori correttivi da catalogo
   const wrapRad1 = Math.PI - 2 * Math.asin(Math.min(1, Math.abs(dp2 - dp1) / (2 * exactC_mm)));
   const wrapDeg1 = (wrapRad1 * 180) / Math.PI;
   const z_mesh = (z1 * (wrapDeg1 / 360));
@@ -183,12 +183,11 @@ function calculateBelts() {
   else if (z_mesh < 5 && z_mesh >= 4) c1 = 0.6;
   else if (z_mesh < 4) c1 = 0.4;
 
-  // Fattore di lunghezza cinghia c2 (da catalogo ISO/Gates: cinghie più lunghe flettono meno frequentemente)
   let c2 = 1.0;
   if (zb < 70) c2 = 0.9;
   else if (zb > 150) c2 = 1.1;
 
-  // 4. Calcolo sforzo tangenziale e selezione larghezza commerciale
+  // 4. Sforzo tangenziale e selezione larghezza commerciale
   const Ft = (Pc_kW * 1000) / Math.max(beltSpeed, 0.1);
   const fAllowable = (baseAllowableForce[profKey] || 20.0) * c1 * c2;
   const reqWidthMm = Ft / fAllowable;
@@ -209,11 +208,11 @@ function calculateBelts() {
   if (currentUnit === 'metric') {
     document.getElementById('exactCenterDisp').innerText = `${exactC_mm.toFixed(2)} mm`;
     document.getElementById('centerDiffDisp').innerText = `Δ: ${signDiff}${cDiff.toFixed(2)} mm vs target`;
-    document.getElementById('beltPitchLengthDisp').innerText = `Lp: ${Lp.toFixed(2)} mm`;
+    document.getElementById('beltPitchLengthDisp').innerText = `Lp: ${Lp.toFixed(2)} mm (${currentLang === 'it' ? 'arrotondato ad intero' : 'rounded to int'})`;
   } else {
     document.getElementById('exactCenterDisp').innerText = `${(exactC_mm / 25.4).toFixed(3)} in`;
     document.getElementById('centerDiffDisp').innerText = `Δ: ${signDiff}${(cDiff / 25.4).toFixed(3)} in vs target`;
-    document.getElementById('beltPitchLengthDisp').innerText = `Lp: ${(Lp / 25.4).toFixed(3)} in`;
+    document.getElementById('beltPitchLengthDisp').innerText = `Lp: ${(Lp / 25.4).toFixed(3)} in (${currentLang === 'it' ? 'arrotondato ad intero' : 'rounded to int'})`;
   }
 
   document.getElementById('beltTeethDisp').innerText = `${zb} ${currentLang === 'it' ? 'denti' : 'teeth'}`;
@@ -233,12 +232,12 @@ function calculateBelts() {
     card3Value.innerText = currentUnit === 'metric' ? `${chosenWidth} mm` : `${(chosenWidth / 25.4).toFixed(2)} in (${chosenWidth} mm)`;
     card3Sub.innerText = `Req. min: ${reqWidthMm.toFixed(1)} mm`;
 
-    // Aggiornamento pannello breakdown fattori a vista
+    // Aggiornamento breakdown fattori
     document.getElementById('breakdownC0').innerText = c0.toFixed(2);
     document.getElementById('breakdownC1').innerText = c1.toFixed(2);
     document.getElementById('breakdownC2').innerText = c2.toFixed(2);
     document.getElementById('breakdownFt').innerText = `${Math.round(Ft)} N`;
-    
+
     const checkEl = document.getElementById('powerCheckStatus');
     if (chosenWidth >= reqWidthMm) {
       checkEl.innerText = currentLang === 'it' ? '✓ Dimensionamento Valido' : '✓ Capacity Verified';
