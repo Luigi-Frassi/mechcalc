@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MechCalc - ISO Fit & Tolerance Calculator</title>
+  <title>MechCalc - Engineering Toolbox</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex">
@@ -13,16 +13,16 @@
     <div>
       <div class="flex items-center gap-2 mb-8">
         <span class="text-xl font-bold tracking-tight text-blue-500">Mech<span class="text-white">Calc</span></span>
-        <span class="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded">v0.4</span>
+        <span class="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded">v0.5</span>
       </div>
       <nav class="space-y-2">
-        <button class="w-full text-left px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-sm flex items-center justify-between">
+        <button id="navBtnFits" class="w-full text-left px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-sm flex items-center justify-between transition-colors">
           <span data-i18n="navFits">Tolerances & Fits</span>
-          <span class="w-2 h-2 rounded-full bg-blue-300"></span>
+          <span id="dotFits" class="w-2 h-2 rounded-full bg-blue-300"></span>
         </button>
-        <button disabled class="w-full text-left px-3 py-2 rounded-lg text-slate-500 font-medium text-sm flex items-center justify-between cursor-not-allowed">
+        <button id="navBtnBelts" class="w-full text-left px-3 py-2 rounded-lg text-slate-400 hover:text-white font-medium text-sm flex items-center justify-between transition-colors">
           <span data-i18n="navBelts">Belts & Pulleys</span>
-          <span class="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-400" data-i18n="comingSoon">Soon</span>
+          <span id="dotBelts" class="w-2 h-2 rounded-full bg-transparent"></span>
         </button>
         <button disabled class="w-full text-left px-3 py-2 rounded-lg text-slate-500 font-medium text-sm flex items-center justify-between cursor-not-allowed">
           <span data-i18n="navShafts">Shafts & Keys</span>
@@ -31,23 +31,23 @@
       </nav>
     </div>
     <div class="text-xs text-slate-500 border-t border-slate-800 pt-4">
-      ISO 286-2 (3-500 mm / 0.118-19.68 in)
+      Mechanical Design Suite
     </div>
   </aside>
 
-  <!-- Main Content -->
+  <!-- Main Content Area -->
   <main class="flex-1 p-6 md:p-10 max-w-4xl overflow-y-auto">
     <!-- Top Header -->
     <header class="flex flex-wrap gap-4 justify-between items-start mb-8">
       <div>
-        <h1 class="text-2xl font-bold tracking-tight text-white mb-1" data-i18n="pageTitle">ISO Fit & Tolerance Selector</h1>
-        <p class="text-sm text-slate-400" data-i18n="pageSubtitle">H7 Hole-Basis System. Interactive matrix, reverse lookup, and unit conversion.</p>
+        <h1 class="text-2xl font-bold tracking-tight text-white mb-1" id="moduleTitle">ISO Fit & Tolerance Selector</h1>
+        <p class="text-sm text-slate-400" id="moduleSubtitle">H7 Hole-Basis System. Interactive matrix, reverse lookup, and unit conversion.</p>
       </div>
       <div class="flex items-center gap-3">
         <!-- Units Toggle -->
         <div class="flex items-center bg-slate-800/80 p-1 rounded-lg border border-slate-700 text-xs font-semibold">
-          <button id="unitMetric" class="px-2.5 py-1 rounded bg-blue-600 text-white transition-colors">mm (µm)</button>
-          <button id="unitImperial" class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition-colors">in (thou)</button>
+          <button id="unitMetric" class="px-2.5 py-1 rounded bg-blue-600 text-white transition-colors">mm</button>
+          <button id="unitImperial" class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition-colors">in</button>
         </div>
         <!-- Language Switcher -->
         <div class="flex items-center bg-slate-800/80 p-1 rounded-lg border border-slate-700 text-xs font-semibold">
@@ -57,143 +57,238 @@
       </div>
     </header>
 
-    <!-- Calculation Mode Selector (Direct vs Reverse) -->
-    <div class="flex gap-2 mb-6 border-b border-slate-800 pb-3">
-      <button id="modeDirect" class="px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600/20 text-blue-400 border border-blue-500/30 transition-all">
-        <span data-i18n="modeDirectLabel">Direct Fit Selection</span>
-      </button>
-      <button id="modeReverse" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white border border-transparent transition-all">
-        <span data-i18n="modeReverseLabel">Inverse Search (By Target Play)</span>
-      </button>
-    </div>
+    <!-- ==================== MODULE 1: TOLERANCES & FITS ==================== -->
+    <div id="moduleFitsSection">
+      <!-- Mode Selector -->
+      <div class="flex gap-2 mb-6 border-b border-slate-800 pb-3">
+        <button id="modeDirect" class="px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600/20 text-blue-400 border border-blue-500/30 transition-all">
+          <span data-i18n="modeDirectLabel">Direct Fit Selection</span>
+        </button>
+        <button id="modeReverse" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white border border-transparent transition-all">
+          <span data-i18n="modeReverseLabel">Inverse Search (By Target Play)</span>
+        </button>
+      </div>
 
-    <!-- Input Card -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-800/60 p-6 rounded-xl border border-slate-700/60 mb-6 backdrop-blur">
-      <div>
-        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="inputDiamLabel">Nominal Diameter (d)</label>
-        <div class="relative">
-          <input type="number" id="nominalDiameter" value="25" min="0.12" max="500" step="any"
-            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none transition-colors">
-          <span class="absolute right-4 top-2.5 text-slate-400 font-medium text-sm" id="unitLabel">mm</span>
+      <!-- Input Card -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-800/60 p-6 rounded-xl border border-slate-700/60 mb-6 backdrop-blur">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="inputDiamLabel">Nominal Diameter (d)</label>
+          <div class="relative">
+            <input type="number" id="nominalDiameter" value="25" min="0.12" max="500" step="any"
+              class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none transition-colors">
+            <span class="absolute right-4 top-2.5 text-slate-400 font-medium text-sm" id="fitUnitLabel">mm</span>
+          </div>
+          <p class="text-xs text-slate-500 mt-1.5 transition-colors" id="stepInfo">ISO Step: over 18 up to 30 mm</p>
         </div>
-        <p class="text-xs text-slate-500 mt-1.5 transition-colors" id="stepInfo">ISO Step: over 18 up to 30 mm</p>
+
+        <div id="directInputs">
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="inputFitLabel">Desired Fit</label>
+          <select id="fitType" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"></select>
+        </div>
+
+        <div id="reverseInputs" class="hidden">
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="reverseTargetLabel">Target Condition & Clearance</label>
+          <div class="flex gap-2">
+            <select id="reverseFitNature" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <option value="clearance" data-i18n="optClearance">Clearance</option>
+              <option value="interference" data-i18n="optInterference">Interference</option>
+            </select>
+            <div class="relative flex-1">
+              <input type="number" id="reverseTargetVal" value="20" step="1"
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <span class="absolute right-3 top-2.5 text-slate-400 text-xs font-mono" id="targetUnitLabel">µm</span>
+            </div>
+          </div>
+          <p class="text-xs text-blue-400 mt-1.5" id="reverseMatchFeedback"></p>
+        </div>
       </div>
 
-      <!-- Direct Selection Inputs -->
-      <div id="directInputs">
-        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="inputFitLabel">Desired Fit</label>
-        <select id="fitType" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          <!-- Populated dynamically via JS -->
-        </select>
+      <!-- Results Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
+          <span class="text-xs font-medium text-slate-400" data-i18n="holeCardTitle">Hole (H7)</span>
+          <div class="text-lg font-bold text-sky-400 mt-1" id="holeDisp">+21 / 0 µm</div>
+          <div class="text-xs text-slate-400 mt-1 font-mono" id="holeDims">25.000 / 25.021 mm</div>
+        </div>
+        <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
+          <span class="text-xs font-medium text-slate-400"><span data-i18n="shaftCardTitle">Shaft</span> (<span id="shaftClassLabel">g6</span>)</span>
+          <div class="text-lg font-bold text-amber-400 mt-1" id="shaftDisp">-7 / -20 µm</div>
+          <div class="text-xs text-slate-400 mt-1 font-mono" id="shaftDims">24.993 / 24.980 mm</div>
+        </div>
+        <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
+          <span class="text-xs font-medium text-slate-400" data-i18n="fitCardTitle">Fit Condition</span>
+          <div class="text-lg font-bold text-emerald-400 mt-1" id="fitResult">Clearance: 7 - 41 µm</div>
+          <div class="text-xs text-slate-400 mt-1" id="fitCategory">Clearance fit</div>
+        </div>
       </div>
 
-      <!-- Reverse Search Inputs -->
-      <div id="reverseInputs" class="hidden">
-        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="reverseTargetLabel">Target Condition & Clearance</label>
-        <div class="flex gap-2">
-          <select id="reverseFitNature" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            <option value="clearance" data-i18n="optClearance">Clearance</option>
-            <option value="interference" data-i18n="optInterference">Interference</option>
-          </select>
-          <div class="relative flex-1">
-            <input type="number" id="reverseTargetVal" value="20" step="1"
-              class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            <span class="absolute right-3 top-2.5 text-slate-400 text-xs font-mono" id="targetUnitLabel">µm</span>
+      <!-- SVG Tolerance Chart -->
+      <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700/50 mb-6">
+        <div class="flex justify-between items-center mb-3">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-300" data-i18n="chartTitle">Relative Tolerance Zone Positions</span>
+          <div class="flex gap-4 text-xs">
+            <span class="flex items-center gap-1.5 text-sky-400"><span class="w-3 h-3 rounded bg-sky-500/30 border border-sky-400 inline-block"></span> <span data-i18n="legendHole">Hole (H7)</span></span>
+            <span class="flex items-center gap-1.5 text-amber-400"><span class="w-3 h-3 rounded bg-amber-500/30 border border-amber-400 inline-block"></span> <span data-i18n="legendShaft">Shaft</span></span>
+            <span class="flex items-center gap-1.5 text-slate-400"><span class="w-4 h-0.5 bg-slate-500 inline-block"></span> <span data-i18n="legendZero">Zero Line</span></span>
           </div>
         </div>
-        <p class="text-xs text-blue-400 mt-1.5" id="reverseMatchFeedback"></p>
-      </div>
-    </div>
-
-    <!-- Numerical Results Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-      <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-        <span class="text-xs font-medium text-slate-400" data-i18n="holeCardTitle">Hole (H7)</span>
-        <div class="text-lg font-bold text-sky-400 mt-1" id="holeDisp">+21 / 0 µm</div>
-        <div class="text-xs text-slate-400 mt-1 font-mono" id="holeDims">25.000 / 25.021 mm</div>
-      </div>
-      <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-        <span class="text-xs font-medium text-slate-400"><span data-i18n="shaftCardTitle">Shaft</span> (<span id="shaftClassLabel">g6</span>)</span>
-        <div class="text-lg font-bold text-amber-400 mt-1" id="shaftDisp">-7 / -20 µm</div>
-        <div class="text-xs text-slate-400 mt-1 font-mono" id="shaftDims">24.993 / 24.980 mm</div>
-      </div>
-      <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-        <span class="text-xs font-medium text-slate-400" data-i18n="fitCardTitle">Fit Condition</span>
-        <div class="text-lg font-bold text-emerald-400 mt-1" id="fitResult">Clearance: 7 - 41 µm</div>
-        <div class="text-xs text-slate-400 mt-1" id="fitCategory">Clearance fit</div>
-      </div>
-    </div>
-
-    <!-- SVG Tolerance Band Chart -->
-    <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700/50 mb-6">
-      <div class="flex justify-between items-center mb-3">
-        <span class="text-xs font-semibold uppercase tracking-wider text-slate-300" data-i18n="chartTitle">Relative Tolerance Zone Positions</span>
-        <div class="flex gap-4 text-xs">
-          <span class="flex items-center gap-1.5 text-sky-400"><span class="w-3 h-3 rounded bg-sky-500/30 border border-sky-400 inline-block"></span> <span data-i18n="legendHole">Hole (H7)</span></span>
-          <span class="flex items-center gap-1.5 text-amber-400"><span class="w-3 h-3 rounded bg-amber-500/30 border border-amber-400 inline-block"></span> <span data-i18n="legendShaft">Shaft</span></span>
-          <span class="flex items-center gap-1.5 text-slate-400"><span class="w-4 h-0.5 bg-slate-500 inline-block"></span> <span data-i18n="legendZero">Zero Line</span></span>
+        <div class="w-full bg-slate-950/80 rounded-lg p-2 border border-slate-800 flex justify-center min-h-[224px]">
+          <svg id="toleranceChart" viewBox="0 0 600 240" class="w-full h-56"></svg>
         </div>
       </div>
-      
-      <div class="w-full bg-slate-950/80 rounded-lg p-2 border border-slate-800 flex justify-center min-h-[224px]">
-        <svg id="toleranceChart" viewBox="0 0 600 240" class="w-full h-56"></svg>
-      </div>
-    </div>
 
-    <!-- Interactive Comparison Matrix -->
-    <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700/50 mb-6">
-      <div class="flex justify-between items-center mb-3">
-        <span class="text-xs font-semibold uppercase tracking-wider text-slate-300" data-i18n="comparisonTitle">Instant ISO Fits Comparison Table</span>
-        <span class="text-[11px] text-slate-400" data-i18n="comparisonHelp">Click any row to load fit</span>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs text-slate-300">
-          <thead class="text-[11px] uppercase tracking-wider text-slate-400 bg-slate-950/60 border-b border-slate-800">
-            <tr>
-              <th class="p-2.5" data-i18n="thFit">Fit</th>
-              <th class="p-2.5" data-i18n="thShaftDev">Shaft Dev.</th>
-              <th class="p-2.5" data-i18n="thFitCond">Fit Condition</th>
-              <th class="p-2.5" data-i18n="thMinMax">Min / Max</th>
-              <th class="p-2.5 text-right" data-i18n="thAction">Action</th>
-            </tr>
-          </thead>
-          <tbody id="comparisonTableBody" class="divide-y divide-slate-800/60 font-mono">
-            <!-- Populated dynamically via JS -->
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Workshop & Machining Notes -->
-    <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700/50 mb-8">
-      <div class="flex items-center justify-between mb-4">
-        <span class="text-xs font-semibold uppercase tracking-wider text-slate-300" data-i18n="machiningSectionTitle">Machining & Surface Finish Guidelines</span>
-        <button id="copyBtn" class="text-xs px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-200 transition-colors" data-i18n="copyBtn">Copy CAD note</button>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-        <div class="p-3.5 bg-slate-900/70 rounded-lg border border-slate-800">
-          <div class="text-slate-400 text-xs" data-i18n="shaftMachiningLabel">Recommended Shaft Machining:</div>
-          <div class="font-medium text-white mt-0.5" id="shaftProcess">Precision Turning / Grinding</div>
-          <div class="text-xs text-amber-400 mt-1"><span data-i18n="roughnessLabel">Surface roughness:</span> <span id="shaftRa" class="font-semibold">Ra 0.8 µm</span></div>
+      <!-- Instant Comparison Table -->
+      <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700/50 mb-6">
+        <div class="flex justify-between items-center mb-3">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-300" data-i18n="comparisonTitle">Instant ISO Fits Comparison Table</span>
+          <span class="text-[11px] text-slate-400" data-i18n="comparisonHelp">Click any row to load fit</span>
         </div>
-        <div class="p-3.5 bg-slate-900/70 rounded-lg border border-slate-800">
-          <div class="text-slate-400 text-xs" data-i18n="holeMachiningLabel">Recommended Hole Machining:</div>
-          <div class="font-medium text-white mt-0.5" id="holeProcess">Precision Reaming</div>
-          <div class="text-xs text-sky-400 mt-1"><span data-i18n="roughnessLabel">Surface roughness:</span> <span id="holeRa" class="font-semibold">Ra 1.6 µm</span></div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="text-[11px] uppercase tracking-wider text-slate-400 bg-slate-950/60 border-b border-slate-800">
+              <tr>
+                <th class="p-2.5" data-i18n="thFit">Fit</th>
+                <th class="p-2.5" data-i18n="thShaftDev">Shaft Dev.</th>
+                <th class="p-2.5" data-i18n="thFitCond">Fit Condition</th>
+                <th class="p-2.5" data-i18n="thMinMax">Min / Max</th>
+                <th class="p-2.5 text-right" data-i18n="thAction">Action</th>
+              </tr>
+            </thead>
+            <tbody id="comparisonTableBody" class="divide-y divide-slate-800/60 font-mono"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Workshop Notes -->
+      <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700/50 mb-8">
+        <div class="flex items-center justify-between mb-4">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-300" data-i18n="machiningSectionTitle">Machining & Surface Finish Guidelines</span>
+          <button id="copyFitBtn" class="text-xs px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-200 transition-colors" data-i18n="copyBtn">Copy CAD note</button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div class="p-3.5 bg-slate-900/70 rounded-lg border border-slate-800">
+            <div class="text-slate-400 text-xs" data-i18n="shaftMachiningLabel">Recommended Shaft Machining:</div>
+            <div class="font-medium text-white mt-0.5" id="shaftProcess">Precision Turning / Grinding</div>
+            <div class="text-xs text-amber-400 mt-1"><span data-i18n="roughnessLabel">Surface roughness:</span> <span id="shaftRa" class="font-semibold">Ra 0.8 µm</span></div>
+          </div>
+          <div class="p-3.5 bg-slate-900/70 rounded-lg border border-slate-800">
+            <div class="text-slate-400 text-xs" data-i18n="holeMachiningLabel">Recommended Hole Machining:</div>
+            <div class="font-medium text-white mt-0.5" id="holeProcess">Precision Reaming</div>
+            <div class="text-xs text-sky-400 mt-1"><span data-i18n="roughnessLabel">Surface roughness:</span> <span id="holeRa" class="font-semibold">Ra 1.6 µm</span></div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Disclaimer -->
+    <!-- ==================== MODULE 2: BELTS & PULLEYS ==================== -->
+    <div id="moduleBeltsSection" class="hidden">
+      <!-- Inputs Card -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-800/60 p-6 rounded-xl border border-slate-700/60 mb-6 backdrop-blur">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="beltProfileLabel">Belt Pitch / Profile</label>
+          <select id="beltProfile" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="2">GT2 (2 mm)</option>
+            <option value="3">HTD 3M (3 mm)</option>
+            <option value="5" selected>HTD 5M (5 mm)</option>
+            <option value="5_T5">T5 (5 mm Trapezoidal)</option>
+            <option value="8">HTD 8M (8 mm)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="pulley1Label">Driver Pulley (z₁)</label>
+          <input type="number" id="pulleyZ1" value="24" min="10" max="200" step="1"
+            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          <p class="text-xs text-slate-500 mt-1 font-mono" id="dp1Info">dp₁: 38.20 mm</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="pulley2Label">Driven Pulley (z₂)</label>
+          <input type="number" id="pulleyZ2" value="48" min="10" max="200" step="1"
+            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          <p class="text-xs text-slate-500 mt-1 font-mono" id="dp2Info">dp₂: 76.39 mm</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="desiredCenterLabel">Desired Center (C₀)</label>
+          <div class="relative">
+            <input type="number" id="desiredCenter" value="200" min="20" max="3000" step="any"
+              class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs" id="beltCenterUnit">mm</span>
+          </div>
+          <p class="text-xs text-slate-500 mt-1" id="ratioInfo">Ratio: 1 : 2.00</p>
+        </div>
+      </div>
+
+      <!-- Results Summary Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
+          <span class="text-xs font-medium text-slate-400" data-i18n="exactCenterCard">Exact Center Dist. (C)</span>
+          <div class="text-xl font-bold text-blue-400 mt-1" id="exactCenterDisp">201.42 mm</div>
+          <div class="text-[11px] text-slate-500 mt-0.5" id="centerDiffDisp">Δ: +1.42 mm vs target</div>
+        </div>
+
+        <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
+          <span class="text-xs font-medium text-slate-400" data-i18n="beltTeethCard">Belt Standard Teeth (zb)</span>
+          <div class="text-xl font-bold text-amber-400 mt-1" id="beltTeethDisp">116 teeth</div>
+          <div class="text-[11px] text-slate-500 mt-0.5" id="beltPitchLengthDisp">Lp: 580.00 mm</div>
+        </div>
+
+        <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
+          <span class="text-xs font-medium text-slate-400" data-i18n="teethInMeshCard">Teeth in Mesh (z_mesh)</span>
+          <div class="text-xl font-bold text-emerald-400 mt-1" id="teethInMeshDisp">11.3 teeth</div>
+          <div class="text-[11px] text-slate-500 mt-0.5" id="teethInMeshStatus">Optimal (> 6 teeth)</div>
+        </div>
+
+        <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
+          <span class="text-xs font-medium text-slate-400" data-i18n="wrapAngleCard">Wrap Angle (θ₁)</span>
+          <div class="text-xl font-bold text-purple-400 mt-1" id="wrapAngleDisp">169.1°</div>
+          <div class="text-[11px] text-slate-500 mt-0.5" id="ratioCardDisp">Reduction: 2.000</div>
+        </div>
+      </div>
+
+      <!-- 2D SVG Pulley & Belt Scheme -->
+      <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700/50 mb-6">
+        <div class="flex justify-between items-center mb-3">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-300" data-i18n="beltChartTitle">Kinematic Transmission Scheme</span>
+          <span class="text-[11px] text-slate-400" data-i18n="beltChartSub">Proportional 2D pitch line view</span>
+        </div>
+        <div class="w-full bg-slate-950/80 rounded-lg p-2 border border-slate-800 flex justify-center min-h-[224px]">
+          <svg id="beltChart" viewBox="0 0 600 240" class="w-full h-56"></svg>
+        </div>
+      </div>
+
+      <!-- CAD & Assembly Notes -->
+      <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700/50 mb-8">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-300" data-i18n="beltNotesTitle">Timing Belt Design & Mounting Notes</span>
+          <button id="copyBeltBtn" class="text-xs px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-200 transition-colors" data-i18n="copyBeltNoteBtn">Copy Drive Specs</button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-400 leading-relaxed">
+          <div class="p-3 bg-slate-900/70 rounded-lg border border-slate-800">
+            <span class="font-semibold text-slate-200 block mb-1" data-i18n="beltRuleTitle1">Center Distance Tolerancing:</span>
+            <span data-i18n="beltRuleDesc1">Provide slot adjustments on motor mounts: typically -1.5% to -2% for belt installation without forced stretching, and +2% to +3% for tensioning.</span>
+          </div>
+          <div class="p-3 bg-slate-900/70 rounded-lg border border-slate-800">
+            <span class="font-semibold text-slate-200 block mb-1" data-i18n="beltRuleTitle2">Teeth In Mesh Criterion:</span>
+            <span data-i18n="beltRuleDesc2">Industry handbooks require at least 6 teeth fully engaged on the small pulley (z_mesh ≥ 6) to deliver nominal rated torque without tooth shear.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Technical Footer -->
     <footer class="pt-6 border-t border-slate-800 text-xs text-slate-500 space-y-1">
       <p class="font-medium text-slate-400" data-i18n="disclaimerTitle">Technical note and disclaimer:</p>
       <p data-i18n="disclaimerText">
-        Deviation values conform to international standard UNI EN ISO 286-2. Imperial readings are exact conversions (1 inch = 25.4 mm). This tool is designed for early-stage engineering sizing.
+        Calculations follow standard analytical machine design equations (ISO 286-2 for fits, ISO 5296 / DIN 7721 for synchronous belts). Sizing values are preliminary guides for mechanical engineering and CAD design.
       </p>
     </footer>
   </main>
 
+  <!-- ==================== CORE SCRIPT (Translations & Switchers) ==================== -->
   <script>
+    let activeModule = 'fits';
     let currentLang = 'en';
     let currentUnit = 'metric';
     let currentMode = 'direct';
@@ -204,8 +299,10 @@
         navBelts: "Belts & Pulleys",
         navShafts: "Shafts & Keys",
         comingSoon: "Soon",
-        pageTitle: "ISO Fit & Tolerance Selector",
-        pageSubtitle: "H7 Hole-Basis System. Interactive matrix, reverse lookup, and unit conversion.",
+        pageTitleFits: "ISO Fit & Tolerance Selector",
+        pageSubtitleFits: "H7 Hole-Basis System. Interactive matrix, reverse lookup, and unit conversion.",
+        pageTitleBelts: "Timing Belt & Pulley Center Sizing",
+        pageSubtitleBelts: "Standard synchronous pitch calculation, pitch diameters, standard belt teeth, and exact center distance.",
         modeDirectLabel: "Direct Fit Selection",
         modeReverseLabel: "Inverse Search (By Target Play)",
         inputDiamLabel: "Nominal Diameter (d)",
@@ -239,7 +336,7 @@
         holeMachiningLabel: "Recommended Hole Machining:",
         roughnessLabel: "Surface roughness:",
         disclaimerTitle: "Technical note and disclaimer:",
-        disclaimerText: "Deviation values conform to international standard UNI EN ISO 286-2. Imperial readings are exact conversions (1 inch = 25.4 mm). This tool is designed for early-stage engineering sizing. Verify production drawings before release.",
+        disclaimerText: "Calculations follow standard analytical machine design equations (ISO 286-2 for fits, ISO 5296 / DIN 7721 for synchronous belts). Sizing values are preliminary guides for mechanical engineering and CAD design.",
         clearanceFit: "Clearance fit",
         interferenceFit: "Interference fit",
         transitionFit: "Transition fit",
@@ -250,6 +347,25 @@
         copiedAlert: "Specifications copied to clipboard for CAD drawing!",
         closestMatch: "Suggested ISO fit:",
         meanPlay: "Mean play:",
+        beltProfileLabel: "Belt Pitch / Profile",
+        pulley1Label: "Driver Pulley (z₁)",
+        pulley2Label: "Driven Pulley (z₂)",
+        desiredCenterLabel: "Desired Center (C₀)",
+        exactCenterCard: "Exact Center Dist. (C)",
+        beltTeethCard: "Belt Standard Teeth (zb)",
+        teethInMeshCard: "Teeth in Mesh (z_mesh)",
+        wrapAngleCard: "Wrap Angle (θ₁)",
+        beltChartTitle: "Kinematic Transmission Scheme",
+        beltChartSub: "Proportional 2D pitch line view",
+        beltNotesTitle: "Timing Belt Design & Mounting Notes",
+        copyBeltNoteBtn: "Copy Drive Specs",
+        beltRuleTitle1: "Center Distance Tolerancing:",
+        beltRuleDesc1: "Provide slot adjustments on motor mounts: typically -1.5% to -2% for belt installation without forced stretching, and +2% to +3% for tensioning.",
+        beltRuleTitle2: "Teeth In Mesh Criterion:",
+        beltRuleDesc2: "Industry handbooks require at least 6 teeth fully engaged on the small pulley (z_mesh ≥ 6) to deliver nominal rated torque without tooth shear.",
+        meshOptimal: "Optimal (≥ 6 teeth)",
+        meshWarning: "Warning (< 6 teeth, derate torque!)",
+        centerTooSmall: "Center distance too small! Pulleys interfere.",
         fits: {
           'H7/f7': { label: "Wide clearance / Loose running (H7/f7)", shaftProc: "Finish Turning", holeProc: "Standard Reaming / Boring" },
           'H7/g6': { label: "Precision running / Journal bearing (H7/g6)", shaftProc: "Precision Turning / Grinding", holeProc: "Accurate Reaming" },
@@ -264,8 +380,10 @@
         navBelts: "Cinghie & Pulegge",
         navShafts: "Alberi & Linguette",
         comingSoon: "In arrivo",
-        pageTitle: "Selettore Tolleranze & Lavorazioni ISO",
-        pageSubtitle: "Sistema Foro Base H7. Tabella comparativa, ricerca inversa e conversione unità.",
+        pageTitleFits: "Selettore Tolleranze & Lavorazioni ISO",
+        pageSubtitleFits: "Sistema Foro Base H7. Tabella comparativa, ricerca inversa e conversione unità.",
+        pageTitleBelts: "Dimensionamento Cinghie & Pulegge",
+        pageSubtitleBelts: "Calcolo geometrico di trasmissioni sincrone: diametri primitivi, denti commerciali e interasse esatto.",
         modeDirectLabel: "Selezione Diretta",
         modeReverseLabel: "Ricerca Inversa (Per Gioco Desiderato)",
         inputDiamLabel: "Diametro Nominale (d)",
@@ -299,7 +417,7 @@
         holeMachiningLabel: "Lavorazione Foro consigliata:",
         roughnessLabel: "Rugosità consigliata:",
         disclaimerTitle: "Nota tecnica e limitazione di responsabilità:",
-        disclaimerText: "I valori di scostamento e tolleranza sono conformi alla norma UNI EN ISO 286-2. Le quote imperiali derivano da conversione metrica esatta (1 pollice = 25.4 mm). Ausilio di calcolo per il pre-dimensionamento.",
+        disclaimerText: "I calcoli utilizzano le formulazioni analitiche di costruzione di macchine (ISO 286 per gli accoppiamenti, ISO 5296 / DIN 7721 per le cinghie sincrone). Valori di pre-dimensionamento per disegni e CAD 3D.",
         clearanceFit: "Accoppiamento con gioco",
         interferenceFit: "Accoppiamento con interferenza",
         transitionFit: "Accoppiamento incerto",
@@ -310,6 +428,25 @@
         copiedAlert: "Specifiche copiate negli appunti per la tavola CAD!",
         closestMatch: "Accoppiamento ISO ottimale:",
         meanPlay: "Valore medio:",
+        beltProfileLabel: "Passo / Profilo Cinghia",
+        pulley1Label: "Puleggia Motrice (z₁)",
+        pulley2Label: "Puleggia Condotta (z₂)",
+        desiredCenterLabel: "Interasse Indicativo (C₀)",
+        exactCenterCard: "Interasse Esatto (C)",
+        beltTeethCard: "Denti Commerciali Cinghia (zb)",
+        teethInMeshCard: "Denti in Presa (z_mesh)",
+        wrapAngleCard: "Angolo di Contatto (θ₁)",
+        beltChartTitle: "Schema Cinematico della Trasmissione",
+        beltChartSub: "Vista 2D in scala delle primitive",
+        beltNotesTitle: "Note di Montaggio e Tolleramento Cinghie",
+        copyBeltNoteBtn: "Copia Dati Trasmissione",
+        beltRuleTitle1: "Asole e Regolazione Interasse:",
+        beltRuleDesc1: "Prevedere sempre asole sui supporti motore: tipicamente -1.5% per agevolare il montaggio senza forzare la cinghia e +2.5% per il corretto tensionamento.",
+        beltRuleTitle2: "Criterio Minimo Denti in Presa:",
+        beltRuleDesc2: "I manuali industriali impongono almeno 6 denti in presa sulla puleggia piccola (z_mesh ≥ 6) per evitare lo scalzamento o la rottura a taglio del dente.",
+        meshOptimal: "Ottimale (≥ 6 denti)",
+        meshWarning: "Attenzione (< 6 denti, declassare coppia!)",
+        centerTooSmall: "Interasse insufficiente! Le pulegge si compenetrano.",
         fits: {
           'H7/f7': { label: "Scorrevole con ampio gioco (H7/f7)", shaftProc: "Tornitura finita", holeProc: "Alesatura o Tornitura interna" },
           'H7/g6': { label: "Scorrevole di precisione / Bronzina (H7/g6)", shaftProc: "Tornitura di precisione / Rettifica", holeProc: "Alesatura accurata" },
@@ -321,41 +458,38 @@
       }
     };
 
-    const isoTable = [
-      { min: 3, max: 6, it6: 8, it7: 12, f7_es: -10, g6_es: -4, h6_es: 0, js6_es: 4, k6_es: 9, p6_es: 20 },
-      { min: 6, max: 10, it6: 9, it7: 15, f7_es: -13, g6_es: -5, h6_es: 0, js6_es: 4.5, k6_es: 10, p6_es: 24 },
-      { min: 10, max: 18, it6: 11, it7: 18, f7_es: -16, g6_es: -6, h6_es: 0, js6_es: 5.5, k6_es: 12, p6_es: 29 },
-      { min: 18, max: 30, it6: 13, it7: 21, f7_es: -20, g6_es: -7, h6_es: 0, js6_es: 6.5, k6_es: 15, p6_es: 35 },
-      { min: 30, max: 50, it6: 16, it7: 25, f7_es: -25, g6_es: -9, h6_es: 0, js6_es: 8, k6_es: 18, p6_es: 42 },
-      { min: 50, max: 80, it6: 19, it7: 30, f7_es: -30, g6_es: -10, h6_es: 0, js6_es: 9.5, k6_es: 21, p6_es: 51 },
-      { min: 80, max: 120, it6: 22, it7: 35, f7_es: -36, g6_es: -12, h6_es: 0, js6_es: 11, k6_es: 25, p6_es: 59 },
-      { min: 120, max: 180, it6: 25, it7: 40, f7_es: -43, g6_es: -14, h6_es: 0, js6_es: 12.5, k6_es: 28, p6_es: 68 },
-      { min: 180, max: 250, it6: 29, it7: 46, f7_es: -50, g6_es: -15, h6_es: 0, js6_es: 14.5, k6_es: 33, p6_es: 79 },
-      { min: 250, max: 315, it6: 32, it7: 52, f7_es: -56, g6_es: -17, h6_es: 0, js6_es: 16, k6_es: 36, p6_es: 88 },
-      { min: 315, max: 400, it6: 36, it7: 57, f7_es: -62, g6_es: -18, h6_es: 0, js6_es: 18, k6_es: 40, p6_es: 98 },
-      { min: 400, max: 500, it6: 40, it7: 63, f7_es: -68, g6_es: -20, h6_es: 0, js6_es: 20, k6_es: 45, p6_es: 108 }
-    ];
+    function switchModule(mod) {
+      activeModule = mod;
+      const bFits = document.getElementById('navBtnFits');
+      const bBelts = document.getElementById('navBtnBelts');
+      const dFits = document.getElementById('dotFits');
+      const dBelts = document.getElementById('dotBelts');
+      const sFits = document.getElementById('moduleFitsSection');
+      const sBelts = document.getElementById('moduleBeltsSection');
+      const titleEl = document.getElementById('moduleTitle');
+      const subEl = document.getElementById('moduleSubtitle');
+      const t = translations[currentLang];
 
-    const fitsRa = {
-      'H7/f7': { shaftRa: 'Ra 1.6 µm / 63 µin', holeRa: 'Ra 1.6-3.2 µm / 63-125 µin' },
-      'H7/g6': { shaftRa: 'Ra 0.8 µm / 32 µin', holeRa: 'Ra 1.6 µm / 63 µin' },
-      'H7/h6': { shaftRa: 'Ra 0.8 µm / 32 µin', holeRa: 'Ra 1.6 µm / 63 µin' },
-      'H7/js6': { shaftRa: 'Ra 0.8 µm / 32 µin', holeRa: 'Ra 1.6 µm / 63 µin' },
-      'H7/k6': { shaftRa: 'Ra 0.8 µm / 32 µin', holeRa: 'Ra 1.6 µm / 63 µin' },
-      'H7/p6': { shaftRa: 'Ra 0.4-0.8 µm / 16-32 µin', holeRa: 'Ra 0.8-1.6 µm / 32-63 µin' }
-    };
-
-    function populateSelect() {
-      const select = document.getElementById('fitType');
-      const cur = select.value || 'H7/g6';
-      select.innerHTML = '';
-      const t = translations[currentLang].fits;
-      for (const [key, val] of Object.entries(t)) {
-        const opt = document.createElement('option');
-        opt.value = key;
-        opt.innerText = val.label;
-        if (key === cur) opt.selected = true;
-        select.appendChild(opt);
+      if (mod === 'fits') {
+        bFits.className = "w-full text-left px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-sm flex items-center justify-between transition-colors";
+        bBelts.className = "w-full text-left px-3 py-2 rounded-lg text-slate-400 hover:text-white font-medium text-sm flex items-center justify-between transition-colors";
+        dFits.className = "w-2 h-2 rounded-full bg-blue-300";
+        dBelts.className = "w-2 h-2 rounded-full bg-transparent";
+        sFits.classList.remove('hidden');
+        sBelts.classList.add('hidden');
+        titleEl.innerText = t.pageTitleFits;
+        subEl.innerText = t.pageSubtitleFits;
+        calculateFits();
+      } else {
+        bBelts.className = "w-full text-left px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-sm flex items-center justify-between transition-colors";
+        bFits.className = "w-full text-left px-3 py-2 rounded-lg text-slate-400 hover:text-white font-medium text-sm flex items-center justify-between transition-colors";
+        dBelts.className = "w-2 h-2 rounded-full bg-blue-300";
+        dFits.className = "w-2 h-2 rounded-full bg-transparent";
+        sBelts.classList.remove('hidden');
+        sFits.classList.add('hidden');
+        titleEl.innerText = t.pageTitleBelts;
+        subEl.innerText = t.pageSubtitleBelts;
+        calculateBelts();
       }
     }
 
@@ -377,32 +511,42 @@
         rInputs.classList.remove('hidden');
         dInputs.classList.add('hidden');
       }
-      calculate();
+      calculateFits();
     }
 
     function setUnit(unit) {
       if (currentUnit === unit) return;
       currentUnit = unit;
+
       const diamInput = document.getElementById('nominalDiameter');
       const targetInput = document.getElementById('reverseTargetVal');
       let val = parseFloat(diamInput.value);
 
+      const centerInput = document.getElementById('desiredCenter');
+      let cVal = parseFloat(centerInput.value);
+
       if (unit === 'imperial') {
         document.getElementById('unitImperial').className = "px-2.5 py-1 rounded bg-blue-600 text-white transition-colors";
         document.getElementById('unitMetric').className = "px-2.5 py-1 rounded text-slate-400 hover:text-white transition-colors";
-        document.getElementById('unitLabel').innerText = "in";
+        document.getElementById('fitUnitLabel').innerText = "in";
         document.getElementById('targetUnitLabel').innerText = "thou";
+        document.getElementById('beltCenterUnit').innerText = "in";
         if (!isNaN(val)) diamInput.value = (val / 25.4).toFixed(3);
         targetInput.value = (parseFloat(targetInput.value) / 25.4).toFixed(2);
+        if (!isNaN(cVal)) centerInput.value = (cVal / 25.4).toFixed(2);
       } else {
         document.getElementById('unitMetric').className = "px-2.5 py-1 rounded bg-blue-600 text-white transition-colors";
         document.getElementById('unitImperial').className = "px-2.5 py-1 rounded text-slate-400 hover:text-white transition-colors";
-        document.getElementById('unitLabel').innerText = "mm";
+        document.getElementById('fitUnitLabel').innerText = "mm";
         document.getElementById('targetUnitLabel').innerText = "µm";
+        document.getElementById('beltCenterUnit').innerText = "mm";
         if (!isNaN(val)) diamInput.value = (val * 25.4).toFixed(1);
         targetInput.value = Math.round(parseFloat(targetInput.value) * 25.4);
+        if (!isNaN(cVal)) centerInput.value = (cVal * 25.4).toFixed(1);
       }
-      calculate();
+
+      if (activeModule === 'fits') calculateFits();
+      else calculateBelts();
     }
 
     function updateLanguage(lang) {
@@ -422,274 +566,38 @@
         document.getElementById('langEN').className = "px-2.5 py-1 rounded text-slate-400 hover:text-white transition-colors";
       }
 
+      document.getElementById('moduleTitle').innerText = activeModule === 'fits' ? t.pageTitleFits : t.pageTitleBelts;
+      document.getElementById('moduleSubtitle').innerText = activeModule === 'fits' ? t.pageSubtitleFits : t.pageSubtitleBelts;
+
       populateSelect();
-      calculate();
+      if (activeModule === 'fits') calculateFits();
+      else calculateBelts();
     }
 
-    function getShaftDevs(step, shaftClass) {
-      let es_s = 0, ei_s = 0;
-      if (shaftClass === 'f7') {
-        es_s = step.f7_es;
-        ei_s = es_s - step.it7;
-      } else if (shaftClass === 'g6') {
-        es_s = step.g6_es;
-        ei_s = es_s - step.it6;
-      } else if (shaftClass === 'h6') {
-        es_s = step.h6_es;
-        ei_s = es_s - step.it6;
-      } else if (shaftClass === 'js6') {
-        es_s = step.js6_es;
-        ei_s = -step.js6_es;
-      } else if (shaftClass === 'k6') {
-        es_s = step.k6_es;
-        ei_s = es_s - step.it6;
-      } else if (shaftClass === 'p6') {
-        es_s = step.p6_es;
-        ei_s = es_s - step.it6;
-      }
-      return { es: es_s, ei: ei_s };
-    }
+    // Attach Event Listeners
+    document.getElementById('navBtnFits').addEventListener('click', () => switchModule('fits'));
+    document.getElementById('navBtnBelts').addEventListener('click', () => switchModule('belts'));
 
-    function formatDeviation(valMicron) {
-      if (currentUnit === 'metric') {
-        return (valMicron >= 0 ? `+${valMicron}` : `${valMicron}`) + " µm";
-      } else {
-        const thou = (valMicron / 25.4).toFixed(2);
-        return (valMicron >= 0 ? `+${thou}` : `${thou}`) + " thou";
-      }
-    }
-
-    function formatDim(dMm, devMicron) {
-      if (currentUnit === 'metric') {
-        return (dMm + devMicron / 1000).toFixed(3) + " mm";
-      } else {
-        return ((dMm + devMicron / 1000) / 25.4).toFixed(4) + " in";
-      }
-    }
-
-    function drawToleranceChart(es_h, ei_h, es_s, ei_s) {
-      const svg = document.getElementById('toleranceChart');
-      svg.innerHTML = '';
-
-      const minVal = Math.min(ei_s, ei_h);
-      const maxVal = Math.max(es_s, es_h);
-      const span = Math.max(Math.abs(minVal), Math.abs(maxVal), 25);
-      const padding = span * 0.35;
-      const totalRange = span + padding;
-
-      const zeroY = 120;
-      const scale = 85 / totalRange;
-      const yForVal = (v) => zeroY - (v * scale);
-
-      // Linea di riferimento Zero
-      svg.innerHTML += `
-        <line x1="50" y1="${zeroY}" x2="550" y2="${zeroY}" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 4" />
-        <text x="555" y="${zeroY + 4}" fill="#94a3b8" font-size="11" font-family="monospace">0</text>
-      `;
-
-      // Rettangolo Foro (H7)
-      const hTop = yForVal(es_h);
-      const hBottom = yForVal(ei_h);
-      const hHeight = Math.max(Math.abs(hBottom - hTop), 2);
-      const holeText = currentLang === 'it' ? 'FORO' : 'HOLE';
-      svg.innerHTML += `
-        <rect x="180" y="${hTop}" width="100" height="${hHeight}" fill="rgba(56, 189, 248, 0.25)" stroke="#38bdf8" stroke-width="2" rx="4" />
-        <text x="230" y="${hTop - 8}" fill="#38bdf8" font-size="11" font-weight="bold" text-anchor="middle">${formatDeviation(es_h)}</text>
-        <text x="230" y="${hBottom + 16}" fill="#38bdf8" font-size="11" text-anchor="middle">${formatDeviation(0)}</text>
-        <text x="230" y="${hTop + (hHeight / 2) + 4}" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle">${holeText} (H7)</text>
-      `;
-
-      // Rettangolo Albero
-      const sTop = yForVal(es_s);
-      const sBottom = yForVal(ei_s);
-      const sHeight = Math.max(Math.abs(sBottom - sTop), 2);
-      const shaftClass = document.getElementById('shaftClassLabel').innerText.toUpperCase();
-      const shaftText = currentLang === 'it' ? 'ALBERO' : 'SHAFT';
-      svg.innerHTML += `
-        <rect x="320" y="${sTop}" width="100" height="${sHeight}" fill="rgba(251, 191, 36, 0.25)" stroke="#fbbf24" stroke-width="2" rx="4" />
-        <text x="370" y="${sTop - 8}" fill="#fbbf24" font-size="11" font-weight="bold" text-anchor="middle">${formatDeviation(es_s)}</text>
-        <text x="370" y="${sBottom + 16}" fill="#fbbf24" font-size="11" text-anchor="middle">${formatDeviation(ei_s)}</text>
-        <text x="370" y="${sTop + (sHeight / 2) + 4}" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle">${shaftText} (${shaftClass})</text>
-      `;
-    }
-
-    function updateComparisonTable(dMm, step, activeFit) {
-      const tbody = document.getElementById('comparisonTableBody');
-      tbody.innerHTML = '';
-      const fitsKeys = ['H7/f7', 'H7/g6', 'H7/h6', 'H7/js6', 'H7/k6', 'H7/p6'];
-      const t = translations[currentLang];
-      const ES_H = step.it7;
-
-      fitsKeys.forEach(fitKey => {
-        const sClass = fitKey.split('/')[1];
-        const devs = getShaftDevs(step, sClass);
-        const maxPlay = ES_H - devs.ei;
-        const minPlay = 0 - devs.es;
-        
-        let typeStr = "", minMaxStr = "", badgeColor = "";
-        if (minPlay >= 0) {
-          typeStr = t.clearanceFit;
-          badgeColor = "text-emerald-400 bg-emerald-500/10 border border-emerald-500/30";
-          minMaxStr = `${formatDeviation(minPlay)} / ${formatDeviation(maxPlay)}`;
-        } else if (maxPlay <= 0) {
-          typeStr = t.interferenceFit;
-          badgeColor = "text-rose-400 bg-rose-500/10 border border-rose-500/30";
-          minMaxStr = `${formatDeviation(Math.abs(maxPlay))} / ${formatDeviation(Math.abs(minPlay))}`;
-        } else {
-          typeStr = t.transitionFit;
-          badgeColor = "text-amber-400 bg-amber-500/10 border border-amber-500/30";
-          minMaxStr = `-${formatDeviation(Math.abs(minPlay))} / +${formatDeviation(maxPlay)}`;
-        }
-
-        const isSelected = (fitKey === activeFit);
-        const row = document.createElement('tr');
-        row.className = `cursor-pointer transition-colors ${isSelected ? 'bg-blue-600/20 text-white font-bold' : 'hover:bg-slate-800/60'}`;
-        row.innerHTML = `
-          <td class="p-2.5 font-sans font-semibold">${fitKey}</td>
-          <td class="p-2.5">${formatDeviation(devs.es)} / ${formatDeviation(devs.ei)}</td>
-          <td class="p-2.5 font-sans"><span class="px-2 py-0.5 rounded text-[10px] ${badgeColor}">${typeStr}</span></td>
-          <td class="p-2.5">${minMaxStr}</td>
-          <td class="p-2.5 text-right font-sans">
-            <button class="px-2 py-1 bg-slate-800 hover:bg-blue-600 rounded text-[11px] text-slate-300 hover:text-white transition-colors">
-              ${isSelected ? t.btnActive : t.btnSelect}
-            </button>
-          </td>
-        `;
-        row.addEventListener('click', () => {
-          document.getElementById('fitType').value = fitKey;
-          if (currentMode === 'reverse') setMode('direct');
-          calculate();
-        });
-        tbody.appendChild(row);
-      });
-    }
-
-    function calculate() {
-      const inputEl = document.getElementById('nominalDiameter');
-      let dVal = parseFloat(inputEl.value.trim());
-      const t = translations[currentLang];
-      const stepInfoEl = document.getElementById('stepInfo');
-
-      let dMm = currentUnit === 'metric' ? dVal : dVal * 25.4;
-
-      if (isNaN(dMm) || dMm < 3 || dMm > 500) {
-        inputEl.classList.add('border-rose-500', 'focus:ring-rose-500');
-        inputEl.classList.remove('border-slate-700', 'focus:ring-blue-500');
-        stepInfoEl.className = "text-xs text-rose-400 mt-1.5 font-medium";
-        stepInfoEl.innerText = t.outOfRange;
-
-        document.getElementById('holeDisp').innerText = "--";
-        document.getElementById('holeDims').innerText = "--";
-        document.getElementById('shaftDisp').innerText = "--";
-        document.getElementById('shaftDims').innerText = "--";
-        document.getElementById('fitResult').innerText = "--";
-        document.getElementById('fitCategory').innerText = t.invalidInput;
-        document.getElementById('toleranceChart').innerHTML = '';
-        document.getElementById('comparisonTableBody').innerHTML = '';
-        return;
-      }
-
-      inputEl.classList.remove('border-rose-500', 'focus:ring-rose-500');
-      inputEl.classList.add('border-slate-700', 'focus:ring-blue-500');
-      stepInfoEl.className = "text-xs text-slate-500 mt-1.5";
-
-      const step = isoTable.find(s => dMm > s.min && dMm <= s.max) || (dMm <= 3 ? isoTable[0] : isoTable[isoTable.length - 1]);
-      const stepLabel = currentUnit === 'metric'
-        ? `${t.stepOver} ${step.min} ${t.stepUpTo} ${step.max} mm`
-        : `${t.stepOver} ${(step.min / 25.4).toFixed(3)} ${t.stepUpTo} ${(step.max / 25.4).toFixed(3)} in`;
-      stepInfoEl.innerText = stepLabel;
-
-      let fit = document.getElementById('fitType').value;
-
-      // Inverse Search Logic
-      if (currentMode === 'reverse') {
-        const nature = document.getElementById('reverseFitNature').value;
-        let targetVal = parseFloat(document.getElementById('reverseTargetVal').value) || 0;
-        let targetMicron = currentUnit === 'metric' ? targetVal : targetVal * 25.4;
-        if (nature === 'interference') targetMicron = -Math.abs(targetMicron);
-
-        const candidates = ['H7/f7', 'H7/g6', 'H7/h6', 'H7/js6', 'H7/k6', 'H7/p6'];
-        let bestFit = candidates[0];
-        let minDiff = Infinity;
-
-        candidates.forEach(cand => {
-          const sClass = cand.split('/')[1];
-          const devs = getShaftDevs(step, sClass);
-          const meanPlay = (step.it7 - devs.ei - devs.es) / 2;
-          const diff = Math.abs(meanPlay - targetMicron);
-          if (diff < minDiff) {
-            minDiff = diff;
-            bestFit = cand;
-          }
-        });
-
-        fit = bestFit;
-        document.getElementById('fitType').value = fit;
-        const feedbackEl = document.getElementById('reverseMatchFeedback');
-        const bestDevs = getShaftDevs(step, fit.split('/')[1]);
-        const matchedMean = (step.it7 - bestDevs.ei - bestDevs.es) / 2;
-        feedbackEl.innerText = `${t.closestMatch} ${fit} (${t.meanPlay} ${formatDeviation(matchedMean)})`;
-      }
-
-      const shaftClass = fit.split('/')[1];
-      const EI_H = 0;
-      const ES_H = step.it7;
-      const devs_s = getShaftDevs(step, shaftClass);
-
-      document.getElementById('shaftClassLabel').innerText = shaftClass;
-      document.getElementById('holeDisp').innerText = `${formatDeviation(ES_H)} / ${formatDeviation(0)}`;
-      document.getElementById('holeDims').innerText = `${formatDim(dMm, 0)} / ${formatDim(dMm, ES_H)}`;
-
-      document.getElementById('shaftDisp').innerText = `${formatDeviation(devs_s.es)} / ${formatDeviation(devs_s.ei)}`;
-      document.getElementById('shaftDims').innerText = `${formatDim(dMm, devs_s.ei)} / ${formatDim(dMm, devs_s.es)}`;
-
-      const maxPlay = ES_H - devs_s.ei;
-      const minPlay = EI_H - devs_s.es;
-      const resElem = document.getElementById('fitResult');
-      const catElem = document.getElementById('fitCategory');
-
-      if (minPlay >= 0) {
-        resElem.className = "text-lg font-bold text-emerald-400 mt-1";
-        resElem.innerText = `${t.clearanceText} ${formatDeviation(minPlay)} - ${formatDeviation(maxPlay)}`;
-        catElem.innerText = t.clearanceFit;
-      } else if (maxPlay <= 0) {
-        resElem.className = "text-lg font-bold text-rose-400 mt-1";
-        resElem.innerText = `${t.interferenceText} ${formatDeviation(Math.abs(maxPlay))} - ${formatDeviation(Math.abs(minPlay))}`;
-        catElem.innerText = t.interferenceFit;
-      } else {
-        resElem.className = "text-lg font-bold text-amber-400 mt-1";
-        resElem.innerText = `${t.maxClearance} ${formatDeviation(maxPlay)} / ${t.maxInterference} ${formatDeviation(Math.abs(minPlay))}`;
-        catElem.innerText = t.transitionFit;
-      }
-
-      const fitData = t.fits[fit];
-      document.getElementById('shaftProcess').innerText = fitData.shaftProc;
-      document.getElementById('shaftRa').innerText = fitsRa[fit].shaftRa;
-      document.getElementById('holeProcess').innerText = fitData.holeProc;
-      document.getElementById('holeRa').innerText = fitsRa[fit].holeRa;
-
-      drawToleranceChart(ES_H, EI_H, devs_s.es, devs_s.ei);
-      updateComparisonTable(dMm, step, fit);
-    }
-
-    // Event Listeners
-    document.getElementById('nominalDiameter').addEventListener('input', calculate);
-    document.getElementById('fitType').addEventListener('change', calculate);
-
+    document.getElementById('nominalDiameter').addEventListener('input', () => calculateFits());
+    document.getElementById('fitType').addEventListener('change', () => calculateFits());
     document.getElementById('modeDirect').addEventListener('click', () => setMode('direct'));
     document.getElementById('modeReverse').addEventListener('click', () => setMode('reverse'));
-    document.getElementById('reverseFitNature').addEventListener('change', calculate);
-    document.getElementById('reverseTargetVal').addEventListener('input', calculate);
+    document.getElementById('reverseFitNature').addEventListener('change', () => calculateFits());
+    document.getElementById('reverseTargetVal').addEventListener('input', () => calculateFits());
+
+    document.getElementById('beltProfile').addEventListener('change', () => calculateBelts());
+    document.getElementById('pulleyZ1').addEventListener('input', () => calculateBelts());
+    document.getElementById('pulleyZ2').addEventListener('input', () => calculateBelts());
+    document.getElementById('desiredCenter').addEventListener('input', () => calculateBelts());
 
     document.getElementById('unitMetric').addEventListener('click', () => setUnit('metric'));
     document.getElementById('unitImperial').addEventListener('click', () => setUnit('imperial'));
-
     document.getElementById('langEN').addEventListener('click', () => updateLanguage('en'));
     document.getElementById('langIT').addEventListener('click', () => updateLanguage('it'));
-    
-    document.getElementById('copyBtn').addEventListener('click', () => {
+
+    document.getElementById('copyFitBtn').addEventListener('click', () => {
       const d = document.getElementById('nominalDiameter').value;
-      const u = document.getElementById('unitLabel').innerText;
+      const u = document.getElementById('fitUnitLabel').innerText;
       const fit = document.getElementById('fitType').value;
       const t = translations[currentLang];
       const text = `Ø${d} ${u} ${fit} | ${t.holeCardTitle}: ${document.getElementById('holeDisp').innerText} | ${t.shaftCardTitle}: ${document.getElementById('shaftDisp').innerText} | ${document.getElementById('fitResult').innerText}`;
@@ -697,8 +605,29 @@
       alert(t.copiedAlert);
     });
 
+    document.getElementById('copyBeltBtn').addEventListener('click', () => {
+      const prof = document.getElementById('beltProfile').selectedOptions[0].text;
+      const z1 = document.getElementById('pulleyZ1').value;
+      const z2 = document.getElementById('pulleyZ2').value;
+      const c = document.getElementById('exactCenterDisp').innerText;
+      const zb = document.getElementById('beltTeethDisp').innerText;
+      const lp = document.getElementById('beltPitchLengthDisp').innerText;
+      const t = translations[currentLang];
+      const text = `Drive Specs: ${prof} | z1=${z1}, z2=${z2} | Center=${c} | Belt=${zb} (${lp}) | z_mesh=${document.getElementById('teethInMeshDisp').innerText}`;
+      navigator.clipboard.writeText(text);
+      alert(t.copiedAlert);
+    });
+  </script>
+
+  <!-- ==================== "LATEX-STYLE" SUBMODULE INCLUDES ==================== -->
+  <script src="modules/fits.js"></script>
+  <script src="modules/belts.js"></script>
+
+  <script>
+    // Boot sequence
     populateSelect();
-    calculate();
+    calculateFits();
+    calculateBelts();
   </script>
 </body>
 </html>
