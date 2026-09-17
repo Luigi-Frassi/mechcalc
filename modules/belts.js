@@ -100,9 +100,22 @@ function calculateBelts() {
   const profKey = document.getElementById('beltProfile').value;
   const p = parseFloat(profKey);
   const z1 = parseInt(document.getElementById('pulleyZ1').value) || 20;
-  const z2 = parseInt(document.getElementById('pulleyZ2').value) || 40;
   const c0Input = parseFloat(document.getElementById('desiredCenter').value) || 150;
   const t = translations[currentLang];
+
+  // Gestione puleggia z2: da input diretto oppure da target tau
+  let z2 = 40;
+  if (currentRatioMethod === 'teeth') {
+    z2 = parseInt(document.getElementById('pulleyZ2').value) || 40;
+  } else {
+    const targetTau = parseFloat(document.getElementById('targetTau').value) || 2.0;
+    z2 = Math.max(10, Math.round(z1 * targetTau));
+    window._computedZ2 = z2;
+    const actualTau = z2 / z1;
+    const errPct = ((actualTau - targetTau) / targetTau) * 100;
+    const signErr = errPct >= 0 ? `+` : ``;
+    document.getElementById('tauFeedback').innerText = `z₂: ${z2} (${currentLang === 'it' ? 'effettivo' : 'actual'} τ: ${actualTau.toFixed(2)}, Δ: ${signErr}${errPct.toFixed(1)}%)`;
+  }
 
   const P_kW = parseFloat(document.getElementById('motorPower').value) || 1.5;
   const n1_rpm = parseFloat(document.getElementById('driverSpeed').value) || 1500;
@@ -160,7 +173,7 @@ function calculateBelts() {
     exactC_mm = (B + Math.sqrt(rad)) / 16;
   }
 
-  // 3. Denti in presa e fattore c1
+  // 3. Denti in presa e fattori correttivi da catalogo (c1 e c2)
   const wrapRad1 = Math.PI - 2 * Math.asin(Math.min(1, Math.abs(dp2 - dp1) / (2 * exactC_mm)));
   const wrapDeg1 = (wrapRad1 * 180) / Math.PI;
   const z_mesh = (z1 * (wrapDeg1 / 360));
@@ -170,9 +183,14 @@ function calculateBelts() {
   else if (z_mesh < 5 && z_mesh >= 4) c1 = 0.6;
   else if (z_mesh < 4) c1 = 0.4;
 
-  // 4. Calcolo larghezza minima richiesta e selezione commerciale
+  // Fattore di lunghezza cinghia c2 (da catalogo ISO/Gates: cinghie più lunghe flettono meno frequentemente)
+  let c2 = 1.0;
+  if (zb < 70) c2 = 0.9;
+  else if (zb > 150) c2 = 1.1;
+
+  // 4. Calcolo sforzo tangenziale e selezione larghezza commerciale
   const Ft = (Pc_kW * 1000) / Math.max(beltSpeed, 0.1);
-  const fAllowable = (baseAllowableForce[profKey] || 20.0) * c1;
+  const fAllowable = (baseAllowableForce[profKey] || 20.0) * c1 * c2;
   const reqWidthMm = Ft / fAllowable;
 
   const widths = catalogWidths[profKey] || [9, 15, 25];
@@ -201,7 +219,7 @@ function calculateBelts() {
   document.getElementById('beltTeethDisp').innerText = `${zb} ${currentLang === 'it' ? 'denti' : 'teeth'}`;
   document.getElementById('teethInMeshDisp').innerText = `${z_mesh.toFixed(1)} ${currentLang === 'it' ? 'denti' : 'teeth'}`;
 
-  // Card 3 dinamica: Angolo di contatto in "geom" o Larghezza consigliata in "power"
+  // Card 3 dinamica
   const card3Title = document.getElementById('card3Title');
   const card3Value = document.getElementById('card3Value');
   const card3Sub = document.getElementById('card3Sub');
@@ -214,6 +232,21 @@ function calculateBelts() {
     card3Title.innerText = t.recWidthCard;
     card3Value.innerText = currentUnit === 'metric' ? `${chosenWidth} mm` : `${(chosenWidth / 25.4).toFixed(2)} in (${chosenWidth} mm)`;
     card3Sub.innerText = `Req. min: ${reqWidthMm.toFixed(1)} mm`;
+
+    // Aggiornamento pannello breakdown fattori a vista
+    document.getElementById('breakdownC0').innerText = c0.toFixed(2);
+    document.getElementById('breakdownC1').innerText = c1.toFixed(2);
+    document.getElementById('breakdownC2').innerText = c2.toFixed(2);
+    document.getElementById('breakdownFt').innerText = `${Math.round(Ft)} N`;
+    
+    const checkEl = document.getElementById('powerCheckStatus');
+    if (chosenWidth >= reqWidthMm) {
+      checkEl.innerText = currentLang === 'it' ? '✓ Dimensionamento Valido' : '✓ Capacity Verified';
+      checkEl.className = "text-[11px] font-mono text-emerald-400 font-semibold";
+    } else {
+      checkEl.innerText = currentLang === 'it' ? '⚠ Larghezza Massima Superata' : '⚠ Exceeds Catalog Width';
+      checkEl.className = "text-[11px] font-mono text-amber-400 font-semibold";
+    }
   }
 
   const meshStatusEl = document.getElementById('teethInMeshStatus');
