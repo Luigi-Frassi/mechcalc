@@ -182,15 +182,25 @@
 
     <!-- ==================== MODULE 2: BELTS & PULLEYS ==================== -->
     <div id="moduleBeltsSection" class="hidden">
-      <!-- Inputs Card -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-800/60 p-6 rounded-xl border border-slate-700/60 mb-6 backdrop-blur">
+      <!-- Belts Sub-Mode Selector -->
+      <div class="flex gap-2 mb-6 border-b border-slate-800 pb-3">
+        <button id="beltModeGeom" class="px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600/20 text-blue-400 border border-blue-500/30 transition-all">
+          <span data-i18n="beltModeGeomLabel">Geometry & Center Only (CAD)</span>
+        </button>
+        <button id="beltModePower" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white border border-transparent transition-all">
+          <span data-i18n="beltModePowerLabel">Full Power & Width Sizing</span>
+        </button>
+      </div>
+
+      <!-- Inputs Card: Geometry (Always Visible) -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-800/60 p-6 rounded-xl border border-slate-700/60 mb-4 backdrop-blur">
         <div>
           <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="beltProfileLabel">Belt Pitch / Profile</label>
           <select id="beltProfile" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
             <option value="2">GT2 (2 mm)</option>
             <option value="3">HTD 3M (3 mm)</option>
             <option value="5" selected>HTD 5M (5 mm)</option>
-            <option value="5_T5">T5 (5 mm Trapezoidal)</option>
+            <option value="5_T5">T5 (5 mm)</option>
             <option value="8">HTD 8M (8 mm)</option>
           </select>
         </div>
@@ -220,6 +230,40 @@
         </div>
       </div>
 
+      <!-- Inputs Card: Power Sizing (Hidden by default in Geometry mode) -->
+      <div id="beltPowerInputsCard" class="hidden grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-800/60 p-6 rounded-xl border border-slate-700/60 mb-6 backdrop-blur">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="motorPowerLabel">Motor Power (P)</label>
+          <div class="relative">
+            <input type="number" id="motorPower" value="1.5" min="0.01" max="500" step="0.1"
+              class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">kW</span>
+          </div>
+          <p class="text-xs text-slate-500 mt-1 font-mono" id="torqueDisp">Torque: 9.55 Nm</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="driverSpeedLabel">Driver Pulley Speed (n₁)</label>
+          <div class="relative">
+            <input type="number" id="driverSpeed" value="1500" min="50" max="20000" step="50"
+              class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">rpm</span>
+          </div>
+          <p class="text-xs text-slate-500 mt-1 font-mono" id="beltSpeedDisp">Belt speed: 3.00 m/s</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="serviceFactorLabel">Service Factor (c₀)</label>
+          <select id="serviceFactor" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="1.2">1.2 - Uniform (Electric motor, steady load)</option>
+            <option value="1.5" selected>1.5 - Moderate shocks (Pumps, conveyors, fans)</option>
+            <option value="1.8">1.8 - Heavy shocks (Compressors, crushers)</option>
+            <option value="2.0">2.0 - Extreme / Reversing shock loads</option>
+          </select>
+          <p class="text-xs text-blue-400 mt-1 font-mono" id="designPowerDisp">Design Power Pc: 2.25 kW</p>
+        </div>
+      </div>
+
       <!-- Results Summary Cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
@@ -234,16 +278,16 @@
           <div class="text-[11px] text-slate-500 mt-0.5" id="beltPitchLengthDisp">Lp: 580.00 mm</div>
         </div>
 
-        <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-          <span class="text-xs font-medium text-slate-400" data-i18n="teethInMeshCard">Teeth in Mesh (z_mesh)</span>
-          <div class="text-xl font-bold text-emerald-400 mt-1" id="teethInMeshDisp">11.3 teeth</div>
-          <div class="text-[11px] text-slate-500 mt-0.5" id="teethInMeshStatus">Optimal (> 6 teeth)</div>
+        <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50" id="powerWidthCard">
+          <span class="text-xs font-medium text-slate-400" id="card3Title" data-i18n="wrapAngleCard">Wrap Angle (θ₁)</span>
+          <div class="text-xl font-bold text-emerald-400 mt-1" id="card3Value">169.1°</div>
+          <div class="text-[11px] text-slate-500 mt-0.5" id="card3Sub">Ratio: 2.000</div>
         </div>
 
         <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-          <span class="text-xs font-medium text-slate-400" data-i18n="wrapAngleCard">Wrap Angle (θ₁)</span>
-          <div class="text-xl font-bold text-purple-400 mt-1" id="wrapAngleDisp">169.1°</div>
-          <div class="text-[11px] text-slate-500 mt-0.5" id="ratioCardDisp">Reduction: 2.000</div>
+          <span class="text-xs font-medium text-slate-400" data-i18n="teethInMeshCard">Teeth in Mesh (z_mesh)</span>
+          <div class="text-xl font-bold text-purple-400 mt-1" id="teethInMeshDisp">11.3 teeth</div>
+          <div class="text-[11px] text-slate-500 mt-0.5" id="teethInMeshStatus">Optimal (> 6 teeth)</div>
         </div>
       </div>
 
@@ -292,6 +336,7 @@
     let currentLang = 'en';
     let currentUnit = 'metric';
     let currentMode = 'direct';
+    let currentBeltMode = 'geom';
 
     const translations = {
       en: {
@@ -347,14 +392,21 @@
         copiedAlert: "Specifications copied to clipboard for CAD drawing!",
         closestMatch: "Suggested ISO fit:",
         meanPlay: "Mean play:",
+        // Module 2 Belts
+        beltModeGeomLabel: "Geometry & Center Only (CAD)",
+        beltModePowerLabel: "Full Power & Width Sizing",
         beltProfileLabel: "Belt Pitch / Profile",
         pulley1Label: "Driver Pulley (z₁)",
         pulley2Label: "Driven Pulley (z₂)",
         desiredCenterLabel: "Desired Center (C₀)",
         exactCenterCard: "Exact Center Dist. (C)",
         beltTeethCard: "Belt Standard Teeth (zb)",
-        teethInMeshCard: "Teeth in Mesh (z_mesh)",
+        recWidthCard: "Recommended Width (W)",
         wrapAngleCard: "Wrap Angle (θ₁)",
+        teethInMeshCard: "Teeth in Mesh (z_mesh)",
+        motorPowerLabel: "Motor Power (P)",
+        driverSpeedLabel: "Driver Pulley Speed (n₁)",
+        serviceFactorLabel: "Service Factor (c₀)",
         beltChartTitle: "Kinematic Transmission Scheme",
         beltChartSub: "Proportional 2D pitch line view",
         beltNotesTitle: "Timing Belt Design & Mounting Notes",
@@ -428,14 +480,21 @@
         copiedAlert: "Specifiche copiate negli appunti per la tavola CAD!",
         closestMatch: "Accoppiamento ISO ottimale:",
         meanPlay: "Valore medio:",
+        // Module 2 Belts
+        beltModeGeomLabel: "Solo Geometria & Interasse (CAD)",
+        beltModePowerLabel: "Dimensionamento Potenza & Larghezza",
         beltProfileLabel: "Passo / Profilo Cinghia",
         pulley1Label: "Puleggia Motrice (z₁)",
         pulley2Label: "Puleggia Condotta (z₂)",
         desiredCenterLabel: "Interasse Indicativo (C₀)",
         exactCenterCard: "Interasse Esatto (C)",
         beltTeethCard: "Denti Commerciali Cinghia (zb)",
-        teethInMeshCard: "Denti in Presa (z_mesh)",
+        recWidthCard: "Larghezza Consigliata (W)",
         wrapAngleCard: "Angolo di Contatto (θ₁)",
+        teethInMeshCard: "Denti in Presa (z_mesh)",
+        motorPowerLabel: "Potenza Motore (P)",
+        driverSpeedLabel: "Velocità Puleggia Motrice (n₁)",
+        serviceFactorLabel: "Fattore di Servizio (c₀)",
         beltChartTitle: "Schema Cinematico della Trasmissione",
         beltChartSub: "Vista 2D in scala delle primitive",
         beltNotesTitle: "Note di Montaggio e Tolleramento Cinghie",
@@ -479,7 +538,7 @@
         sBelts.classList.add('hidden');
         titleEl.innerText = t.pageTitleFits;
         subEl.innerText = t.pageSubtitleFits;
-        calculateFits();
+        if (typeof calculateFits === 'function') calculateFits();
       } else {
         bBelts.className = "w-full text-left px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-sm flex items-center justify-between transition-colors";
         bFits.className = "w-full text-left px-3 py-2 rounded-lg text-slate-400 hover:text-white font-medium text-sm flex items-center justify-between transition-colors";
@@ -489,7 +548,7 @@
         sFits.classList.add('hidden');
         titleEl.innerText = t.pageTitleBelts;
         subEl.innerText = t.pageSubtitleBelts;
-        calculateBelts();
+        if (typeof calculateBelts === 'function') calculateBelts();
       }
     }
 
@@ -511,7 +570,25 @@
         rInputs.classList.remove('hidden');
         dInputs.classList.add('hidden');
       }
-      calculateFits();
+      if (typeof calculateFits === 'function') calculateFits();
+    }
+
+    function setBeltSubMode(mode) {
+      currentBeltMode = mode;
+      const bGeom = document.getElementById('beltModeGeom');
+      const bPower = document.getElementById('beltModePower');
+      const pInputs = document.getElementById('beltPowerInputsCard');
+
+      if (mode === 'geom') {
+        bGeom.className = "px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600/20 text-blue-400 border border-blue-500/30 transition-all";
+        bPower.className = "px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white border border-transparent transition-all";
+        pInputs.classList.add('hidden');
+      } else {
+        bPower.className = "px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600/20 text-blue-400 border border-blue-500/30 transition-all";
+        bGeom.className = "px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white border border-transparent transition-all";
+        pInputs.classList.remove('hidden');
+      }
+      if (typeof calculateBelts === 'function') calculateBelts();
     }
 
     function setUnit(unit) {
@@ -545,8 +622,11 @@
         if (!isNaN(cVal)) centerInput.value = (cVal * 25.4).toFixed(1);
       }
 
-      if (activeModule === 'fits') calculateFits();
-      else calculateBelts();
+      if (activeModule === 'fits') {
+        if (typeof calculateFits === 'function') calculateFits();
+      } else {
+        if (typeof calculateBelts === 'function') calculateBelts();
+      }
     }
 
     function updateLanguage(lang) {
@@ -569,26 +649,35 @@
       document.getElementById('moduleTitle').innerText = activeModule === 'fits' ? t.pageTitleFits : t.pageTitleBelts;
       document.getElementById('moduleSubtitle').innerText = activeModule === 'fits' ? t.pageSubtitleFits : t.pageSubtitleBelts;
 
-      populateSelect();
-      if (activeModule === 'fits') calculateFits();
-      else calculateBelts();
+      if (typeof populateSelect === 'function') populateSelect();
+      if (activeModule === 'fits') {
+        if (typeof calculateFits === 'function') calculateFits();
+      } else {
+        if (typeof calculateBelts === 'function') calculateBelts();
+      }
     }
 
     // Attach Event Listeners
     document.getElementById('navBtnFits').addEventListener('click', () => switchModule('fits'));
     document.getElementById('navBtnBelts').addEventListener('click', () => switchModule('belts'));
 
-    document.getElementById('nominalDiameter').addEventListener('input', () => calculateFits());
-    document.getElementById('fitType').addEventListener('change', () => calculateFits());
+    document.getElementById('nominalDiameter').addEventListener('input', () => { if (typeof calculateFits === 'function') calculateFits(); });
+    document.getElementById('fitType').addEventListener('change', () => { if (typeof calculateFits === 'function') calculateFits(); });
     document.getElementById('modeDirect').addEventListener('click', () => setMode('direct'));
     document.getElementById('modeReverse').addEventListener('click', () => setMode('reverse'));
-    document.getElementById('reverseFitNature').addEventListener('change', () => calculateFits());
-    document.getElementById('reverseTargetVal').addEventListener('input', () => calculateFits());
+    document.getElementById('reverseFitNature').addEventListener('change', () => { if (typeof calculateFits === 'function') calculateFits(); });
+    document.getElementById('reverseTargetVal').addEventListener('input', () => { if (typeof calculateFits === 'function') calculateFits(); });
 
-    document.getElementById('beltProfile').addEventListener('change', () => calculateBelts());
-    document.getElementById('pulleyZ1').addEventListener('input', () => calculateBelts());
-    document.getElementById('pulleyZ2').addEventListener('input', () => calculateBelts());
-    document.getElementById('desiredCenter').addEventListener('input', () => calculateBelts());
+    document.getElementById('beltModeGeom').addEventListener('click', () => setBeltSubMode('geom'));
+    document.getElementById('beltModePower').addEventListener('click', () => setBeltSubMode('power'));
+
+    document.getElementById('beltProfile').addEventListener('change', () => { if (typeof calculateBelts === 'function') calculateBelts(); });
+    document.getElementById('pulleyZ1').addEventListener('input', () => { if (typeof calculateBelts === 'function') calculateBelts(); });
+    document.getElementById('pulleyZ2').addEventListener('input', () => { if (typeof calculateBelts === 'function') calculateBelts(); });
+    document.getElementById('desiredCenter').addEventListener('input', () => { if (typeof calculateBelts === 'function') calculateBelts(); });
+    document.getElementById('motorPower').addEventListener('input', () => { if (typeof calculateBelts === 'function') calculateBelts(); });
+    document.getElementById('driverSpeed').addEventListener('input', () => { if (typeof calculateBelts === 'function') calculateBelts(); });
+    document.getElementById('serviceFactor').addEventListener('change', () => { if (typeof calculateBelts === 'function') calculateBelts(); });
 
     document.getElementById('unitMetric').addEventListener('click', () => setUnit('metric'));
     document.getElementById('unitImperial').addEventListener('click', () => setUnit('imperial'));
@@ -612,22 +701,22 @@
       const c = document.getElementById('exactCenterDisp').innerText;
       const zb = document.getElementById('beltTeethDisp').innerText;
       const lp = document.getElementById('beltPitchLengthDisp').innerText;
-      const t = translations[currentLang];
-      const text = `Drive Specs: ${prof} | z1=${z1}, z2=${z2} | Center=${c} | Belt=${zb} (${lp}) | z_mesh=${document.getElementById('teethInMeshDisp').innerText}`;
+      const card3Info = `${document.getElementById('card3Title').innerText}: ${document.getElementById('card3Value').innerText}`;
+      const text = `Drive Specs: ${prof} | z1=${z1}, z2=${z2} | Center=${c} | Belt=${zb} (${lp}) | ${card3Info} | z_mesh=${document.getElementById('teethInMeshDisp').innerText}`;
       navigator.clipboard.writeText(text);
-      alert(t.copiedAlert);
+      alert(translations[currentLang].copiedAlert);
     });
   </script>
 
-  <!-- ==================== "LATEX-STYLE" SUBMODULE INCLUDES ==================== -->
+  <!-- ==================== SUBMODULES ==================== -->
   <script src="modules/fits.js"></script>
   <script src="modules/belts.js"></script>
 
   <script>
     // Boot sequence
-    populateSelect();
-    calculateFits();
-    calculateBelts();
+    if (typeof populateSelect === 'function') populateSelect();
+    if (typeof calculateFits === 'function') calculateFits();
+    if (typeof calculateBelts === 'function') calculateBelts();
   </script>
 </body>
 </html>
