@@ -26,47 +26,59 @@ function drawBeltScheme(dp1, dp2, C) {
   const r1 = dp1 / 2;
   const r2 = dp2 / 2;
   const totalWidthMm = C + r1 + r2;
-  const totalHeightMm = Math.max(dp1, dp2) * 1.4;
+  const maxDiameterMm = Math.max(dp1, dp2);
 
-  const scaleX = 460 / totalWidthMm;
-  const scaleY = 150 / totalHeightMm;
-  const scale = Math.min(scaleX, scaleY, 1.1);
+  // Scalatura proporzionale dentro il viewport SVG (600x240)
+  const scaleX = 440 / Math.max(totalWidthMm, 1);
+  const scaleY = 130 / Math.max(maxDiameterMm, 1);
+  const scale = Math.min(scaleX, scaleY, 1.2);
 
   const cx1 = 70 + r1 * scale;
   const cy1 = 110;
   const cx2 = cx1 + C * scale;
   const cy2 = 110;
 
-  const R1 = r1 * scale;
-  const R2 = r2 * scale;
+  const R1 = Math.max(r1 * scale, 1);
+  const R2 = Math.max(r2 * scale, 1);
+  const dCenter = cx2 - cx1;
 
-  const sinG = Math.max(-0.999, Math.min(0.999, (R2 - R1) / (cx2 - cx1)));
-  const gamma = Math.asin(sinG);
-  const cosG = Math.cos(gamma);
+  // Angolo di inclinazione dei tratti tangenti esterni comuni
+  const sinVal = Math.max(-0.9999, Math.min(0.9999, (R2 - R1) / dCenter));
+  const gamma = Math.asin(sinVal);
 
-  const p1_top_x = cx1 - R1 * sinG;
-  const p1_top_y = cy1 - R1 * cosG;
-  const p1_bot_x = cx1 - R1 * sinG;
-  const p1_bot_y = cy1 + R1 * cosG;
+  // Punti di tangenza Puleggia 1 (sinistra)
+  const p1_top_x = cx1 + R1 * Math.sin(gamma);
+  const p1_top_y = cy1 - R1 * Math.cos(gamma);
+  const p1_bot_x = cx1 + R1 * Math.sin(gamma);
+  const p1_bot_y = cy1 + R1 * Math.cos(gamma);
 
-  const p2_top_x = cx2 - R2 * sinG;
-  const p2_top_y = cy2 - R2 * cosG;
-  const p2_bot_x = cx2 - R2 * sinG;
-  const p2_bot_y = cy2 + R2 * cosG;
+  // Punti di tangenza Puleggia 2 (destra)
+  const p2_top_x = cx2 + R2 * Math.sin(gamma);
+  const p2_top_y = cy2 - R2 * Math.cos(gamma);
+  const p2_bot_x = cx2 + R2 * Math.sin(gamma);
+  const p2_bot_y = cy2 + R2 * Math.cos(gamma);
 
-  const largeArc1 = (R1 >= R2) ? 1 : 0;
-  const largeArc2 = (R2 >= R1) ? 1 : 0;
+  // Flag arco per SVG: se l'arco supera 180 gradi, largeArc = 1, altrimenti 0
+  const largeArc1 = (R1 > R2) ? 1 : 0;
+  const largeArc2 = (R2 > R1) ? 1 : 0;
 
+  // Path SVG continuo e chiuso:
+  // 1. Tratto dritto superiore (da p1_top a p2_top)
+  // 2. Arco sulla puleggia 2 (senso orario: sweep-flag = 1) fino a p2_bot
+  // 3. Tratto dritto inferiore (da p2_bot a p1_bot)
+  // 4. Arco sulla puleggia 1 (senso orario: sweep-flag = 1) fino a p1_top
   const beltPath = `
-    M ${p1_top_x}${p1_top_y}
-    L ${p2_top_x}${p2_top_y}
-    A ${R2} ${R2} 0${largeArc2} 1 ${p2_bot_x}${p2_bot_y}
-    L ${p1_bot_x}${p1_bot_y}
-    A ${R1} ${R1} 0${largeArc1} 1 ${p1_top_x}${p1_top_y}
+    M ${p1_top_x.toFixed(2)}${p1_top_y.toFixed(2)}
+    L ${p2_top_x.toFixed(2)}${p2_top_y.toFixed(2)}
+    A ${R2.toFixed(2)} ${R2.toFixed(2)} 0${largeArc2} 1 ${p2_bot_x.toFixed(2)}${p2_bot_y.toFixed(2)}
+    L ${p1_bot_x.toFixed(2)}${p1_bot_y.toFixed(2)}
+    A ${R1.toFixed(2)} ${R1.toFixed(2)} 0${largeArc1} 1 ${p1_top_x.toFixed(2)}${p1_top_y.toFixed(2)}
     Z
   `;
 
   const dimY = cy1 + Math.max(R1, R2) + 26;
+
+  // 1. Linea d'asse e quotatura interasse
   svg.innerHTML += `
     <line x1="${cx1 - R1 - 25}" y1="${cy1}" x2="${cx2 + R2 + 25}" y2="${cy2}" stroke="#334155" stroke-dasharray="6 4" stroke-width="1.2" />
     <line x1="${cx1}" y1="${cy1}" x2="${cx1}" y2="${dimY + 8}" stroke="#0284c7" stroke-width="0.8" stroke-dasharray="2 2" />
@@ -79,16 +91,19 @@ function drawBeltScheme(dp1, dp2, C) {
     </text>
   `;
 
+  // 2. Nastro Cinghia Tesa
   svg.innerHTML += `
     <path d="${beltPath}" fill="rgba(56, 189, 248, 0.08)" stroke="#38bdf8" stroke-width="3" stroke-linejoin="round" />
   `;
 
+  // 3. Puleggia 1 (Motrice z1)
   svg.innerHTML += `
     <circle cx="${cx1}" cy="${cy1}" r="${R1}" fill="rgba(251, 191, 36, 0.15)" stroke="#fbbf24" stroke-width="2" />
     <circle cx="${cx1}" cy="${cy1}" r="3" fill="#fbbf24" />
     <text x="${cx1}" y="${cy1 - R1 - 8}" fill="#fbbf24" font-size="11" font-weight="bold" text-anchor="middle">z₁</text>
   `;
 
+  // 4. Puleggia 2 (Condotta z2)
   svg.innerHTML += `
     <circle cx="${cx2}" cy="${cy2}" r="${R2}" fill="rgba(168, 85, 247, 0.15)" stroke="#a855f7" stroke-width="2" />
     <circle cx="${cx2}" cy="${cy2}" r="3" fill="#a855f7" />
@@ -103,7 +118,7 @@ function calculateBelts() {
   const c0Input = parseFloat(document.getElementById('desiredCenter').value) || 150;
   const t = translations[currentLang];
 
-  // Gestione puleggia z2: inserimento diretto oppure da target tau
+  // Gestione puleggia z2: da input diretto oppure da target tau
   let z2 = 40;
   if (currentRatioMethod === 'teeth') {
     z2 = parseInt(document.getElementById('pulleyZ2').value) || 40;
@@ -232,7 +247,6 @@ function calculateBelts() {
     card3Value.innerText = currentUnit === 'metric' ? `${chosenWidth} mm` : `${(chosenWidth / 25.4).toFixed(2)} in (${chosenWidth} mm)`;
     card3Sub.innerText = `Req. min: ${reqWidthMm.toFixed(1)} mm`;
 
-    // Aggiornamento breakdown fattori
     document.getElementById('breakdownC0').innerText = c0.toFixed(2);
     document.getElementById('breakdownC1').innerText = c1.toFixed(2);
     document.getElementById('breakdownC2').innerText = c2.toFixed(2);
