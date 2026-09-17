@@ -21,7 +21,7 @@
           <span id="dotFits" class="w-2 h-2 rounded-full bg-blue-300"></span>
         </button>
         <button id="navBtnBelts" class="w-full text-left px-3 py-2 rounded-lg text-slate-400 hover:text-white font-medium text-sm flex items-center justify-between transition-colors">
-          <span data-i18n="navBelts">Belts & Pulleys</span>
+          <span data-i18n="navBelts">Synchronous Belts</span>
           <span id="dotBelts" class="w-2 h-2 rounded-full bg-transparent"></span>
         </button>
         <button disabled class="w-full text-left px-3 py-2 rounded-lg text-slate-500 font-medium text-sm flex items-center justify-between cursor-not-allowed">
@@ -35,7 +35,7 @@
     </div>
   </aside>
 
-  <!-- Mobile Top Nav (Visible ONLY on Mobile) -->
+  <!-- Mobile Navigation Bar (Visible ONLY on small screens) -->
   <div class="md:hidden bg-slate-950 border-b border-slate-800 p-3 sticky top-0 z-50">
     <div class="flex items-center justify-between mb-2.5 px-1">
       <span class="text-lg font-bold tracking-tight text-blue-500">Mech<span class="text-white">Calc</span></span>
@@ -46,14 +46,14 @@
         <span data-i18n="navFits">Tolerances & Fits</span>
       </button>
       <button id="navBtnBeltsMobile" class="text-center py-2 px-2 rounded-lg bg-slate-800/80 text-slate-300 font-medium text-xs transition-colors">
-        <span data-i18n="navBelts">Belts & Pulleys</span>
+        <span data-i18n="navBelts">Synchronous Belts</span>
       </button>
     </div>
   </div>
 
   <!-- Main Content Area -->
   <main class="flex-1 p-4 md:p-10 max-w-4xl overflow-y-auto">
-    <!-- Top Header -->
+    <!-- Top Header (Locked dimensions to avoid layout jumps on language switch) -->
     <header class="flex justify-between items-start gap-4 mb-8 min-h-[72px]">
       <div class="flex-1 pr-2">
         <h1 class="text-2xl font-bold tracking-tight text-white mb-1 leading-tight" id="moduleTitle">ISO Fit & Tolerance Selector</h1>
@@ -170,7 +170,7 @@
                 <th class="p-2.5 text-right" data-i18n="thAction">Action</th>
               </tr>
             </thead>
-            <tbody id="comparisonTableBody" class="divide-y divide-slate-800/60 font-mono"></tbody>
+            <tbody id="comparisonTableBody" class="divide-y border-slate-800/60 font-mono"></tbody>
           </table>
         </div>
       </div>
@@ -196,7 +196,7 @@
       </div>
     </div>
 
-    <!-- ==================== MODULE 2: BELTS & PULLEYS ==================== -->
+    <!-- ==================== MODULE 2: SYNCHRONOUS TIMING BELTS ==================== -->
     <div id="moduleBeltsSection" class="hidden">
       <!-- Belts Sub-Mode Selector -->
       <div class="flex gap-2 mb-6 border-b border-slate-800 pb-3">
@@ -305,9 +305,9 @@
         </div>
 
         <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-          <span class="text-xs font-medium text-slate-400" data-i18n="beltTeethCard">Belt Standard Teeth (zb)</span>
+          <span class="text-xs font-medium text-slate-400" data-i18n="beltTeethCard">Rounded Belt Teeth (zb)</span>
           <div class="text-xl font-bold text-amber-400 mt-1" id="beltTeethDisp">116 teeth</div>
-          <div class="text-[11px] text-slate-500 mt-0.5" id="beltPitchLengthDisp">Lp: 580.00 mm</div>
+          <div class="text-[11px] text-slate-500 mt-0.5" id="beltPitchLengthDisp">Lp: 580.00 mm (rounded)</div>
         </div>
 
         <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50" id="powerWidthCard">
@@ -368,8 +368,8 @@
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-400 leading-relaxed">
           <div class="p-3 bg-slate-900/70 rounded-lg border border-slate-800">
-            <span class="font-semibold text-slate-200 block mb-1" data-i18n="beltRuleTitle1">Center Distance Tolerancing:</span>
-            <span data-i18n="beltRuleDesc1">Provide slot adjustments on motor mounts: typically -1.5% to -2% for belt installation without forced stretching, and +2% to +3% for tensioning.</span>
+            <span class="font-semibold text-slate-200 block mb-1" data-i18n="beltRuleTitle1">Tooth Count & Center Distance:</span>
+            <span data-i18n="beltRuleDesc1">Tooth count (zb) is rounded to the nearest integer. Check manufacturer catalogs for off-the-shelf closed loops, and provide slot adjustments (-1.5% to +2.5%) on motor mounts to accommodate standard lengths.</span>
           </div>
           <div class="p-3 bg-slate-900/70 rounded-lg border border-slate-800">
             <span class="font-semibold text-slate-200 block mb-1" data-i18n="beltRuleTitle2">Teeth In Mesh Criterion:</span>
@@ -400,13 +400,13 @@
     const translations = {
       en: {
         navFits: "Tolerances & Fits",
-        navBelts: "Belts & Pulleys",
+        navBelts: "Synchronous Belts",
         navShafts: "Shafts & Keys",
         comingSoon: "Soon",
         pageTitleFits: "ISO Fit & Tolerance Selector",
         pageSubtitleFits: "H7 Hole-Basis System. Interactive matrix, reverse lookup, and unit conversion.",
-        pageTitleBelts: "Timing Belt & Pulley Center Sizing",
-        pageSubtitleBelts: "Standard synchronous pitch calculation, pitch diameters, standard belt teeth, and exact center distance.",
+        pageTitleBelts: "Synchronous Timing Belt Sizing",
+        pageSubtitleBelts: "Pitch diameters, integer belt teeth rounding, exact center distance, and preliminary catalog power capacity.",
         modeDirectLabel: "Direct Fit Selection",
         modeReverseLabel: "Inverse Search (By Target Play)",
         inputDiamLabel: "Nominal Diameter (d)",
@@ -463,7 +463,7 @@
         pulley2Label: "Driven Pulley (z₂)",
         desiredCenterLabel: "Desired Center (C₀)",
         exactCenterCard: "Exact Center Dist. (C)",
-        beltTeethCard: "Belt Standard Teeth (zb)",
+        beltTeethCard: "Rounded Belt Teeth (zb)",
         recWidthCard: "Recommended Width (W)",
         wrapAngleCard: "Wrap Angle (θ₁)",
         teethInMeshCard: "Teeth in Mesh (z_mesh)",
@@ -475,8 +475,8 @@
         beltChartSub: "Proportional 2D pitch line view",
         beltNotesTitle: "Timing Belt Design & Mounting Notes",
         copyBeltNoteBtn: "Copy Drive Specs",
-        beltRuleTitle1: "Center Distance Tolerancing:",
-        beltRuleDesc1: "Provide slot adjustments on motor mounts: typically -1.5% to -2% for belt installation without forced stretching, and +2% to +3% for tensioning.",
+        beltRuleTitle1: "Tooth Count & Center Distance:",
+        beltRuleDesc1: "Tooth count (zb) is rounded to the nearest integer. Check manufacturer catalogs for off-the-shelf closed loops, and provide slot adjustments (-1.5% to +2.5%) on motor mounts to accommodate standard lengths.",
         beltRuleTitle2: "Teeth In Mesh Criterion:",
         beltRuleDesc2: "Industry handbooks require at least 6 teeth fully engaged on the small pulley (z_mesh ≥ 6) to deliver nominal rated torque without tooth shear.",
         meshOptimal: "Optimal (≥ 6 teeth)",
@@ -499,13 +499,13 @@
       },
       it: {
         navFits: "Tolleranze & Lavorazioni",
-        navBelts: "Cinghie & Pulegge",
+        navBelts: "Cinghie Dentate",
         navShafts: "Alberi & Linguette",
         comingSoon: "In arrivo",
         pageTitleFits: "Selettore Tolleranze & Lavorazioni ISO",
         pageSubtitleFits: "Sistema Foro Base H7. Tabella comparativa, ricerca inversa e conversione unità.",
-        pageTitleBelts: "Dimensionamento Cinghie & Pulegge",
-        pageSubtitleBelts: "Calcolo geometrico e di potenza di trasmissioni sincrone: diametri primitivi, denti e interasse esatto.",
+        pageTitleBelts: "Dimensionamento Cinghie Dentate Sincrone",
+        pageSubtitleBelts: "Diametri primitivi, arrotondamento denti commerciali, interasse analitico esatto e verifica preliminare di potenza.",
         modeDirectLabel: "Selezione Diretta",
         modeReverseLabel: "Ricerca Inversa (Per Gioco Desiderato)",
         inputDiamLabel: "Diametro Nominale (d)",
@@ -562,7 +562,7 @@
         pulley2Label: "Puleggia Condotta (z₂)",
         desiredCenterLabel: "Interasse Indicativo (C₀)",
         exactCenterCard: "Interasse Esatto (C)",
-        beltTeethCard: "Denti Commerciali Cinghia (zb)",
+        beltTeethCard: "Denti Cinghia Arrotondati (zb)",
         recWidthCard: "Larghezza Consigliata (W)",
         wrapAngleCard: "Angolo di Contatto (θ₁)",
         teethInMeshCard: "Denti in Presa (z_mesh)",
@@ -574,8 +574,8 @@
         beltChartSub: "Vista 2D in scala delle primitive",
         beltNotesTitle: "Note di Montaggio e Tolleramento Cinghie",
         copyBeltNoteBtn: "Copia Dati Trasmissione",
-        beltRuleTitle1: "Asole e Regolazione Interasse:",
-        beltRuleDesc1: "Prevedere sempre asole sui supporti motore: tipicamente -1.5% per agevolare il montaggio senza forzare la cinghia e +2.5% per il corretto tensionamento.",
+        beltRuleTitle1: "Scelta Denti & Regolazione Interasse:",
+        beltRuleDesc1: "Il numero di denti (zb) è arrotondato all'intero più vicino. Verificare a catalogo la disponibilità a magazzino della cinghia chiusa e prevedere asole di registro (-1.5% montaggio, +2.5% tensionamento) sui supporti motore.",
         beltRuleTitle2: "Criterio Minimo Denti in Presa:",
         beltRuleDesc2: "I manuali industriali impongono almeno 6 denti in presa sulla puleggia piccola (z_mesh ≥ 6) per evitare lo scalzamento o la rottura a taglio del dente.",
         meshOptimal: "Ottimale (≥ 6 denti)",
@@ -629,12 +629,11 @@
       const t = translations[currentLang];
 
       if (mod === 'fits') {
-        // Desktop
         bFits.className = "w-full text-left px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-sm flex items-center justify-between transition-colors";
         bBelts.className = "w-full text-left px-3 py-2 rounded-lg text-slate-400 hover:text-white font-medium text-sm flex items-center justify-between transition-colors";
         dFits.className = "w-2 h-2 rounded-full bg-blue-300";
         dBelts.className = "w-2 h-2 rounded-full bg-transparent";
-        // Mobile
+
         bFitsM.className = "text-center py-2 px-2 rounded-lg bg-blue-600 text-white font-medium text-xs transition-colors";
         bBeltsM.className = "text-center py-2 px-2 rounded-lg bg-slate-800/80 text-slate-300 font-medium text-xs transition-colors";
 
@@ -644,12 +643,11 @@
         subEl.innerText = t.pageSubtitleFits;
         if (typeof calculateFits === 'function') calculateFits();
       } else {
-        // Desktop
         bBelts.className = "w-full text-left px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-sm flex items-center justify-between transition-colors";
         bFits.className = "w-full text-left px-3 py-2 rounded-lg text-slate-400 hover:text-white font-medium text-sm flex items-center justify-between transition-colors";
         dBelts.className = "w-2 h-2 rounded-full bg-blue-300";
         dFits.className = "w-2 h-2 rounded-full bg-transparent";
-        // Mobile
+
         bBeltsM.className = "text-center py-2 px-2 rounded-lg bg-blue-600 text-white font-medium text-xs transition-colors";
         bFitsM.className = "text-center py-2 px-2 rounded-lg bg-slate-800/80 text-slate-300 font-medium text-xs transition-colors";
 
@@ -825,7 +823,7 @@
       const u = document.getElementById('fitUnitLabel').innerText;
       const fit = document.getElementById('fitType').value;
       const t = translations[currentLang];
-      const text = `Ø${d} ${u} ${fit} | ${t.holeCardTitle}: ${document.getElementById('holeDisp').innerText} | ${t.shaftCardTitle}: ${document.getElementById('shaftDisp').innerText} | ${document.getElementById('fitResult').innerText}`;
+      const text = `Ø${d}${u} ${fit} \vert{}${t.holeCardTitle}: ${document.getElementById('holeDisp').innerText} \vert{}${t.shaftCardTitle}: ${document.getElementById('shaftDisp').innerText} \vert{}${document.getElementById('fitResult').innerText}`;
       navigator.clipboard.writeText(text);
       alert(t.copiedAlert);
     });
@@ -837,8 +835,8 @@
       const c = document.getElementById('exactCenterDisp').innerText;
       const zb = document.getElementById('beltTeethDisp').innerText;
       const lp = document.getElementById('beltPitchLengthDisp').innerText;
-      const card3Info = `${document.getElementById('card3Title').innerText}: ${document.getElementById('card3Value').innerText}`;
-      const text = `Drive Specs: ${prof} | z1=${z1}, z2=${z2} | Center=${c} | Belt=${zb} (${lp}) | ${card3Info} | z_mesh=${document.getElementById('teethInMeshDisp').innerText}`;
+      const card3Info = `${document.getElementById('card3Title').innerText}:${document.getElementById('card3Value').innerText}`;
+      const text = `Drive Specs: ${prof} \vert{} z1=${z1}, z2=${z2} \vert{} Center=${c} | Belt=${zb} (${lp}) | ${card3Info} \vert{} z_mesh=${document.getElementById('teethInMeshDisp').innerText}`;
       navigator.clipboard.writeText(text);
       alert(translations[currentLang].copiedAlert);
     });
