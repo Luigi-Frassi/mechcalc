@@ -87,7 +87,7 @@
         </select>
       </div>
 
-      <!-- Reverse Search Inputs (Hidden by default) -->
+      <!-- Reverse Search Inputs -->
       <div id="reverseInputs" class="hidden">
         <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="reverseTargetLabel">Target Condition & Clearance</label>
         <div class="flex gap-2">
@@ -150,11 +150,11 @@
         <table class="w-full text-left text-xs text-slate-300">
           <thead class="text-[11px] uppercase tracking-wider text-slate-400 bg-slate-950/60 border-b border-slate-800">
             <tr>
-              <th class="p-2.5">Fit</th>
-              <th class="p-2.5">Shaft Dev.</th>
-              <th class="p-2.5">Fit Condition</th>
-              <th class="p-2.5">Min / Max</th>
-              <th class="p-2.5 text-right">Action</th>
+              <th class="p-2.5" data-i18n="thFit">Fit</th>
+              <th class="p-2.5" data-i18n="thShaftDev">Shaft Dev.</th>
+              <th class="p-2.5" data-i18n="thFitCond">Fit Condition</th>
+              <th class="p-2.5" data-i18n="thMinMax">Min / Max</th>
+              <th class="p-2.5 text-right" data-i18n="thAction">Action</th>
             </tr>
           </thead>
           <tbody id="comparisonTableBody" class="divide-y divide-slate-800/60 font-mono">
@@ -195,8 +195,8 @@
 
   <script>
     let currentLang = 'en';
-    let currentUnit = 'metric'; // 'metric' (mm, µm) | 'imperial' (inch, thou)
-    let currentMode = 'direct'; // 'direct' | 'reverse'
+    let currentUnit = 'metric';
+    let currentMode = 'direct';
 
     const translations = {
       en: {
@@ -223,6 +223,13 @@
         chartTitle: "Relative Tolerance Zone Positions",
         comparisonTitle: "Instant ISO Fits Comparison Table",
         comparisonHelp: "Click any row to select fit",
+        thFit: "Fit",
+        thShaftDev: "Shaft Dev.",
+        thFitCond: "Fit Condition",
+        thMinMax: "Min / Max",
+        thAction: "Action",
+        btnSelect: "Select",
+        btnActive: "✓ Active",
         legendHole: "Hole (H7)",
         legendShaft: "Shaft",
         legendZero: "Zero Line",
@@ -276,6 +283,13 @@
         chartTitle: "Posizione Relativa delle Fasce di Tolleranza",
         comparisonTitle: "Tabella Comparativa Istantanea Accoppiamenti",
         comparisonHelp: "Clicca su una riga per selezionare l'accoppiamento",
+        thFit: "Accoppiamento",
+        thShaftDev: "Scostam. Albero",
+        thFitCond: "Condizione",
+        thMinMax: "Min / Max",
+        thAction: "Azione",
+        btnSelect: "Seleziona",
+        btnActive: "✓ Attivo",
         legendHole: "Foro (H7)",
         legendShaft: "Albero",
         legendZero: "Linea dello Zero",
@@ -286,9 +300,9 @@
         roughnessLabel: "Rugosità consigliata:",
         disclaimerTitle: "Nota tecnica e limitazione di responsabilità:",
         disclaimerText: "I valori di scostamento e tolleranza sono conformi alla norma UNI EN ISO 286-2. Le quote imperiali derivano da conversione metrica esatta (1 pollice = 25.4 mm). Ausilio di calcolo per il pre-dimensionamento.",
-        clearanceFit: "Accoppiamento con gioco mobile",
-        interferenceFit: "Accoppiamento forzato / stabile",
-        transitionFit: "Accoppiamento incerto (transizione)",
+        clearanceFit: "Accoppiamento con gioco",
+        interferenceFit: "Accoppiamento con interferenza",
+        transitionFit: "Accoppiamento incerto",
         clearanceText: "Gioco:",
         interferenceText: "Interferenza:",
         maxClearance: "Gioco max:",
@@ -537,7 +551,7 @@
           <td class="p-2.5">${minMaxStr}</td>
           <td class="p-2.5 text-right font-sans">
             <button class="px-2 py-1 bg-slate-800 hover:bg-blue-600 rounded text-[11px] text-slate-300 hover:text-white transition-colors">
-              ${isSelected ? '✓ Active' : 'Select'}
+              ${isSelected ? t.btnActive : t.btnSelect}
             </button>
           </td>
         `;
@@ -556,7 +570,6 @@
       const t = translations[currentLang];
       const stepInfoEl = document.getElementById('stepInfo');
 
-      // Convert input to millimeters for ISO matrix lookups
       let dMm = currentUnit === 'metric' ? dVal : dVal * 25.4;
 
       if (isNaN(dMm) || dMm < 3 || dMm > 500) {
@@ -602,7 +615,7 @@
         candidates.forEach(cand => {
           const sClass = cand.split('/')[1];
           const devs = getShaftDevs(step, sClass);
-          const meanPlay = (step.it7 - devs.ei - devs.es) / 2; // Valore medio tra gioco min e max
+          const meanPlay = (step.it7 - devs.ei - devs.es) / 2;
           const diff = Math.abs(meanPlay - targetMicron);
           if (diff < minDiff) {
             minDiff = diff;
