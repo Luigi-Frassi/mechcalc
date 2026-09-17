@@ -55,10 +55,10 @@
         <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="inputDiamLabel">Nominal Diameter (d)</label>
         <div class="relative">
           <input type="number" id="nominalDiameter" value="25" min="3" max="500" step="1"
-            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none transition-colors">
           <span class="absolute right-4 top-2.5 text-slate-400 font-medium text-sm">mm</span>
         </div>
-        <p class="text-xs text-slate-500 mt-1.5" id="stepInfo">ISO Step: over 18 up to 30 mm</p>
+        <p class="text-xs text-slate-500 mt-1.5 transition-colors" id="stepInfo">ISO Step: over 18 up to 30 mm</p>
       </div>
 
       <div>
@@ -73,7 +73,7 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
       <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
         <span class="text-xs font-medium text-slate-400" data-i18n="holeCardTitle">Hole (H7)</span>
-        <div class="text-lg font-bold text-sky-400 mt-1" id="holeDisp">0 / +21 µm</div>
+        <div class="text-lg font-bold text-sky-400 mt-1" id="holeDisp">+21 / 0 µm</div>
         <div class="text-xs text-slate-400 mt-1 font-mono" id="holeDims">25.000 / 25.021 mm</div>
       </div>
       <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
@@ -99,7 +99,7 @@
         </div>
       </div>
       
-      <div class="w-full bg-slate-950/80 rounded-lg p-2 border border-slate-800 flex justify-center">
+      <div class="w-full bg-slate-950/80 rounded-lg p-2 border border-slate-800 flex justify-center min-h-[224px]">
         <svg id="toleranceChart" viewBox="0 0 600 240" class="w-full h-56"></svg>
       </div>
     </div>
@@ -148,6 +148,8 @@
         inputFitLabel: "Desired Fit",
         stepOver: "ISO Step: over",
         stepUpTo: "up to",
+        outOfRange: "Out of ISO 286 range (allowed: 3 - 500 mm)",
+        invalidInput: "Invalid input",
         holeCardTitle: "Hole (H7)",
         shaftCardTitle: "Shaft",
         fitCardTitle: "Fit Condition",
@@ -190,6 +192,8 @@
         inputFitLabel: "Accoppiamento Desiderato",
         stepOver: "Scaglione ISO: oltre",
         stepUpTo: "fino a",
+        outOfRange: "Valore fuori campo ISO 286 (consentito: 3 - 500 mm)",
+        invalidInput: "Input non valido",
         holeCardTitle: "Foro (H7)",
         shaftCardTitle: "Albero",
         fitCardTitle: "Condizione Accoppiamento",
@@ -294,15 +298,16 @@
 
       const zeroY = 120;
       const scale = 85 / totalRange;
+
       const yForVal = (v) => zeroY - (v * scale);
 
-      // Zero reference line
+      // Linea di riferimento Zero
       svg.innerHTML += `
         <line x1="50" y1="${zeroY}" x2="550" y2="${zeroY}" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 4" />
         <text x="555" y="${zeroY + 4}" fill="#94a3b8" font-size="11" font-family="monospace">0</text>
       `;
 
-      // Hole Box (H7)
+      // Rettangolo Foro (H7)
       const hTop = yForVal(es_h);
       const hBottom = yForVal(ei_h);
       const hHeight = Math.max(Math.abs(hBottom - hTop), 2);
@@ -314,7 +319,7 @@
         <text x="230" y="${hTop + (hHeight / 2) + 4}" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle">${holeText} (H7)</text>
       `;
 
-      // Shaft Box
+      // Rettangolo Albero
       const sTop = yForVal(es_s);
       const sBottom = yForVal(ei_s);
       const sHeight = Math.max(Math.abs(sBottom - sTop), 2);
@@ -329,16 +334,41 @@
     }
 
     function calculate() {
-      let d = parseFloat(document.getElementById('nominalDiameter').value);
-      if (isNaN(d) || d < 3) d = 3;
-      if (d > 500) d = 500;
+      const inputEl = document.getElementById('nominalDiameter');
+      const dVal = inputEl.value.trim();
+      const d = parseFloat(dVal);
+      const t = translations[currentLang];
+      const stepInfoEl = document.getElementById('stepInfo');
+
+      // Controllo robusto input: fuori range 3-500 mm o campo non numerico/vuoto
+      if (isNaN(d) || d < 3 || d > 500) {
+        inputEl.classList.add('border-rose-500', 'focus:ring-rose-500');
+        inputEl.classList.remove('border-slate-700', 'focus:ring-blue-500');
+        
+        stepInfoEl.className = "text-xs text-rose-400 mt-1.5 font-medium";
+        stepInfoEl.innerText = t.outOfRange;
+
+        document.getElementById('holeDisp').innerText = "--";
+        document.getElementById('holeDims').innerText = "--";
+        document.getElementById('shaftDisp').innerText = "--";
+        document.getElementById('shaftDims').innerText = "--";
+        document.getElementById('fitResult').innerText = "--";
+        document.getElementById('fitCategory').innerText = t.invalidInput;
+        
+        document.getElementById('toleranceChart').innerHTML = '';
+        return;
+      }
+
+      // Input valido: ripristina stile standard
+      inputEl.classList.remove('border-rose-500', 'focus:ring-rose-500');
+      inputEl.classList.add('border-slate-700', 'focus:ring-blue-500');
+      stepInfoEl.className = "text-xs text-slate-500 mt-1.5";
 
       const fit = document.getElementById('fitType').value;
       const shaftClass = fit.split('/')[1];
-      const t = translations[currentLang];
 
-      const step = isoTable.find(s => d > s.min && d <= s.max) || isoTable[isoTable.length - 1];
-      document.getElementById('stepInfo').innerText = `${t.stepOver} ${step.min} ${t.stepUpTo} ${step.max} mm`;
+      const step = isoTable.find(s => d > s.min && d <= s.max) || (d <= 3 ? isoTable[0] : isoTable[isoTable.length - 1]);
+      stepInfoEl.innerText = `${t.stepOver} ${step.min} ${t.stepUpTo} ${step.max} mm`;
 
       const EI_H = 0;
       const ES_H = step.it7;
