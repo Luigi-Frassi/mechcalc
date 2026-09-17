@@ -2,6 +2,22 @@
 // MODULE 2: TIMING BELTS & PULLEYS (ISO 5296 / DIN 7721)
 // ==========================================
 
+const catalogWidths = {
+  '2': [6, 9, 12],            // GT2
+  '3': [6, 9, 15],            // HTD 3M
+  '5': [9, 15, 25],           // HTD 5M
+  '5_T5': [10, 16, 25],       // T5
+  '8': [20, 30, 50, 85]       // HTD 8M
+};
+
+const baseAllowableForce = {
+  '2': 7.0,     // N per mm di larghezza
+  '3': 12.0,    // N per mm di larghezza
+  '5': 24.0,    // N per mm di larghezza
+  '5_T5': 22.0, // N per mm di larghezza
+  '8': 48.0     // N per mm di larghezza
+};
+
 function drawBeltScheme(dp1, dp2, C) {
   const svg = document.getElementById('beltChart');
   if (!svg) return;
@@ -24,35 +40,23 @@ function drawBeltScheme(dp1, dp2, C) {
   const R1 = r1 * scale;
   const R2 = r2 * scale;
 
-  // Angolo di inclinazione del tratto tangente comune
-  // sin(gamma) = (R2 - R1) / (C * scale)
   const sinG = Math.max(-0.999, Math.min(0.999, (R2 - R1) / (cx2 - cx1)));
   const gamma = Math.asin(sinG);
   const cosG = Math.cos(gamma);
 
-  // Punti di tangenza geometrici esatti
-  // Puleggia 1 (sinistra): tangente stacca verso l'alto/basso con inclinazione gamma
   const p1_top_x = cx1 - R1 * sinG;
   const p1_top_y = cy1 - R1 * cosG;
   const p1_bot_x = cx1 - R1 * sinG;
   const p1_bot_y = cy1 + R1 * cosG;
 
-  // Puleggia 2 (destra): tangente tocca verso l'alto/basso con inclinazione gamma
   const p2_top_x = cx2 - R2 * sinG;
   const p2_top_y = cy2 - R2 * cosG;
   const p2_bot_x = cx2 - R2 * sinG;
   const p2_bot_y = cy2 + R2 * cosG;
 
-  // Arco puleggia 1: angolo < 180° se R1 < R2 (large-arc-flag = 0)
-  // Arco puleggia 2: angolo > 180° se R2 > R1 (large-arc-flag = 1)
   const largeArc1 = (R1 >= R2) ? 1 : 0;
   const largeArc2 = (R2 >= R1) ? 1 : 0;
 
-  // Percorso continuo chiuso:
-  // 1. Linea retta tangente superiore (da P1 a P2)
-  // 2. Arco attorno a Puleggia 2 (senso orario)
-  // 3. Linea retta tangente inferiore (da P2 a P1)
-  // 4. Arco attorno a Puleggia 1 (senso orario)
   const beltPath = `
     M ${p1_top_x} ${p1_top_y}
     L ${p2_top_x} ${p2_top_y}
@@ -62,7 +66,6 @@ function drawBeltScheme(dp1, dp2, C) {
     Z
   `;
 
-  // 1. Asse mediano e quotatura interasse
   const dimY = cy1 + Math.max(R1, R2) + 26;
   svg.innerHTML += `
     <line x1="${cx1 - R1 - 25}" y1="${cy1}" x2="${cx2 + R2 + 25}" y2="${cy2}" stroke="#334155" stroke-dasharray="6 4" stroke-width="1.2" />
@@ -76,19 +79,16 @@ function drawBeltScheme(dp1, dp2, C) {
     </text>
   `;
 
-  // 2. Cinghia (anello teso esterno)
   svg.innerHTML += `
     <path d="${beltPath}" fill="rgba(56, 189, 248, 0.08)" stroke="#38bdf8" stroke-width="3" stroke-linejoin="round" />
   `;
 
-  // 3. Puleggia 1 (Motrice z1)
   svg.innerHTML += `
     <circle cx="${cx1}" cy="${cy1}" r="${R1}" fill="rgba(251, 191, 36, 0.15)" stroke="#fbbf24" stroke-width="2" />
     <circle cx="${cx1}" cy="${cy1}" r="3" fill="#fbbf24" />
     <text x="${cx1}" y="${cy1 - R1 - 8}" fill="#fbbf24" font-size="11" font-weight="bold" text-anchor="middle">z₁</text>
   `;
 
-  // 4. Puleggia 2 (Condotta z2)
   svg.innerHTML += `
     <circle cx="${cx2}" cy="${cy2}" r="${R2}" fill="rgba(168, 85, 247, 0.15)" stroke="#a855f7" stroke-width="2" />
     <circle cx="${cx2}" cy="${cy2}" r="3" fill="#a855f7" />
@@ -97,12 +97,16 @@ function drawBeltScheme(dp1, dp2, C) {
 }
 
 function calculateBelts() {
-  const pRaw = document.getElementById('beltProfile').value;
-  const p = parseFloat(pRaw);
+  const profKey = document.getElementById('beltProfile').value;
+  const p = parseFloat(profKey);
   const z1 = parseInt(document.getElementById('pulleyZ1').value) || 20;
   const z2 = parseInt(document.getElementById('pulleyZ2').value) || 40;
   const c0Input = parseFloat(document.getElementById('desiredCenter').value) || 150;
   const t = translations[currentLang];
+
+  const P_kW = parseFloat(document.getElementById('motorPower').value) || 1.5;
+  const n1_rpm = parseFloat(document.getElementById('driverSpeed').value) || 1500;
+  const c0 = parseFloat(document.getElementById('serviceFactor').value) || 1.5;
 
   const C0_mm = currentUnit === 'metric' ? c0Input : c0Input * 25.4;
 
@@ -116,7 +120,16 @@ function calculateBelts() {
 
   const ratio = z2 / z1;
   document.getElementById('ratioInfo').innerText = `Ratio: 1 : ${ratio.toFixed(2)}`;
-  document.getElementById('ratioCardDisp').innerText = `Reduction: ${ratio.toFixed(3)}`;
+
+  // Cinematica e carichi di calcolo
+  const omega1 = (2 * Math.PI * n1_rpm) / 60;
+  const torqueNm = (P_kW * 1000) / Math.max(omega1, 0.001);
+  const beltSpeed = (Math.PI * dp1 * n1_rpm) / 60000;
+  const Pc_kW = P_kW * c0;
+
+  document.getElementById('torqueDisp').innerText = `Torque: ${torqueNm.toFixed(2)} Nm`;
+  document.getElementById('beltSpeedDisp').innerText = `Belt speed: ${beltSpeed.toFixed(2)} m/s`;
+  document.getElementById('designPowerDisp').innerText = `Design Power Pc: ${Pc_kW.toFixed(2)} kW`;
 
   const minTheoreticalC = (dp1 + dp2) / 2 + 2;
   if (C0_mm <= minTheoreticalC) {
@@ -124,23 +137,21 @@ function calculateBelts() {
     document.getElementById('centerDiffDisp').innerText = t.centerTooSmall;
     document.getElementById('centerDiffDisp').className = "text-[11px] text-rose-400 mt-0.5 font-medium";
     document.getElementById('beltTeethDisp').innerText = "--";
+    document.getElementById('card3Value').innerText = "--";
     document.getElementById('teethInMeshDisp').innerText = "--";
-    document.getElementById('wrapAngleDisp').innerText = "--";
     document.getElementById('beltChart').innerHTML = '';
     return;
   }
 
   document.getElementById('centerDiffDisp').className = "text-[11px] text-slate-500 mt-0.5";
 
-  // 1. Sviluppo primitivo teorico L0
+  // 1. Sviluppo primitivo teorico
   const L0 = 2 * C0_mm + (Math.PI / 2) * (dp1 + dp2) + Math.pow(dp2 - dp1, 2) / (4 * C0_mm);
-
-  // 2. Numero denti commerciale arrotondato
   const zb0 = L0 / p;
   const zb = Math.max(z1 + z2 + 2, Math.round(zb0));
   const Lp = zb * p;
 
-  // 3. Risoluzione quadratica esatta dell'interasse C
+  // 2. Risoluzione quadratica esatta dell'interasse C
   const B = 4 * Lp - 2 * Math.PI * (dp1 + dp2);
   const rad = Math.pow(B, 2) - 32 * Math.pow(dp2 - dp1, 2);
   let exactC_mm = C0_mm;
@@ -149,11 +160,31 @@ function calculateBelts() {
     exactC_mm = (B + Math.sqrt(rad)) / 16;
   }
 
-  // 4. Angolo di contatto e denti in presa sulla puleggia minore
+  // 3. Denti in presa e fattore c1
   const wrapRad1 = Math.PI - 2 * Math.asin(Math.min(1, Math.abs(dp2 - dp1) / (2 * exactC_mm)));
   const wrapDeg1 = (wrapRad1 * 180) / Math.PI;
   const z_mesh = (z1 * (wrapDeg1 / 360));
 
+  let c1 = 1.0;
+  if (z_mesh < 6 && z_mesh >= 5) c1 = 0.8;
+  else if (z_mesh < 5 && z_mesh >= 4) c1 = 0.6;
+  else if (z_mesh < 4) c1 = 0.4;
+
+  // 4. Calcolo larghezza minima richiesta e selezione commerciale
+  const Ft = (Pc_kW * 1000) / Math.max(beltSpeed, 0.1);
+  const fAllowable = (baseAllowableForce[profKey] || 20.0) * c1;
+  const reqWidthMm = Ft / fAllowable;
+
+  const widths = catalogWidths[profKey] || [9, 15, 25];
+  let chosenWidth = widths[widths.length - 1];
+  for (let w of widths) {
+    if (w >= reqWidthMm) {
+      chosenWidth = w;
+      break;
+    }
+  }
+
+  // Visualizzazione dati geometrici
   const cDiff = exactC_mm - C0_mm;
   const signDiff = cDiff >= 0 ? `+` : ``;
 
@@ -168,15 +199,29 @@ function calculateBelts() {
   }
 
   document.getElementById('beltTeethDisp').innerText = `${zb} ${currentLang === 'it' ? 'denti' : 'teeth'}`;
-  document.getElementById('wrapAngleDisp').innerText = `${wrapDeg1.toFixed(1)}°`;
   document.getElementById('teethInMeshDisp').innerText = `${z_mesh.toFixed(1)} ${currentLang === 'it' ? 'denti' : 'teeth'}`;
+
+  // Card 3 dinamica: Angolo di contatto in "geom" o Larghezza consigliata in "power"
+  const card3Title = document.getElementById('card3Title');
+  const card3Value = document.getElementById('card3Value');
+  const card3Sub = document.getElementById('card3Sub');
+
+  if (currentBeltMode === 'geom') {
+    card3Title.innerText = t.wrapAngleCard;
+    card3Value.innerText = `${wrapDeg1.toFixed(1)}°`;
+    card3Sub.innerText = `Ratio: ${ratio.toFixed(2)}`;
+  } else {
+    card3Title.innerText = t.recWidthCard;
+    card3Value.innerText = currentUnit === 'metric' ? `${chosenWidth} mm` : `${(chosenWidth / 25.4).toFixed(2)} in (${chosenWidth} mm)`;
+    card3Sub.innerText = `Req. min: ${reqWidthMm.toFixed(1)} mm`;
+  }
 
   const meshStatusEl = document.getElementById('teethInMeshStatus');
   if (z_mesh >= 6) {
     meshStatusEl.innerText = t.meshOptimal;
     meshStatusEl.className = "text-[11px] text-emerald-400 mt-0.5 font-medium";
   } else {
-    meshStatusEl.innerText = t.meshWarning;
+    meshStatusEl.innerText = `${t.meshWarning} (c₁ = ${c1})`;
     meshStatusEl.className = "text-[11px] text-amber-400 mt-0.5 font-medium";
   }
 
