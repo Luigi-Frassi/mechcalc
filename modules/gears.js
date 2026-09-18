@@ -3,6 +3,7 @@
 // Conforme al formulario di Costruzione di Macchine
 // ==========================================
 
+// Moduli unificati normati con classificazione cromatica
 const STANDARD_MODULES = [
   { m: 1.0, cat: 'green' },
   { m: 1.125, cat: 'orange' },
@@ -36,28 +37,36 @@ const STANDARD_MODULES = [
   { m: 20.0, cat: 'green' }
 ];
 
+// Interpolazione del fattore di forma di Lewis Y (Figura 1)
 function getLewisFactor(z, xr = 0) {
   const zClamped = Math.max(z, 9);
   const yBase = 0.4715 - (2.84 / zClamped);
   return Math.max(0.20, yBase + 0.25 * xr);
 }
 
+// Interpolazione coefficienti correttivi per dentature elicoidali (Figura 2)
 function getHelicalFactors(alphaDeg, z1, z2) {
   const a = Math.max(0, Math.min(45, alphaDeg));
+  
+  // Curva Phi (linea rossa che scende con alpha)
   const Phi = 1.0 - 0.0139 * a - 0.000014 * Math.pow(a, 2);
+
+  // Curva Psi (linea verde che sale con alpha)
   const Psi = 1.0 + 0.000089 * Math.pow(a, 2);
 
+  // Curve Gamma_T (fascio blu in funzione di z e alpha)
   const g0_1 = 1.05 - (1.2 / Math.sqrt(Math.max(z1, 9)));
   const g0_2 = 1.05 - (1.2 / Math.sqrt(Math.max(z2, 9)));
   const decay = 1.0 - 0.006 * a - 0.00015 * Math.pow(a, 2);
 
-  const Gamma_T1 = Math.max(0.2, g0_1 * decay);
-  const Gamma_T2 = Math.max(0.2, g0_2 * decay);
+  const Gamma_T1 = Math.max(0.15, g0_1 * decay);
+  const Gamma_T2 = Math.max(0.15, g0_2 * decay);
   const Gamma_T = Gamma_T1 + Gamma_T2;
 
   return { Phi, Psi, Gamma_T1, Gamma_T2, Gamma_T };
 }
 
+// Disegno cinematico 2D delle ruote dentate in SVG
 function drawGearScheme(d1, d2, a) {
   const svg = document.getElementById('gearChart');
   if (!svg) return;
@@ -78,27 +87,32 @@ function drawGearScheme(d1, d2, a) {
 
   const dimY = cy + Math.max(R1, R2) + 24;
 
+  // Asse mediano tratteggiato
   svg.innerHTML += `
     <line x1="${cx1 - R1 - 20}" y1="${cy}" x2="${cx2 + R2 + 20}" y2="${cy}" stroke="#334155" stroke-dasharray="6 4" stroke-width="1.2" />
   `;
 
+  // Ruota 1 (Pignone z1)
   svg.innerHTML += `
     <circle cx="${cx1}" cy="${cy}" r="${R1}" fill="rgba(251, 191, 36, 0.12)" stroke="#fbbf24" stroke-width="2" />
     <circle cx="${cx1}" cy="${cy}" r="4" fill="#fbbf24" />
     <text x="${cx1}" y="${cy - R1 - 8}" fill="#fbbf24" font-size="11" font-weight="bold" font-family="monospace" text-anchor="middle">z₁ (dp=${d1.toFixed(1)})</text>
   `;
 
+  // Ruota 2 (Condotta z2)
   svg.innerHTML += `
     <circle cx="${cx2}" cy="${cy}" r="${R2}" fill="rgba(168, 85, 247, 0.12)" stroke="#a855f7" stroke-width="2" />
     <circle cx="${cx2}" cy="${cy}" r="4" fill="#a855f7" />
     <text x="${cx2}" y="${cy - R2 - 8}" fill="#a855f7" font-size="11" font-weight="bold" font-family="monospace" text-anchor="middle">z₂ (dp=${d2.toFixed(1)})</text>
   `;
 
+  // Polo d'ingranamento C
   const contactX = cx1 + R1;
   svg.innerHTML += `
     <circle cx="${contactX}" cy="${cy}" r="3.5" fill="#38bdf8" />
   `;
 
+  // Linea di quota dell'interasse
   svg.innerHTML += `
     <line x1="${cx1}" y1="${cy}" x2="${cx1}" y2="${dimY + 8}" stroke="#0284c7" stroke-width="0.8" stroke-dasharray="2 2" />
     <line x1="${cx2}" y1="${cy}" x2="${cx2}" y2="${dimY + 8}" stroke="#0284c7" stroke-width="0.8" stroke-dasharray="2 2" />
@@ -116,7 +130,7 @@ function calculateGears() {
   const loadMode = document.querySelector('input[name="gearLoadMode"]:checked').value;
   const geomMode = document.querySelector('input[name="gearGeomMode"]:checked').value;
 
-  // 1. Carico motore / coppia
+  // 1. Determinazione potenza W [Watt], omega1 [rad/s] e coppia M1 [Nm]
   let W_watt = 5500.0;
   let n1_rpm = 1450.0;
   let omega1 = (2 * Math.PI * n1_rpm) / 60.0;
@@ -137,7 +151,7 @@ function calculateGears() {
     document.getElementById('gearOmegaCalc').innerText = `P = ${(W_watt / 1000).toFixed(2)} kW | ω₁ = ${omega1.toFixed(1)} rad/s`;
   }
 
-  // 2. Geometria (z1, z2, tau o interasse i)
+  // 2. Determinazione geometria (z1, z2, tau o interasse i)
   let z1 = parseInt(document.getElementById('gearZ1').value) || 20;
   let z2 = 40;
   let tauEff = 2.0;
@@ -162,12 +176,15 @@ function calculateGears() {
     document.getElementById('gearGeomFeedback').innerText = `z₂ = ${z2} | i_target = ${targetCenter.toFixed(1)} mm`;
   }
 
-  // Costanti materiale e angoli
-  const theta = (20.0 * Math.PI) / 180.0;
+  // Costanti fisiche e geometriche
+  const theta = (20.0 * Math.PI) / 180.0; // Angolo di pressione 20°
   const Ke_GPa = parseFloat(document.getElementById('gearKeInput').value) || 35.0;
-  const Ke_N_mm2 = Ke_GPa * 1000.0; // Conversione corretta in MPa (N/mm^2)
+  const Ke_N_mm2 = Ke_GPa * 1000.0; // 35 GPa = 35000 MPa (N/mm^2)
   const sigmaH_lim = parseFloat(document.getElementById('gearSigmaH').value) || 550.0;
   const xr1 = parseFloat(document.getElementById('gearXr1').value) || 0.0;
+
+  // Conversione coerente di W in N*mm/s (1 W = 1000 N*mm/s)
+  const W_N_mm_s = W_watt * 1000.0;
 
   let m_min = 1.0;
   let chosenModuleObj = STANDARD_MODULES[4];
@@ -183,33 +200,30 @@ function calculateGears() {
     document.getElementById('helicalStepDetails').classList.add('hidden');
     z_min = (2 * (1 - xr1)) / Math.pow(Math.sin(theta), 2);
 
-    // FORMULA DI HERTZ RIGOROSA CON UNITÀ COERENTI IN MILLIMETRI:
-    // W in N*mm/s -> W_watt * 1000
-    const W_N_mm_s = W_watt * 1000.0;
+    // Passo 2: Hertz con phi = 1 per trovare m_min
     const numHertz = 8 * Ke_N_mm2 * W_N_mm_s * (1 + tauEff);
     const denHertz = 1.0 * omega1 * Math.sin(2 * theta) * Math.pow(z1, 3) * Math.pow(sigmaH_lim, 2);
     m_min = Math.cbrt(numHertz / denHertz);
 
-    // Seleziona modulo unificato superiore
+    // Passo 3: Scelta del modulo unificato immediatamente superiore
     chosenModuleObj = STANDARD_MODULES.find(item => item.m >= m_min) || STANDARD_MODULES[STANDARD_MODULES.length - 1];
     m_norm = chosenModuleObj.m;
     mn = m_norm;
     mt = m_norm;
 
-    // Calcolo di phi per lavorare esattamente al limite (sigmaH = sigmaH_lim)
+    // Reiterazione Hertz con m_norm per calcolare phi al limite
     phi = (8 * Ke_N_mm2 * W_N_mm_s * (1 + tauEff)) / (omega1 * Math.sin(2 * theta) * Math.pow(z1, 3) * Math.pow(m_norm, 3) * Math.pow(sigmaH_lim, 2));
 
   } else {
     document.getElementById('helicalStepDetails').classList.remove('hidden');
 
     // Denti elicoidali: stima con (Phi / Gamma_T) ≈ 0.6
-    const W_N_mm_s = W_watt * 1000.0;
     const numHertzHel = 8 * Ke_N_mm2 * W_N_mm_s * (1 + tauEff) * 0.6;
     const denHertzHel = 1.0 * omega1 * Math.sin(2 * theta) * Math.pow(z1, 3) * Math.pow(sigmaH_lim, 2);
     const mt_min = Math.cbrt(numHertzHel / denHertzHel);
     m_min = mt_min;
 
-    // Sceglie mn <= mt_min per ottenere un angolo alpha reale
+    // Scelta mn <= mt_min per garantire cos(alpha) <= 1
     const candidates = STANDARD_MODULES.filter(item => item.m <= mt_min * 1.01 && item.m >= mt_min * 0.70);
     chosenModuleObj = candidates.length > 0 ? candidates[candidates.length - 1] : STANDARD_MODULES.find(item => item.m >= mt_min) || STANDARD_MODULES[4];
     mn = chosenModuleObj.m;
@@ -219,6 +233,7 @@ function calculateGears() {
     mt = mn / Math.cos((alphaDeg * Math.PI) / 180.0);
     m_norm = mn;
 
+    // z_min elicoidale con formula esatta
     const cosA = Math.cos((alphaDeg * Math.PI) / 180.0);
     const sinA = Math.sin((alphaDeg * Math.PI) / 180.0);
     const cosTh = Math.cos(theta);
@@ -235,8 +250,7 @@ function calculateGears() {
   const a_center = mt * ((z1 + z2) / 2.0 + xr1);
   const L_face = phi * dp1;
 
-  // VERIFICA LEWIS
-  // Fc = 2 * M1 / dp1 = 2 * (M1_Nm * 1000) / dp1
+  // Passo 4: Verifica a flessione di Lewis
   const Fc = (2 * M1_Nm * 1000.0) / dp1; // in Newton [N]
   let yLewis = 0.32;
   let sigma_L = 0.0;
@@ -251,7 +265,7 @@ function calculateGears() {
     sigma_L = (Fc / (L_face * mn * yLewis)) * (factors.Psi / factors.Gamma_T);
   }
 
-  // Output Cards
+  // Aggiornamento interfaccia
   document.getElementById('gearModuleDisp').innerText = `${gearType === 'spur' ? 'm' : 'mn'} = ${m_norm.toFixed(2)} mm`;
   const catEl = document.getElementById('gearModuleCategory');
   if (chosenModuleObj.cat === 'green') {
@@ -277,18 +291,18 @@ function calculateGears() {
 
   document.getElementById('gearLewisDisp').innerText = `${Math.round(sigma_L)} MPa`;
   const lewisStatus = document.getElementById('gearLewisStatus');
-  if (sigma_L >= 300 && sigma_L <= 800) {
-    lewisStatus.innerText = '✓ Nel range (300 ÷ 800 MPa)';
+  if (sigma_L <= 800) {
+    lewisStatus.innerText = `✓ Ammissibile (σL ≤ 800 MPa)`;
     lewisStatus.className = 'text-[11px] text-emerald-400 font-semibold';
   } else {
-    lewisStatus.innerText = '⚠ Fuori range consigliato (300 ÷ 800 MPa)';
+    lewisStatus.innerText = `⚠ Eccessiva (σL > 800 MPa)`;
     lewisStatus.className = 'text-[11px] text-amber-400 font-semibold';
   }
 
   document.getElementById('gearCenterDisp').innerText = `${a_center.toFixed(2)} mm`;
   document.getElementById('gearCenterSub').innerText = `dp₁: ${dp1.toFixed(1)} | dp₂: ${dp2.toFixed(1)} mm`;
 
-  // Output Breakdown Step-by-Step
+  // Dettaglio step-by-step
   document.getElementById('bkMmin').innerText = `${m_min.toFixed(2)} mm`;
   document.getElementById('bkMnorm').innerText = `${m_norm.toFixed(2)} mm`;
   document.getElementById('bkPhiLim').innerText = `${phi.toFixed(3)}`;
