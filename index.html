@@ -174,6 +174,26 @@
           </table>
         </div>
       </div>
+
+      <!-- Workshop Notes (Restored) -->
+      <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700/50 mb-8">
+        <div class="flex items-center justify-between mb-4">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-300" data-i18n="machiningSectionTitle">Machining & Surface Finish Guidelines</span>
+          <button id="copyFitBtn" class="text-xs px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-200 transition-colors" data-i18n="copyBtn">Copy CAD note</button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div class="p-3.5 bg-slate-900/70 rounded-lg border border-slate-800">
+            <div class="text-slate-400 text-xs" data-i18n="shaftMachiningLabel">Recommended Shaft Machining:</div>
+            <div class="font-medium text-white mt-0.5" id="shaftProcess">Precision Turning / Grinding</div>
+            <div class="text-xs text-amber-400 mt-1"><span data-i18n="roughnessLabel">Surface roughness:</span> <span id="shaftRa" class="font-semibold">Ra 0.8 µm</span></div>
+          </div>
+          <div class="p-3.5 bg-slate-900/70 rounded-lg border border-slate-800">
+            <div class="text-slate-400 text-xs" data-i18n="holeMachiningLabel">Recommended Hole Machining:</div>
+            <div class="font-medium text-white mt-0.5" id="holeProcess">Precision Reaming</div>
+            <div class="text-xs text-sky-400 mt-1"><span data-i18n="roughnessLabel">Surface roughness:</span> <span id="holeRa" class="font-semibold">Ra 1.6 µm</span></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ==================== MODULE 2: SYNCHRONOUS TIMING BELTS ==================== -->
@@ -243,6 +263,7 @@
         </div>
       </div>
 
+      <!-- Belt Power Inputs Card -->
       <div id="beltPowerInputsCard" class="hidden grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-800/60 p-6 rounded-xl border border-slate-700/60 mb-6 backdrop-blur">
         <div>
           <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="motorPowerLabel">Motor Power (P)</label>
@@ -297,6 +318,32 @@
         </div>
       </div>
 
+      <!-- Power Breakdown Step-by-Step Panel (Restored) -->
+      <div id="powerBreakdownCard" class="hidden bg-slate-800/40 p-6 rounded-xl border border-slate-700/50 mb-6 font-mono text-xs">
+        <div class="flex justify-between items-center mb-3 border-b border-slate-800 pb-2">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-300" data-i18n="breakdownTitle">Catalog Design Factors & Sizing Breakdown</span>
+          <span class="text-[11px] text-emerald-400 font-bold" id="powerCheckStatus">Pass</span>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="p-3 bg-slate-900/70 rounded-lg border border-slate-800">
+            <span class="text-slate-400 block mb-1">Service Factor (c₀):</span>
+            <span class="text-white font-bold text-sm" id="breakdownC0">1.50</span>
+          </div>
+          <div class="p-3 bg-slate-900/70 rounded-lg border border-slate-800">
+            <span class="text-slate-400 block mb-1">Mesh Factor (c₁):</span>
+            <span class="text-emerald-400 font-bold text-sm" id="breakdownC1">1.00</span>
+          </div>
+          <div class="p-3 bg-slate-900/70 rounded-lg border border-slate-800">
+            <span class="text-slate-400 block mb-1">Length Factor (c₂):</span>
+            <span class="text-sky-400 font-bold text-sm" id="breakdownC2">1.00</span>
+          </div>
+          <div class="p-3 bg-slate-900/70 rounded-lg border border-slate-800">
+            <span class="text-slate-400 block mb-1">Tangential Force (Ft):</span>
+            <span class="text-amber-400 font-bold text-sm" id="breakdownFt">750 N</span>
+          </div>
+        </div>
+      </div>
+
       <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700/50 mb-6">
         <div class="w-full bg-slate-950/80 rounded-lg p-2 border border-slate-800 flex justify-center min-h-[224px]">
           <svg id="beltChart" viewBox="0 0 600 240" class="w-full h-56"></svg>
@@ -310,34 +357,34 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <!-- Load Mode Selector -->
         <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700/60 text-xs">
-          <span class="text-slate-400 font-semibold block mb-2 uppercase tracking-wider">Metodo Definizione Carico:</span>
+          <span class="text-slate-400 font-semibold block mb-2 uppercase tracking-wider" data-i18n="gearLoadModeLabel">Metodo Definizione Carico:</span>
           <div class="flex gap-4">
             <label class="flex items-center gap-1.5 cursor-pointer text-slate-300">
               <input type="radio" name="gearLoadMode" value="power" checked class="text-blue-600 focus:ring-blue-500 bg-slate-900 border-slate-700">
-              <span>Potenza P [kW] & Giri n₁</span>
+              <span data-i18n="optLoadPower">Potenza P [kW] & Giri n₁</span>
             </label>
             <label class="flex items-center gap-1.5 cursor-pointer text-slate-300">
               <input type="radio" name="gearLoadMode" value="torque" class="text-blue-600 focus:ring-blue-500 bg-slate-900 border-slate-700">
-              <span>Coppia Diretta M₁ [Nm]</span>
+              <span data-i18n="optLoadTorque">Coppia Diretta M₁ [Nm]</span>
             </label>
           </div>
         </div>
 
         <!-- Geometry Mode Selector -->
         <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700/60 text-xs">
-          <span class="text-slate-400 font-semibold block mb-2 uppercase tracking-wider">Definizione Ingranaggio:</span>
+          <span class="text-slate-400 font-semibold block mb-2 uppercase tracking-wider" data-i18n="gearGeomModeLabel">Definizione Ingranaggio:</span>
           <div class="flex gap-3">
             <label class="flex items-center gap-1.5 cursor-pointer text-slate-300">
               <input type="radio" name="gearGeomMode" value="tau" checked class="text-blue-600 focus:ring-blue-500 bg-slate-900 border-slate-700">
-              <span>Target τ</span>
+              <span data-i18n="optGeomTau">Target τ</span>
             </label>
             <label class="flex items-center gap-1.5 cursor-pointer text-slate-300">
               <input type="radio" name="gearGeomMode" value="teeth" class="text-blue-600 focus:ring-blue-500 bg-slate-900 border-slate-700">
-              <span>Denti z₁, z₂</span>
+              <span data-i18n="optGeomTeeth">Denti z₁, z₂</span>
             </label>
             <label class="flex items-center gap-1.5 cursor-pointer text-slate-300">
               <input type="radio" name="gearGeomMode" value="center" class="text-blue-600 focus:ring-blue-500 bg-slate-900 border-slate-700">
-              <span>Interasse Target i</span>
+              <span data-i18n="optGeomCenter">Interasse Target i</span>
             </label>
           </div>
         </div>
@@ -346,17 +393,16 @@
       <!-- Parameters Input Card -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-800/60 p-6 rounded-xl border border-slate-700/60 mb-6 backdrop-blur">
         <div>
-          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Tipo Dentatura</label>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="gearToothTypeLabel">Tipo Dentatura</label>
           <select id="gearToothType" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            <option value="spur" selected>Denti Diritti (Spur)</option>
-            <option value="helical">Denti Elicoidali (Helical)</option>
+            <option value="spur" id="optGearSpur" selected>Denti Diritti</option>
+            <option value="helical" id="optGearHelical">Denti Elicoidali</option>
           </select>
-          <p class="text-xs text-slate-500 mt-1">ISO 54 / Normate</p>
+          <p class="text-xs text-slate-500 mt-1">ISO 54 / UNI</p>
         </div>
 
-        <!-- Dynamic Load Inputs -->
         <div id="colGearPower">
-          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Potenza Motore (W)</label>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="gearPowerLabel">Potenza Motore (W)</label>
           <div class="relative">
             <input type="number" id="gearPower" value="5.5" min="0.1" max="1000" step="0.5"
               class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
@@ -366,17 +412,17 @@
         </div>
 
         <div id="colGearTorque" class="hidden">
-          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Coppia Motrice (M₁)</label>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="gearTorqueLabel">Coppia Motrice (M₁)</label>
           <div class="relative">
             <input type="number" id="gearTorqueInput" value="36.2" min="0.1" max="10000" step="1"
               class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
             <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">Nm</span>
           </div>
-          <p class="text-xs text-slate-500 mt-1 font-mono">Coppia nominale asse 1</p>
+          <p class="text-xs text-slate-500 mt-1 font-mono">Asse pignone</p>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Velocità Pignone (n₁)</label>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="gearSpeedLabel">Velocità Pignone (n₁)</label>
           <div class="relative">
             <input type="number" id="gearSpeed" value="1450" min="50" max="10000" step="50"
               class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
@@ -385,47 +431,46 @@
           <p class="text-xs text-slate-500 mt-1">Asse motore</p>
         </div>
 
-        <!-- Dynamic Geometry Inputs -->
         <div id="colTargetTau">
-          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Rapporto Target (τ)</label>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="gearTargetTauLabel">Rapporto Target (τ)</label>
           <input type="number" id="gearTargetTau" value="2.0" min="1.0" max="15.0" step="0.1"
             class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
           <p class="text-xs text-blue-400 mt-1 font-mono" id="gearGeomFeedback">z₂: 40 (τ_eff: 2.00)</p>
         </div>
 
         <div id="colTargetZ2" class="hidden">
-          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Denti Ruota 2 (z₂)</label>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="gearZ2Label">Denti Ruota 2 (z₂)</label>
           <input type="number" id="gearZ2" value="40" min="10" max="250" step="1"
             class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
           <p class="text-xs text-slate-500 mt-1 font-mono">Ruota condotta</p>
         </div>
 
         <div id="colTargetCenter" class="hidden">
-          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Interasse Target (i)</label>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="gearCenterLabel">Interasse Target (i)</label>
           <div class="relative">
             <input type="number" id="gearTargetCenter" value="100" min="10" max="2000" step="1"
               class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
             <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">mm</span>
           </div>
-          <p class="text-xs text-slate-500 mt-1 font-mono">Quota di montaggio</p>
+          <p class="text-xs text-slate-500 mt-1 font-mono">Quota montaggio</p>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Denti Pignone (z₁)</label>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="gearZ1Label">Denti Pignone (z₁)</label>
           <input type="number" id="gearZ1" value="20" min="9" max="150" step="1"
             class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
           <p class="text-xs text-slate-500 mt-1">z₁ ≥ 17 (denti diritti)</p>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Spostamento (xr₁)</label>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="gearXr1Label">Spostamento (xr₁)</label>
           <input type="number" id="gearXr1" value="0.0" min="-0.5" max="0.5" step="0.05"
             class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
           <p class="text-xs text-slate-500 mt-1">Range: 0.0 ÷ 0.5</p>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Costante Elastica (Kε)</label>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="gearKeLabel">Costante Elastica (Kε)</label>
           <div class="relative">
             <input type="number" id="gearKeInput" value="35" min="10" max="100" step="1"
               class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
@@ -435,7 +480,7 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Limite Hertz (σH lim)</label>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="gearSigmaHLabel">Limite Hertz (σH lim)</label>
           <div class="relative">
             <input type="number" id="gearSigmaH" value="550" min="200" max="1500" step="25"
               class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
@@ -448,25 +493,25 @@
       <!-- Results Summary Cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-          <span class="text-xs font-medium text-slate-400">Modulo Normato UNI</span>
+          <span class="text-xs font-medium text-slate-400" data-i18n="gearModuleCard">Modulo Normato UNI</span>
           <div class="text-xl font-bold text-blue-400 mt-1" id="gearModuleDisp">m = 2.00 mm</div>
           <div class="text-[11px] text-emerald-400 mt-0.5" id="gearModuleCategory">Serie 1: Consigliato</div>
         </div>
 
         <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-          <span class="text-xs font-medium text-slate-400">Fattore Forma Fascia (ϕ)</span>
+          <span class="text-xs font-medium text-slate-400" data-i18n="gearPhiCard">Fattore Forma Fascia (ϕ)</span>
           <div class="text-xl font-bold text-amber-400 mt-1" id="gearPhiDisp">ϕ = 0.82</div>
           <div class="text-[11px] text-slate-500 mt-0.5" id="gearPhiStatus">Ottimale (L = 32.8 mm)</div>
         </div>
 
         <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-          <span class="text-xs font-medium text-slate-400">Verifica Flessione Lewis</span>
+          <span class="text-xs font-medium text-slate-400" data-i18n="gearLewisCard">Verifica Flessione Lewis</span>
           <div class="text-xl font-bold text-emerald-400 mt-1" id="gearLewisDisp">412 MPa</div>
           <div class="text-[11px] text-emerald-400 mt-0.5" id="gearLewisStatus">✓ Ammissibile (σL ≤ 800 MPa)</div>
         </div>
 
         <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-          <span class="text-xs font-medium text-slate-400">Interasse Esatto (i)</span>
+          <span class="text-xs font-medium text-slate-400" data-i18n="gearCenterCard">Interasse Esatto (i)</span>
           <div class="text-xl font-bold text-purple-400 mt-1" id="gearCenterDisp">60.00 mm</div>
           <div class="text-[11px] text-slate-500 mt-0.5" id="gearCenterSub">dp₁: 40.0 | dp₂: 80.0 mm</div>
         </div>
@@ -475,70 +520,68 @@
       <!-- Step-by-Step Analytical Breakdown Panel -->
       <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700/50 mb-6 font-mono text-xs">
         <div class="flex justify-between items-center mb-3 border-b border-slate-800 pb-2">
-          <span class="text-xs font-semibold uppercase tracking-wider text-slate-300">Dettaglio Passaggi & Parametri di Calcolo</span>
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-300" data-i18n="gearBreakdownTitle">Dettaglio Passaggi & Parametri di Calcolo</span>
           <span class="text-[11px] text-blue-400" id="bkUndercut">z₁ ≥ z_min → Ok</span>
         </div>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div class="p-3 bg-slate-900/70 rounded-lg border border-slate-800">
-            <span class="text-slate-500 block mb-0.5">1. Modulo Min (Hertz ϕ=1):</span>
+            <span class="text-slate-500 block mb-0.5" data-i18n="gearStep1">1. Modulo Min (Hertz ϕ=1):</span>
             <span class="text-white font-bold" id="bkMmin">1.78 mm</span>
           </div>
           <div class="p-3 bg-slate-900/70 rounded-lg border border-slate-800">
-            <span class="text-slate-500 block mb-0.5">2. Modulo Scelto UNI:</span>
+            <span class="text-slate-500 block mb-0.5" data-i18n="gearStep2">2. Modulo Scelto UNI:</span>
             <span class="text-blue-400 font-bold" id="bkMnorm">2.00 mm</span>
           </div>
           <div class="p-3 bg-slate-900/70 rounded-lg border border-slate-800">
-            <span class="text-slate-500 block mb-0.5">3. ϕ Al Limite (σH lim):</span>
+            <span class="text-slate-500 block mb-0.5" data-i18n="gearStep3">3. ϕ Al Limite (σH lim):</span>
             <span class="text-amber-400 font-bold" id="bkPhiLim">0.710</span>
           </div>
           <div class="p-3 bg-slate-900/70 rounded-lg border border-slate-800">
-            <span class="text-slate-500 block mb-0.5">4. Fascia Dentata L:</span>
+            <span class="text-slate-500 block mb-0.5" data-i18n="gearStep4">4. Fascia Dentata L:</span>
             <span class="text-white font-bold" id="bkLface">28.4 mm</span>
           </div>
           <div class="p-3 bg-slate-900/70 rounded-lg border border-slate-800">
-            <span class="text-slate-500 block mb-0.5">5. Forza Tangenziale Fc:</span>
+            <span class="text-slate-500 block mb-0.5" data-i18n="gearStep5">5. Forza Tangenziale Fc:</span>
             <span class="text-white font-bold" id="bkFc">1810 N</span>
           </div>
           <div class="p-3 bg-slate-900/70 rounded-lg border border-slate-800">
-            <span class="text-slate-500 block mb-0.5">6. Fattore Lewis (y):</span>
+            <span class="text-slate-500 block mb-0.5" data-i18n="gearStep6">6. Fattore Lewis (y):</span>
             <span class="text-sky-400 font-bold" id="bkYlewis">0.329</span>
           </div>
           <div class="p-3 bg-slate-900/70 rounded-lg border border-slate-800">
-            <span class="text-slate-500 block mb-0.5">7. Tensione Lewis (σL):</span>
+            <span class="text-slate-500 block mb-0.5" data-i18n="gearStep7">7. Tensione Lewis (σL):</span>
             <span class="text-emerald-400 font-bold" id="bkSigmaL">387 MPa</span>
           </div>
           <div class="p-3 bg-slate-900/70 rounded-lg border border-slate-800">
-            <span class="text-slate-500 block mb-0.5">8. Modello Materiale:</span>
+            <span class="text-slate-500 block mb-0.5" data-i18n="gearStep8">8. Modello Materiale:</span>
             <span class="text-purple-400 font-bold">Kε = 35 GPa</span>
           </div>
         </div>
 
-        <!-- Helical Specific Parameters (Hidden for Spur) -->
         <div id="helicalStepDetails" class="hidden mt-3 pt-3 border-t border-slate-800 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
           <div class="p-2.5 bg-slate-900/90 rounded border border-slate-800">
-            <span class="text-slate-500 block">Angolo Elica (α):</span>
+            <span class="text-slate-500 block" data-i18n="gearHelixAngle">Angolo Elica (α):</span>
             <span class="text-amber-400 font-bold" id="bkAlpha">18.5°</span>
           </div>
           <div class="p-2.5 bg-slate-900/90 rounded border border-slate-800">
-            <span class="text-slate-500 block">Fattore Φ (Hertz):</span>
+            <span class="text-slate-500 block" data-i18n="gearPhiFactor">Fattore Φ (Hertz):</span>
             <span class="text-white font-bold" id="bkPhiCorr">0.738</span>
           </div>
           <div class="p-2.5 bg-slate-900/90 rounded border border-slate-800">
-            <span class="text-slate-500 block">Fattore Ψ (Lewis):</span>
+            <span class="text-slate-500 block" data-i18n="gearPsiFactor">Fattore Ψ (Lewis):</span>
             <span class="text-white font-bold" id="bkPsiCorr">1.030</span>
           </div>
           <div class="p-2.5 bg-slate-900/90 rounded border border-slate-800">
-            <span class="text-slate-500 block">Curvatura ΓT:</span>
+            <span class="text-slate-500 block" data-i18n="gearGammaT">Curvatura ΓT:</span>
             <span class="text-sky-400 font-bold" id="bkGammaT">1.35</span>
           </div>
         </div>
       </div>
 
-      <!-- 2D SVG Scheme -->
       <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700/50 mb-6">
         <div class="flex justify-between items-center mb-3">
-          <span class="text-xs font-semibold uppercase tracking-wider text-slate-300">Schema Primitivo delle Ruote Dentate</span>
-          <span class="text-[11px] text-slate-400">Polo d'ingranamento e circonferenze primitive</span>
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-300" data-i18n="gearChartTitle">Schema Primitivo delle Ruote Dentate</span>
+          <span class="text-[11px] text-slate-400" data-i18n="gearChartSub">Polo d'ingranamento e circonferenze primitive</span>
         </div>
         <div class="w-full bg-slate-950/80 rounded-lg p-2 border border-slate-800 flex justify-center min-h-[224px]">
           <svg id="gearChart" viewBox="0 0 600 240" class="w-full h-56"></svg>
@@ -621,7 +664,7 @@
         copiedAlert: "Specifications copied to clipboard for CAD drawing!",
         closestMatch: "Suggested ISO fit:",
         meanPlay: "Mean play:",
-        // Module 2 Belts
+        // Belts
         beltModeGeomLabel: "Geometry & Center Only (CAD)",
         beltModePowerLabel: "Full Power & Width Sizing",
         ratioMethodLabel: "Pulley definition:",
@@ -643,15 +686,46 @@
         breakdownTitle: "Catalog Design Factors & Sizing Breakdown",
         beltChartTitle: "Kinematic Transmission Scheme",
         beltChartSub: "Proportional 2D pitch line view",
-        beltNotesTitle: "Timing Belt Design & Mounting Notes",
-        copyBeltNoteBtn: "Copy Drive Specs",
-        beltRuleTitle1: "Tooth Count & Center Distance:",
-        beltRuleDesc1: "Tooth count (zb) is rounded to the nearest integer. Check manufacturer catalogs for off-the-shelf closed loops, and provide slot adjustments (-1.5% to +2.5%) on motor mounts to accommodate standard lengths.",
-        beltRuleTitle2: "Teeth In Mesh Criterion:",
-        beltRuleDesc2: "Industry handbooks require at least 6 teeth fully engaged on the small pulley (z_mesh ≥ 6) to deliver nominal rated torque without tooth shear.",
-        meshOptimal: "Optimal (≥ 6 teeth)",
-        meshWarning: "Warning (< 6 teeth, derate torque!)",
-        centerTooSmall: "Center distance too small! Pulleys interfere.",
+        // Gears Localization
+        gearToothTypeLabel: "Tooth Profile",
+        optSpur: "Spur Gears",
+        optHelical: "Helical Gears",
+        gearLoadModeLabel: "Load Input Mode:",
+        optLoadPower: "Power P [kW] & Speed n₁",
+        optLoadTorque: "Direct Torque M₁ [Nm]",
+        gearGeomModeLabel: "Gear Definition:",
+        optGeomTau: "Target Ratio τ",
+        optGeomTeeth: "Teeth z₁, z₂",
+        optGeomCenter: "Target Center Dist. i",
+        gearPowerLabel: "Motor Power (W)",
+        gearTorqueLabel: "Driver Torque (M₁)",
+        gearSpeedLabel: "Driver Speed (n₁)",
+        gearTargetTauLabel: "Target Ratio (τ)",
+        gearZ2Label: "Driven Teeth (z₂)",
+        gearCenterLabel: "Target Center Dist. (i)",
+        gearZ1Label: "Pinion Teeth (z₁)",
+        gearXr1Label: "Profile Shift (xr₁)",
+        gearKeLabel: "Elastic Constant (Kε)",
+        gearSigmaHLabel: "Hertz Limit (σH lim)",
+        gearModuleCard: "Standard Module (m)",
+        gearPhiCard: "Face Width Factor (ϕ)",
+        gearLewisCard: "Lewis Bending Check",
+        gearCenterCard: "Exact Center Dist. (i)",
+        gearBreakdownTitle: "Analytical Steps & Design Parameters",
+        gearChartTitle: "Pitch Line Gear Meshing Scheme",
+        gearChartSub: "Pitch circles & pitch point contact C",
+        gearStep1: "1. Min Module (Hertz ϕ=1):",
+        gearStep2: "2. Chosen UNI Module:",
+        gearStep3: "3. Limit ϕ (at σH lim):",
+        gearStep4: "4. Face Width L:",
+        gearStep5: "5. Tangential Force Fc:",
+        gearStep6: "6. Lewis Factor (y):",
+        gearStep7: "7. Lewis Stress (σL):",
+        gearStep8: "8. Material Model:",
+        gearHelixAngle: "Helix Angle (α):",
+        gearPhiFactor: "Factor Φ (Hertz):",
+        gearPsiFactor: "Factor Ψ (Lewis):",
+        gearGammaT: "Curvature ΓT:",
         fits: {
           'H7/f7': { label: "Wide clearance / Loose running (H7/f7)", shaftProc: "Finish Turning", holeProc: "Standard Reaming / Boring" },
           'H7/g6': { label: "Precision running / Journal bearing (H7/g6)", shaftProc: "Precision Turning / Grinding", holeProc: "Accurate Reaming" },
@@ -723,7 +797,7 @@
         copiedAlert: "Specifiche copiate negli appunti per la tavola CAD!",
         closestMatch: "Accoppiamento ISO ottimale:",
         meanPlay: "Valore medio:",
-        // Module 2 Belts
+        // Belts
         beltModeGeomLabel: "Solo Geometria & Interasse (CAD)",
         beltModePowerLabel: "Dimensionamento Potenza & Larghezza",
         ratioMethodLabel: "Definizione pulegge:",
@@ -745,15 +819,46 @@
         breakdownTitle: "Fattori di Calcolo da Catalogo & Dettaglio Dimensionamento",
         beltChartTitle: "Schema Cinematico della Trasmissione",
         beltChartSub: "Vista 2D in scala delle primitive",
-        beltNotesTitle: "Note di Montaggio e Tolleramento Cinghie",
-        copyBeltNoteBtn: "Copia Dati Trasmissione",
-        beltRuleTitle1: "Scelta Denti & Regolazione Interasse:",
-        beltRuleDesc1: "Il numero di denti (zb) è arrotondato all'intero più vicino. Verificare a catalogo la disponibilità a magazzino della cinghia chiusa e prevedere asole di registro (-1.5% montaggio, +2.5% tensionamento) sui supporti motore.",
-        beltRuleTitle2: "Criterio Minimo Denti in Presa:",
-        beltRuleDesc2: "I manuali industriali impongono almeno 6 denti in presa sulla puleggia piccola (z_mesh ≥ 6) per evitare lo scalzamento o la rottura a taglio del dente.",
-        meshOptimal: "Ottimale (≥ 6 denti)",
-        meshWarning: "Attenzione (< 6 denti, declassare coppia!)",
-        centerTooSmall: "Interasse insufficiente! Le pulegge si compenetrano.",
+        // Gears Localization
+        gearToothTypeLabel: "Tipo Dentatura",
+        optSpur: "Denti Diritti",
+        optHelical: "Denti Elicoidali",
+        gearLoadModeLabel: "Metodo Definizione Carico:",
+        optLoadPower: "Potenza P [kW] & Giri n₁",
+        optLoadTorque: "Coppia Diretta M₁ [Nm]",
+        gearGeomModeLabel: "Definizione Ingranaggio:",
+        optGeomTau: "Target τ",
+        optGeomTeeth: "Denti z₁, z₂",
+        optGeomCenter: "Interasse Target i",
+        gearPowerLabel: "Potenza Motore (W)",
+        gearTorqueLabel: "Coppia Motrice (M₁)",
+        gearSpeedLabel: "Velocità Pignone (n₁)",
+        gearTargetTauLabel: "Rapporto Target (τ)",
+        gearZ2Label: "Denti Ruota 2 (z₂)",
+        gearCenterLabel: "Interasse Target (i)",
+        gearZ1Label: "Denti Pignone (z₁)",
+        gearXr1Label: "Spostamento (xr₁)",
+        gearKeLabel: "Costante Elastica (Kε)",
+        gearSigmaHLabel: "Limite Hertz (σH lim)",
+        gearModuleCard: "Modulo Normato UNI",
+        gearPhiCard: "Fattore Forma Fascia (ϕ)",
+        gearLewisCard: "Verifica Flessione Lewis",
+        gearCenterCard: "Interasse Esatto (i)",
+        gearBreakdownTitle: "Dettaglio Passaggi & Parametri di Calcolo",
+        gearChartTitle: "Schema Primitivo delle Ruote Dentate",
+        gearChartSub: "Polo d'ingranamento e circonferenze primitive",
+        gearStep1: "1. Modulo Min (Hertz ϕ=1):",
+        gearStep2: "2. Modulo Scelto UNI:",
+        gearStep3: "3. ϕ Al Limite (σH lim):",
+        gearStep4: "4. Fascia Dentata L:",
+        gearStep5: "5. Forza Tangenziale Fc:",
+        gearStep6: "6. Fattore Lewis (y):",
+        gearStep7: "7. Tensione Lewis (σL):",
+        gearStep8: "8. Modello Materiale:",
+        gearHelixAngle: "Angolo Elica (α):",
+        gearPhiFactor: "Fattore Φ (Hertz):",
+        gearPsiFactor: "Fattore Ψ (Lewis):",
+        gearGammaT: "Curvatura ΓT:",
         fits: {
           'H7/f7': { label: "Scorrevole con ampio gioco (H7/f7)", shaftProc: "Tornitura finita", holeProc: "Alesatura o Tornitura interna" },
           'H7/g6': { label: "Scorrevole di precisione / Bronzina (H7/g6)", shaftProc: "Tornitura di precisione / Rettifica", holeProc: "Alesatura accurata" },
@@ -870,15 +975,18 @@
       const bGeom = document.getElementById('beltModeGeom');
       const bPower = document.getElementById('beltModePower');
       const pInputs = document.getElementById('beltPowerInputsCard');
+      const pBreakdown = document.getElementById('powerBreakdownCard');
 
       if (mode === 'geom') {
         bGeom.className = "px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600/20 text-blue-400 border border-blue-500/30 transition-all";
         bPower.className = "px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white border border-transparent transition-all";
         pInputs.classList.add('hidden');
+        if (pBreakdown) pBreakdown.classList.add('hidden');
       } else {
         bPower.className = "px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600/20 text-blue-400 border border-blue-500/30 transition-all";
         bGeom.className = "px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white border border-transparent transition-all";
         pInputs.classList.remove('hidden');
+        if (pBreakdown) pBreakdown.classList.remove('hidden');
       }
       if (typeof calculateBelts === 'function') calculateBelts();
     }
@@ -946,6 +1054,12 @@
         const key = el.getAttribute('data-i18n');
         if (t[key]) el.innerText = t[key];
       });
+
+      // Update Gear select options
+      const optSpur = document.getElementById('optGearSpur');
+      const optHelical = document.getElementById('optGearHelical');
+      if (optSpur && t.optSpur) optSpur.innerText = t.optSpur;
+      if (optHelical && t.optHelical) optHelical.innerText = t.optHelical;
 
       if (lang === 'en') {
         document.getElementById('langEN').className = "px-2.5 py-1 rounded bg-blue-600 text-white transition-colors";
@@ -1041,12 +1155,28 @@
       });
     });
 
-    // Gears Inputs
+    // Gears Inputs Listeners
     ['gearToothType', 'gearPower', 'gearTorqueInput', 'gearSpeed', 'gearTargetTau', 'gearZ1', 'gearZ2', 'gearTargetCenter', 'gearXr1', 'gearKeInput', 'gearSigmaH'].forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.addEventListener('input', () => { if (typeof calculateGears === 'function') calculateGears(); });
-      if (el) el.addEventListener('change', () => { if (typeof calculateGears === 'function') calculateGears(); });
+      if (el) {
+        el.addEventListener('input', () => { if (typeof calculateGears === 'function') calculateGears(); });
+        el.addEventListener('change', () => { if (typeof calculateGears === 'function') calculateGears(); });
+      }
     });
+
+    // Copy note buttons with safe guards
+    const copyFitBtn = document.getElementById('copyFitBtn');
+    if (copyFitBtn) {
+      copyFitBtn.addEventListener('click', () => {
+        const d = document.getElementById('nominalDiameter')?.value || '25';
+        const u = document.getElementById('fitUnitLabel')?.innerText || 'mm';
+        const fit = document.getElementById('fitType')?.value || 'H7/h6';
+        const t = translations[currentLang];
+        const text = `Ø${d} ${u} ${fit} | ${t.holeCardTitle}: ${document.getElementById('holeDisp')?.innerText} | ${t.shaftCardTitle}: ${document.getElementById('shaftDisp')?.innerText} | ${document.getElementById('fitResult')?.innerText}`;
+        navigator.clipboard.writeText(text);
+        alert(t.copiedAlert);
+      });
+    }
 
     document.getElementById('unitMetric').addEventListener('click', () => setUnit('metric'));
     document.getElementById('unitImperial').addEventListener('click', () => setUnit('imperial'));
@@ -1061,11 +1191,11 @@
 
   <script>
     // Boot sequence
-    if (typeof populateSelect === 'function') populateSelect();
-    populateServiceFactors();
-    if (typeof calculateFits === 'function') calculateFits();
-    if (typeof calculateBelts === 'function') calculateBelts();
-    if (typeof calculateGears === 'function') calculateGears();
+    try { if (typeof populateSelect === 'function') populateSelect(); } catch(e) { console.error(e); }
+    try { populateServiceFactors(); } catch(e) { console.error(e); }
+    try { if (typeof calculateFits === 'function') calculateFits(); } catch(e) { console.error(e); }
+    try { if (typeof calculateBelts === 'function') calculateBelts(); } catch(e) { console.error(e); }
+    try { if (typeof calculateGears === 'function') calculateGears(); } catch(e) { console.error(e); }
   </script>
 </body>
 </html>
