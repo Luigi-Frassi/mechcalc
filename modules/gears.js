@@ -1,6 +1,8 @@
 // ==========================================
 // MODULE 3: CYLINDRICAL GEARS (HERTZ & LEWIS)
-// Progetto Diretto & Verifica Inversa (W_max)
+// Conforme agli appunti di Costruzione di Macchine
+// Convenzione: tau = z2 / z1 >= 1.0 (Rapporto di riduzione)
+// Fattore di curvatura Hertz: (tau + 1) / tau = 1 + z1 / z2
 // ==========================================
 
 const STANDARD_MODULES = [
@@ -120,21 +122,25 @@ function calculateGears() {
   // ========================================================
   if (gearsOpMode === 'wmax') {
     const toothType = document.getElementById('gwToothType')?.value || 'spur';
-    const m_input = parseFloat(document.getElementById('gwModule')?.value) || 2.0;
-    const L_mm = parseFloat(document.getElementById('gwFaceWidth')?.value) || 30.0;
-    const z1 = parseInt(document.getElementById('gwZ1')?.value) || 20;
-    const z2 = parseInt(document.getElementById('gwZ2')?.value) || 40;
-    const n1 = parseFloat(document.getElementById('gwSpeed')?.value) || 1450.0;
+    const m_input = parseFloat(document.getElementById('gwModule')?.value) || 5.0;
+    const L_mm = parseFloat(document.getElementById('gwFaceWidth')?.value) || 60.0;
+    const z1 = parseInt(document.getElementById('gwZ1')?.value) || 23;
+    const z2 = parseInt(document.getElementById('gwZ2')?.value) || 39;
+    const n1 = parseFloat(document.getElementById('gwSpeed')?.value) || 650.0;
     const alphaDeg = (toothType === 'helical') ? (parseFloat(document.getElementById('gwAlpha')?.value) || 15.0) : 0.0;
     const Ke_GPa = parseFloat(document.getElementById('gwKe')?.value) || 35.0;
     const Ke_N_mm2 = Ke_GPa * 1000.0;
-    const sigmaH_lim = parseFloat(document.getElementById('gwSigmaH')?.value) || 550.0;
+    const sigmaH_lim = parseFloat(document.getElementById('gwSigmaH')?.value) || 721.52;
     const sigmaL_lim = parseFloat(document.getElementById('gwSigmaL')?.value) || 400.0;
     const xr1 = parseFloat(document.getElementById('gwXr1')?.value) || 0.0;
 
     const omega1 = (2 * Math.PI * n1) / 60.0;
     const theta = (20.0 * Math.PI) / 180.0;
-    const tauEff = z2 / z1;
+    
+    // tau definito come z2 / z1 >= 1.0
+    const tau = z2 / z1;
+    // Curvatura relativa: (tau + 1) / tau = (1 + z1 / z2)
+    const curvFactor = (tau + 1.0) / tau;
 
     let mt = m_input;
     let mn = m_input;
@@ -154,19 +160,18 @@ function calculateGears() {
       factors = getHelicalFactors(alphaDeg, z1, z2);
     }
 
-    // 1. Limite usura Hertz (N*mm/s -> kW)
-    // sigmaH^2 = [8 * Ke * W_N_mm_s * (1+tau)] / [L * omega1 * sin(2*theta) * mt^2 * z1^2] * (Phi / Gamma_T)
+    // 1. Limite usura Hertz (W in N*mm/s -> kW)
+    // sigmaH^2 = [8 * Ke * W_N_mm_s * ((tau+1)/tau)] / [L * omega1 * sin(2*theta) * mt^2 * z1^2] * (Phi / Gamma_T)
     const factorHelHertz = (toothType === 'helical') ? (factors.Gamma_T / factors.Phi) : 1.0;
-    const W_N_mm_s_H = (Math.pow(sigmaH_lim, 2) * L_mm * omega1 * Math.sin(2 * theta) * Math.pow(mt, 2) * Math.pow(z1, 2) * factorHelHertz) / (8 * Ke_N_mm2 * (1 + tauEff));
+    const W_N_mm_s_H = (Math.pow(sigmaH_lim, 2) * L_mm * omega1 * Math.sin(2 * theta) * Math.pow(mt, 2) * Math.pow(z1, 2) * factorHelHertz) / (8 * Ke_N_mm2 * curvFactor);
     const P_kW_H = W_N_mm_s_H / 1e6;
 
-    // 2. Limite flessione Lewis (N*mm/s -> kW)
-    // sigmaL = [2 * W_N_mm_s] / [omega1 * L * mt * mn * z1 * y] * (Psi / Gamma_T)
+    // 2. Limite flessione Lewis (W in N*mm/s -> kW)
     const factorHelLewis = (toothType === 'helical') ? (factors.Gamma_T / factors.Psi) : 1.0;
     const W_N_mm_s_L = (sigmaL_lim * omega1 * L_mm * mt * mn * z1 * yLewis * factorHelLewis) / 2.0;
     const P_kW_L = W_N_mm_s_L / 1e6;
 
-    // 3. Risultato ammissibile
+    // 3. Potenza ammissibile di trasmissione
     const P_kW_max = Math.min(P_kW_H, P_kW_L);
     const W_watt_max = P_kW_max * 1000.0;
     const M1_max = W_watt_max / Math.max(omega1, 0.001);
@@ -176,7 +181,7 @@ function calculateGears() {
     const a_center = mt * ((z1 + z2) / 2.0 + xr1);
     const Fc_max = (2 * M1_max * 1000.0) / dp1;
 
-    // Interfaccia Risultati W_max
+    // Aggiornamento Interfaccia W_max
     const pDisp = document.getElementById('gwPmaxDisp');
     if (pDisp) pDisp.innerText = `${P_kW_max.toFixed(2)} kW`;
 
@@ -200,7 +205,6 @@ function calculateGears() {
     const lewisLimitDisp = document.getElementById('gwLewisCapDisp');
     if (lewisLimitDisp) lewisLimitDisp.innerText = `${P_kW_L.toFixed(2)} kW`;
 
-    // Tabella analitica step
     const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
     setTxt('gwBkDp1', `${dp1.toFixed(1)} mm`);
     setTxt('gwBkDp2', `${dp2.toFixed(1)} mm`);
@@ -249,29 +253,32 @@ function calculateGears() {
 
   let z1 = parseInt(document.getElementById('gearZ1')?.value) || 20;
   let z2 = 40;
-  let tauEff = 2.0;
+  let tau = 2.0;
 
   if (geomMode === 'tau') {
     const targetTau = parseFloat(document.getElementById('gearTargetTau')?.value) || 2.0;
     z2 = Math.max(10, Math.round(z1 * targetTau));
-    tauEff = z2 / z1;
-    const errPct = ((tauEff - targetTau) / targetTau) * 100.0;
+    tau = z2 / z1;
+    const errPct = ((tau - targetTau) / targetTau) * 100.0;
     const signErr = errPct >= 0 ? '+' : '';
     const geomEl = document.getElementById('gearGeomFeedback');
-    if (geomEl) geomEl.innerText = `z₂ = ${z2} (τ_eff = ${tauEff.toFixed(2)}, err: ${signErr}${errPct.toFixed(1)}%)`;
+    if (geomEl) geomEl.innerText = `z₂ = ${z2} (τ = z₂/z₁ = ${tau.toFixed(2)}, err: ${signErr}${errPct.toFixed(1)}%)`;
   } else if (geomMode === 'teeth') {
     z2 = parseInt(document.getElementById('gearZ2')?.value) || 40;
-    tauEff = z2 / z1;
+    tau = z2 / z1;
     const geomEl = document.getElementById('gearGeomFeedback');
-    if (geomEl) geomEl.innerText = `τ_eff = ${tauEff.toFixed(2)} (1 : ${tauEff.toFixed(2)})`;
+    if (geomEl) geomEl.innerText = `τ = z₂/z₁ = ${tau.toFixed(2)} (rapporto 1 : ${tau.toFixed(2)})`;
   } else {
     const targetCenter = parseFloat(document.getElementById('gearTargetCenter')?.value) || 100.0;
     const targetTau = parseFloat(document.getElementById('gearTargetTau')?.value) || 2.0;
     z2 = Math.max(10, Math.round(z1 * targetTau));
-    tauEff = z2 / z1;
+    tau = z2 / z1;
     const geomEl = document.getElementById('gearGeomFeedback');
-    if (geomEl) geomEl.innerText = `z₂ = ${z2} | i_target = ${targetCenter.toFixed(1)} mm`;
+    if (geomEl) geomEl.innerText = `z₂ = ${z2} (τ = ${tau.toFixed(2)}) | i_target = ${targetCenter.toFixed(1)} mm`;
   }
+
+  // Termine di curvatura esatto: (tau + 1) / tau = (1 + z1 / z2)
+  const curvFactor = (tau + 1.0) / tau;
 
   const theta = (20.0 * Math.PI) / 180.0;
   const Ke_GPa = parseFloat(document.getElementById('gearKeInput')?.value) || 35.0;
@@ -296,7 +303,8 @@ function calculateGears() {
     if (helicalDetails) helicalDetails.classList.add('hidden');
     z_min = (2 * (1 - xr1)) / Math.pow(Math.sin(theta), 2);
 
-    const numHertz = 8 * Ke_N_mm2 * W_N_mm_s * (1 + tauEff);
+    // Hertz con phi = 1 per determinare m_min
+    const numHertz = 8 * Ke_N_mm2 * W_N_mm_s * curvFactor;
     const denHertz = 1.0 * omega1 * Math.sin(2 * theta) * Math.pow(z1, 3) * Math.pow(sigmaH_lim, 2);
     m_min = Math.cbrt(numHertz / denHertz);
 
@@ -305,11 +313,12 @@ function calculateGears() {
     mn = m_norm;
     mt = m_norm;
 
-    phi = (8 * Ke_N_mm2 * W_N_mm_s * (1 + tauEff)) / (omega1 * Math.sin(2 * theta) * Math.pow(z1, 3) * Math.pow(m_norm, 3) * Math.pow(sigmaH_lim, 2));
+    // Ricalcolo di phi lavorando al limite sigmaH_lim con il modulo unificato
+    phi = (8 * Ke_N_mm2 * W_N_mm_s * curvFactor) / (omega1 * Math.sin(2 * theta) * Math.pow(z1, 3) * Math.pow(m_norm, 3) * Math.pow(sigmaH_lim, 2));
   } else {
     if (helicalDetails) helicalDetails.classList.remove('hidden');
 
-    const numHertzHel = 8 * Ke_N_mm2 * W_N_mm_s * (1 + tauEff) * 0.6;
+    const numHertzHel = 8 * Ke_N_mm2 * W_N_mm_s * curvFactor * 0.6;
     const denHertzHel = 1.0 * omega1 * Math.sin(2 * theta) * Math.pow(z1, 3) * Math.pow(sigmaH_lim, 2);
     const mt_min = Math.cbrt(numHertzHel / denHertzHel);
     m_min = mt_min;
@@ -330,7 +339,7 @@ function calculateGears() {
     z_min = (2 * (1 - xr1) / Math.pow(sinTh, 2)) * cosA * (1 - Math.pow(sinA, 2) * Math.pow(cosTh, 2));
 
     factors = getHelicalFactors(alphaDeg, z1, z2);
-    phi = (8 * Ke_N_mm2 * W_N_mm_s * (1 + tauEff) / (omega1 * Math.sin(2 * theta) * Math.pow(z1, 3) * Math.pow(mt, 3) * Math.pow(sigmaH_lim, 2))) * (factors.Phi / factors.Gamma_T);
+    phi = (8 * Ke_N_mm2 * W_N_mm_s * curvFactor / (omega1 * Math.sin(2 * theta) * Math.pow(z1, 3) * Math.pow(mt, 3) * Math.pow(sigmaH_lim, 2))) * (factors.Phi / factors.Gamma_T);
   }
 
   const dp1 = mt * z1;
@@ -352,7 +361,7 @@ function calculateGears() {
     sigma_L = (Fc / (L_face * mn * yLewis)) * (factors.Psi / factors.Gamma_T);
   }
 
-  // Update Summary UI
+  // Aggiornamento Interfaccia Sintesi
   const modDisp = document.getElementById('gearModuleDisp');
   if (modDisp) modDisp.innerText = `${gearType === 'spur' ? 'm' : 'mn'} = ${m_norm.toFixed(2)} mm`;
 
@@ -404,7 +413,7 @@ function calculateGears() {
   const centerSub = document.getElementById('gearCenterSub');
   if (centerSub) centerSub.innerText = `dp₁: ${dp1.toFixed(1)} | dp₂: ${dp2.toFixed(1)} mm`;
 
-  // Update Breakdown Steps
+  // Breakdown Analitico
   const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
   setTxt('bkMmin', `${m_min.toFixed(2)} mm`);
   setTxt('bkMnorm', `${m_norm.toFixed(2)} mm`);
