@@ -3,7 +3,7 @@
 // Conforme al formulario di Costruzione di Macchine
 // Convenzione formale: tau = z1 / z2 < 1.0 (Rapporto di trasmissione)
 // Curvatura Hertz: (1 + tau) = (1 + z1 / z2)
-// Ottimizzazione combinazioni (z1, z2) con modulo fisso e tolleranza tau
+// Supporto vincoli modulari: Auto-denti, Modulo Fisso, Fascia L Fissa
 // ==========================================
 
 const STANDARD_MODULES = [
@@ -40,7 +40,7 @@ const STANDARD_MODULES = [
 ];
 
 let selectedAlternativeModule = null;
-let fixedOptCombos = [];
+let autoOptCombos = [];
 let selectedComboIdx = 0;
 
 function getLewisFactor(z, xr = 0) {
@@ -225,6 +225,11 @@ function calculateGears() {
   const loadMode = loadModeEl ? loadModeEl.value : 'power';
   const geomMode = geomModeEl ? geomModeEl.value : 'tau';
 
+  // Toggle di vincolo opzionali
+  const isAutoZ = document.getElementById('toggleAutoZ')?.checked || false;
+  const isLockM = document.getElementById('toggleLockM')?.checked || false;
+  const isLockL = document.getElementById('toggleLockL')?.checked || false;
+
   let W_watt = 5500.0;
   let n1_rpm = 1450.0;
   let omega1 = (2 * Math.PI * n1_rpm) / 60.0;
@@ -263,43 +268,40 @@ function calculateGears() {
 
   const optTableCard = document.getElementById('gearFixedOptTableCard');
 
-  // ========================================================
-  // SUB-MODE: MODULO FISSO CON TOLLERANZA TAU
-  // ========================================================
-  if (geomMode === 'fixed') {
+  // Gestione modalità Auto-Denti con Tolleranza % su tau
+  if (geomMode === 'tau' && isAutoZ) {
     if (optTableCard) optTableCard.classList.remove('hidden');
 
     let targetTau = parseFloat(document.getElementById('gearTargetTau')?.value) || 0.5;
     if (targetTau > 1.0) targetTau = 1.0 / targetTau;
-    const tolPct = parseFloat(document.getElementById('gearFixedTol')?.value) || 3.0;
-    const fixedM = parseFloat(document.getElementById('gearFixedModule')?.value) || 2.5;
+    const tolPct = parseFloat(document.getElementById('gearTauTolVal')?.value) || 3.0;
 
-    // Ricerca combinazioni ottime a partire da z_min
-    fixedOptCombos = [];
-    for (let curZ1 = z_min; curZ1 <= 60; curZ1++) {
+    // Se il modulo è bloccato usa quel modulo, altrimenti prova una stima da 2.5 mm
+    const candidateM = isLockM ? (parseFloat(document.getElementById('gearLockedMVal')?.value) || 2.5) : 2.5;
+
+    autoOptCombos = [];
+    for (let curZ1 = z_min; curZ1 <= 55; curZ1++) {
       const idealZ2 = Math.round(curZ1 / targetTau);
       if (idealZ2 < curZ1) continue;
 
-      // Controlla il vicino idealZ2 e idealZ2 ± 1
       for (let curZ2 of [idealZ2 - 1, idealZ2, idealZ2 + 1]) {
         if (curZ2 <= curZ1) continue;
         const curTau = curZ1 / curZ2;
         const err = Math.abs((curTau - targetTau) / targetTau) * 100.0;
         if (err <= tolPct) {
-          // Calcola phi al limite di Hertz con fixedM
+          // Calcola phi o modulo necessario
           const phiVal = (8 * Ke_N_mm2 * W_N_mm_s * (1.0 + curTau)) / 
-            (omega1 * Math.sin(2 * theta) * Math.pow(curZ1, 3) * Math.pow(fixedM, 3) * Math.pow(sigmaH_lim, 2));
+            (omega1 * Math.sin(2 * theta) * Math.pow(curZ1, 3) * Math.pow(candidateM, 3) * Math.pow(sigmaH_lim, 2));
 
-          const dp1_c = fixedM * curZ1;
+          const dp1_c = candidateM * curZ1;
           const L_c = phiVal * dp1_c;
           const Fc_c = (2 * M1_Nm * 1000.0) / dp1_c;
           const y_c = getLewisFactor(curZ1, xr1);
-          const sigL_c = Fc_c / (L_c * fixedM * y_c);
+          const sigL_c = Fc_c / (L_c * candidateM * y_c);
 
-          // Punteggio ranking: penalizza scostamento da phi=0.75 ed errore su tau
           const score = Math.abs(phiVal - 0.75) * 2.0 + (err / tolPct);
 
-          fixedOptCombos.push({
+          autoOptCombos.push({
             z1: curZ1,
             z2: curZ2,
             tau: curTau,
@@ -313,31 +315,28 @@ function calculateGears() {
       }
     }
 
-    // Ordina per ranking qualitativo
-    fixedOptCombos.sort((a, b) => a.score - b.score);
+    autoOptCombos.sort((a, b) => a.score - b.score);
 
-    // Rimuovi duplicati (stessa z1 e z2)
     const uniqueCombos = [];
     const seen = new Set();
-    for (const c of fixedOptCombos) {
+    for (const c of autoOptCombos) {
       const key = `${c.z1}_${c.z2}`;
       if (!seen.has(key)) {
         seen.add(key);
         uniqueCombos.push(c);
       }
     }
-    fixedOptCombos = uniqueCombos.slice(0, 5); // Tieni le prime 5 migliori
+    autoOptCombos = uniqueCombos.slice(0, 5);
 
-    if (selectedComboIdx >= fixedOptCombos.length) selectedComboIdx = 0;
+    if (selectedComboIdx >= autoOptCombos.length) selectedComboIdx = 0;
 
-    // Popola la tabella interattiva
     const tbody = document.getElementById('fixedOptTableBody');
     if (tbody) {
       tbody.innerHTML = '';
-      if (fixedOptCombos.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-slate-500">${isIt ? 'Nessuna combinazione trovata con la tolleranza specificata. Prova ad allargarla.' : 'No combinations found within tolerance. Try increasing tolerance.'}</td></tr>`;
+      if (autoOptCombos.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-slate-500">${isIt ? 'Nessuna combinazione entro la tolleranza % specificata.' : 'No combinations found within specified ratio tolerance.'}</td></tr>`;
       } else {
-        fixedOptCombos.forEach((c, idx) => {
+        autoOptCombos.forEach((c, idx) => {
           const isSelected = (idx === selectedComboIdx);
           const isOptimalPhi = (c.phi >= 0.50 && c.phi <= 1.00);
           const phiBadgeClass = isOptimalPhi ? 'text-emerald-400 font-bold' : 'text-amber-400 font-bold';
@@ -368,14 +367,12 @@ function calculateGears() {
       }
     }
 
-    // Se esiste una combinazione scelta, adottala
-    if (fixedOptCombos.length > 0) {
-      const activeCombo = fixedOptCombos[selectedComboIdx];
+    if (autoOptCombos.length > 0) {
+      const activeCombo = autoOptCombos[selectedComboIdx];
       z1 = activeCombo.z1;
       z2 = activeCombo.z2;
       tau = activeCombo.tau;
     }
-
   } else {
     if (optTableCard) optTableCard.classList.add('hidden');
 
@@ -420,9 +417,9 @@ function calculateGears() {
     const denHertz = 1.0 * omega1 * Math.sin(2 * theta) * Math.pow(z1, 3) * Math.pow(sigmaH_lim, 2);
     m_min = Math.cbrt(numHertz / denHertz);
 
-    if (geomMode === 'fixed') {
-      const fixedM = parseFloat(document.getElementById('gearFixedModule')?.value) || 2.5;
-      strictModuleObj = STANDARD_MODULES.find(item => item.m === fixedM) || { m: fixedM, cat: 'green', serie: 1 };
+    if (isLockM) {
+      const lockedVal = parseFloat(document.getElementById('gearLockedMVal')?.value) || 2.5;
+      strictModuleObj = STANDARD_MODULES.find(item => item.m === lockedVal) || { m: lockedVal, cat: 'green', serie: 1 };
     } else {
       strictModuleObj = STANDARD_MODULES.find(item => item.m >= m_min) || STANDARD_MODULES[STANDARD_MODULES.length - 1];
       if (strictModuleObj.cat === 'red') {
@@ -437,9 +434,9 @@ function calculateGears() {
     const mt_min = Math.cbrt(numHertzHel / denHertzHel);
     m_min = mt_min;
 
-    if (geomMode === 'fixed') {
-      const fixedM = parseFloat(document.getElementById('gearFixedModule')?.value) || 2.5;
-      strictModuleObj = STANDARD_MODULES.find(item => item.m === fixedM) || { m: fixedM, cat: 'green', serie: 1 };
+    if (isLockM) {
+      const lockedVal = parseFloat(document.getElementById('gearLockedMVal')?.value) || 2.5;
+      strictModuleObj = STANDARD_MODULES.find(item => item.m === lockedVal) || { m: lockedVal, cat: 'green', serie: 1 };
     } else {
       const candidates = STANDARD_MODULES.filter(item => item.m <= mt_min * 1.01 && item.m >= mt_min * 0.70);
       strictModuleObj = candidates.length > 0 ? candidates[candidates.length - 1] : (STANDARD_MODULES.find(item => item.m >= mt_min) || STANDARD_MODULES[4]);
@@ -461,25 +458,32 @@ function calculateGears() {
   }
 
   let activeModuleObj = strictModuleObj;
-  if (selectedAlternativeModule && (selectedAlternativeModule === 'recommended') && recommendedModuleObj && geomMode !== 'fixed') {
+  if (selectedAlternativeModule && (selectedAlternativeModule === 'recommended') && recommendedModuleObj && !isLockM) {
     activeModuleObj = recommendedModuleObj;
   }
 
   let mn = activeModuleObj.m;
   let mt = (gearType === 'spur') ? mn : (mn / Math.cos((alphaDeg * Math.PI) / 180.0));
   let m_norm = mn;
-
-  let phi = 1.0;
-  if (gearType === 'spur') {
-    phi = (8 * Ke_N_mm2 * W_N_mm_s * (1.0 + tau)) / (omega1 * Math.sin(2 * theta) * Math.pow(z1, 3) * Math.pow(m_norm, 3) * Math.pow(sigmaH_lim, 2));
-  } else {
-    phi = (8 * Ke_N_mm2 * W_N_mm_s * (1.0 + tau) / (omega1 * Math.sin(2 * theta) * Math.pow(z1, 3) * Math.pow(mt, 3) * Math.pow(sigmaH_lim, 2))) * (factors.Phi / factors.Gamma_T);
-  }
-
   const dp1 = mt * z1;
   const dp2 = mt * z2;
   const a_center = mt * ((z1 + z2) / 2.0 + xr1);
-  const L_face = phi * dp1;
+
+  // Calcolo di phi e L (gestione vincolo Fascia Fissa L)
+  let phi = 1.0;
+  let L_face = 30.0;
+
+  if (isLockL) {
+    L_face = parseFloat(document.getElementById('gearLockedLVal')?.value) || 30.0;
+    phi = L_face / dp1;
+  } else {
+    if (gearType === 'spur') {
+      phi = (8 * Ke_N_mm2 * W_N_mm_s * (1.0 + tau)) / (omega1 * Math.sin(2 * theta) * Math.pow(z1, 3) * Math.pow(m_norm, 3) * Math.pow(sigmaH_lim, 2));
+    } else {
+      phi = (8 * Ke_N_mm2 * W_N_mm_s * (1.0 + tau) / (omega1 * Math.sin(2 * theta) * Math.pow(z1, 3) * Math.pow(mt, 3) * Math.pow(sigmaH_lim, 2))) * (factors.Phi / factors.Gamma_T);
+    }
+    L_face = phi * dp1;
+  }
 
   const Fc = (2 * M1_Nm * 1000.0) / dp1;
   let yLewis = 0.32;
@@ -495,10 +499,10 @@ function calculateGears() {
     sigma_L = (Fc / (L_face * mn * yLewis)) * (factors.Psi / factors.Gamma_T);
   }
 
-  // Box comparativo Serie 3 (attivo solo se non si è in modalità fisso)
+  // Box comparativo Serie 3
   const compCard = document.getElementById('gearSeries3ComparisonCard');
   if (compCard) {
-    if (geomMode !== 'fixed' && strictModuleObj.cat === 'red' && recommendedModuleObj) {
+    if (!isLockM && strictModuleObj.cat === 'red' && recommendedModuleObj) {
       compCard.classList.remove('hidden');
 
       const phiStrict = (gearType === 'spur')
