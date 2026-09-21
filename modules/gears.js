@@ -1,9 +1,9 @@
 // ==========================================
 // MODULE 3: CYLINDRICAL GEARS (HERTZ & LEWIS)
 // Conforme al formulario di Costruzione di Macchine
-// Convenzione formale: tau = z1 / z2 < 1.0 (Rapporto di trasmissione)
-// Curvatura Hertz: (1 + tau) = (1 + z1 / z2)
-// Supporto vincoli modulari: Auto-denti, Modulo Fisso, Fascia L Fissa
+// Convenzione: tau = z1 / z2 < 1.0
+// Algoritmo di Ottimizzazione Denti (Minimo z1 compatto)
+// Supporto denti diritti ed elicoidali su Target tau e Interasse i
 // ==========================================
 
 const STANDARD_MODULES = [
@@ -225,7 +225,6 @@ function calculateGears() {
   const loadMode = loadModeEl ? loadModeEl.value : 'power';
   const geomMode = geomModeEl ? geomModeEl.value : 'tau';
 
-  // Toggle di vincolo opzionali
   const isAutoZ = document.getElementById('toggleAutoZ')?.checked || false;
   const isLockM = document.getElementById('toggleLockM')?.checked || false;
   const isLockL = document.getElementById('toggleLockL')?.checked || false;
@@ -268,47 +267,100 @@ function calculateGears() {
 
   const optTableCard = document.getElementById('gearFixedOptTableCard');
 
-  // Gestione modalità Auto-Denti con Tolleranza % su tau
-  if (geomMode === 'tau' && isAutoZ) {
+  // ========================================================
+  // RICERCA AUTOMATICA DENTI (Sia su Tau che su Interasse i)
+  // ========================================================
+  const supportsAutoZ = (geomMode === 'tau' || geomMode === 'center') && isAutoZ;
+
+  if (supportsAutoZ) {
     if (optTableCard) optTableCard.classList.remove('hidden');
 
     let targetTau = parseFloat(document.getElementById('gearTargetTau')?.value) || 0.5;
     if (targetTau > 1.0) targetTau = 1.0 / targetTau;
     const tolPct = parseFloat(document.getElementById('gearTauTolVal')?.value) || 3.0;
+    const targetI = parseFloat(document.getElementById('gearTargetCenter')?.value) || 100.0;
 
-    // Se il modulo è bloccato usa quel modulo, altrimenti prova una stima da 2.5 mm
-    const candidateM = isLockM ? (parseFloat(document.getElementById('gearLockedMVal')?.value) || 2.5) : 2.5;
+    // Se il modulo è bloccato usa quello, altrimenti usa modulo indicativo per la stima cinematica
+    let candidateM = isLockM ? (parseFloat(document.getElementById('gearLockedMVal')?.value) || 2.5) : 2.5;
 
     autoOptCombos = [];
-    for (let curZ1 = z_min; curZ1 <= 55; curZ1++) {
-      const idealZ2 = Math.round(curZ1 / targetTau);
-      if (idealZ2 < curZ1) continue;
 
-      for (let curZ2 of [idealZ2 - 1, idealZ2, idealZ2 + 1]) {
+    // Limiti di scansione: da z_min a 60
+    for (let curZ1 = z_min; curZ1 <= 60; curZ1++) {
+      let candidateZ2List = [];
+
+      if (geomMode === 'center') {
+        // Se interasse è fissato: i = mt * (z1 + z2) / 2
+        // z2 ideale = (2 * i / mt) - z1
+        const idealZ2 = Math.round((2.0 * targetI / candidateM) - curZ1);
+        if (idealZ2 > curZ1) {
+          candidateZ2List = [idealZ2 - 1, idealZ2, idealZ2 + 1];
+        }
+      } else {
+        const idealZ2 = Math.round(curZ1 / targetTau);
+        if (idealZ2 > curZ1) {
+          candidateZ2List = [idealZ2 - 1, idealZ2, idealZ2 + 1];
+        }
+      }
+
+      for (let curZ2 of candidateZ2List) {
         if (curZ2 <= curZ1) continue;
         const curTau = curZ1 / curZ2;
-        const err = Math.abs((curTau - targetTau) / targetTau) * 100.0;
-        if (err <= tolPct) {
-          // Calcola phi o modulo necessario
-          const phiVal = (8 * Ke_N_mm2 * W_N_mm_s * (1.0 + curTau)) / 
-            (omega1 * Math.sin(2 * theta) * Math.pow(curZ1, 3) * Math.pow(candidateM, 3) * Math.pow(sigmaH_lim, 2));
+        const errTau = Math.abs((curTau - targetTau) / targetTau) * 100.0;
 
-          const dp1_c = candidateM * curZ1;
-          const L_c = phiVal * dp1_c;
+        if (errTau <= tolPct) {
+          let alpha_c = 0.0;
+          let mt_c = candidateM;
+          let factors_c = { Phi: 1, Psi: 1, Gamma_T: 2 };
+
+          if (gearType === 'helical') {
+            // Stima mt da Hertz elicoidale
+            const numHel = 8 * Ke_N_mm2 * W_N_mm_s * (1.0 + curTau) * 0.6;
+            const denHel = 1.0 * omega1 * Math.sin(2 * theta) * Math.pow(curZ1, 3) * Math.pow(sigmaH_lim, 2);
+            const mt_min_c = Math.cbrt(numHel / denHel);
+            const cosA = Math.min(0.999, Math.max(0.707, candidateM / mt_min_c));
+            alpha_c = (Math.acos(cosA) * 180.0) / Math.PI;
+            mt_c = candidateM / Math.cos((alpha_c * Math.PI) / 180.0);
+            factors_c = getHelicalFactors(alpha_c, curZ1, curZ2);
+          }
+
+          const phiVal = (gearType === 'spur')
+            ? (8 * Ke_N_mm2 * W_N_mm_s * (1.0 + curTau)) / (omega1 * Math.sin(2 * theta) * Math.pow(curZ1, 3) * Math.pow(candidateM, 3) * Math.pow(sigmaH_lim, 2))
+            : (8 * Ke_N_mm2 * W_N_mm_s * (1.0 + curTau) / (omega1 * Math.sin(2 * theta) * Math.pow(curZ1, 3) * Math.pow(mt_c, 3) * Math.pow(sigmaH_lim, 2))) * (factors_c.Phi / factors_c.Gamma_T);
+
+          const dp1_c = mt_c * curZ1;
+          const L_c = isLockL ? (parseFloat(document.getElementById('gearLockedLVal')?.value) || 30.0) : (phiVal * dp1_c);
+          const phi_eff = L_c / dp1_c;
+
           const Fc_c = (2 * M1_Nm * 1000.0) / dp1_c;
-          const y_c = getLewisFactor(curZ1, xr1);
-          const sigL_c = Fc_c / (L_c * candidateM * y_c);
+          const z_eq = (gearType === 'spur') ? curZ1 : (curZ1 / Math.pow(Math.cos((alpha_c * Math.PI) / 180.0), 3));
+          const y_c = getLewisFactor(z_eq, xr1);
+          const sigL_c = (gearType === 'spur')
+            ? (Fc_c / (L_c * candidateM * y_c))
+            : (Fc_c / (L_c * candidateM * y_c)) * (factors_c.Psi / factors_c.Gamma_T);
 
-          const score = Math.abs(phiVal - 0.75) * 2.0 + (err / tolPct);
+          const i_eff = mt_c * ((curZ1 + curZ2) / 2.0 + xr1);
+
+          // Criterio di Ranking ingegneristico:
+          // 1. Privilegia fortemente z1 basso (compattezza riduttore)
+          // 2. Penalizza phi fuori range [0.5, 1.0]
+          // 3. Penalizza errore su tau
+          let phiPenalty = 0;
+          if (phi_eff < 0.5) phiPenalty = (0.5 - phi_eff) * 80;
+          else if (phi_eff > 1.0) phiPenalty = (phi_eff - 1.0) * 80;
+
+          const score = (curZ1 * 2.0) + (errTau * 1.5) + phiPenalty;
 
           autoOptCombos.push({
             z1: curZ1,
             z2: curZ2,
             tau: curTau,
-            err: err,
-            phi: phiVal,
+            err: errTau,
+            phi: phi_eff,
             L: L_c,
             sigmaL: sigL_c,
+            alpha: alpha_c,
+            i: i_eff,
             score: score
           });
         }
@@ -334,7 +386,7 @@ function calculateGears() {
     if (tbody) {
       tbody.innerHTML = '';
       if (autoOptCombos.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-slate-500">${isIt ? 'Nessuna combinazione entro la tolleranza % specificata.' : 'No combinations found within specified ratio tolerance.'}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-slate-500">${isIt ? 'Nessuna combinazione entro la tolleranza. Allarga la tolleranza % o modifica il modulo.' : 'No combinations found within specified ratio tolerance.'}</td></tr>`;
       } else {
         autoOptCombos.forEach((c, idx) => {
           const isSelected = (idx === selectedComboIdx);
@@ -349,11 +401,15 @@ function calculateGears() {
             calculateGears();
           };
 
+          const toothInfo = (gearType === 'helical')
+            ? `<span class="text-amber-400 font-bold">z₁=${c.z1}</span>, <span class="text-purple-400 font-bold">z₂=${c.z2}</span> <span class="text-[10px] text-slate-400">(α=${c.alpha.toFixed(1)}°)</span>`
+            : `<span class="text-blue-400 font-bold">z₁=${c.z1}</span>, <span class="text-purple-400 font-bold">z₂=${c.z2}</span>`;
+
           tr.innerHTML = `
-            <td class="p-2.5 font-bold font-mono text-blue-400">${c.z1}</td>
-            <td class="p-2.5 font-bold font-mono text-purple-400">${c.z2}</td>
+            <td class="p-2.5 font-mono">${toothInfo}</td>
             <td class="p-2.5 font-mono">${c.tau.toFixed(3)}</td>
             <td class="p-2.5 font-mono ${c.err < 1.0 ? 'text-emerald-400' : 'text-slate-300'}">±${c.err.toFixed(2)}%</td>
+            <td class="p-2.5 font-mono text-slate-300">i = ${c.i.toFixed(1)} mm</td>
             <td class="p-2.5 font-mono ${phiBadgeClass}">ϕ = ${c.phi.toFixed(2)} (${c.L.toFixed(1)} mm)</td>
             <td class="p-2.5 font-mono ${lewisBadgeClass}">${Math.round(c.sigmaL)} MPa</td>
             <td class="p-2.5 text-right font-mono text-xs">
@@ -384,12 +440,12 @@ function calculateGears() {
       const errPct = ((tau - targetTau) / targetTau) * 100.0;
       const signErr = errPct >= 0 ? '+' : '';
       const geomEl = document.getElementById('gearGeomFeedback');
-      if (geomEl) geomEl.innerText = `z₂ = ${z2} (τ = z₁/z₂ = ${tau.toFixed(3)}, err: ${signErr}${errPct.toFixed(1)}%)`;
+      if (geomEl) geomEl.innerText = `z₁ = ${z1}, z₂ = ${z2} (τ = ${tau.toFixed(3)}, err: ${signErr}${errPct.toFixed(1)}%)`;
     } else if (geomMode === 'teeth') {
       z2 = parseInt(document.getElementById('gearZ2')?.value) || 40;
       tau = z1 / z2;
       const geomEl = document.getElementById('gearGeomFeedback');
-      if (geomEl) geomEl.innerText = `τ = z₁/z₂ = ${tau.toFixed(3)} (1 : ${(1/tau).toFixed(2)})`;
+      if (geomEl) geomEl.innerText = `z₁ = ${z1}, z₂ = ${z2} (τ = ${tau.toFixed(3)})`;
     } else {
       const targetCenter = parseFloat(document.getElementById('gearTargetCenter')?.value) || 100.0;
       let targetTau = parseFloat(document.getElementById('gearTargetTau')?.value) || 0.5;
@@ -397,7 +453,7 @@ function calculateGears() {
       z2 = Math.max(10, Math.round(z1 / targetTau));
       tau = z1 / z2;
       const geomEl = document.getElementById('gearGeomFeedback');
-      if (geomEl) geomEl.innerText = `z₂ = ${z2} (τ = ${tau.toFixed(3)}) | i_target = ${targetCenter.toFixed(1)} mm`;
+      if (geomEl) geomEl.innerText = `z₁ = ${z1}, z₂ = ${z2} | i_target = ${targetCenter.toFixed(1)} mm`;
     }
   }
 
@@ -469,7 +525,6 @@ function calculateGears() {
   const dp2 = mt * z2;
   const a_center = mt * ((z1 + z2) / 2.0 + xr1);
 
-  // Calcolo di phi e L (gestione vincolo Fascia Fissa L)
   let phi = 1.0;
   let L_face = 30.0;
 
@@ -546,18 +601,25 @@ function calculateGears() {
 
   // Risultati principali UI
   const modDisp = document.getElementById('gearModuleDisp');
-  if (modDisp) modDisp.innerText = `${gearType === 'spur' ? 'm' : 'mn'} = ${m_norm.toFixed(2)} mm`;
+  if (modDisp) {
+    if (gearType === 'helical') {
+      modDisp.innerText = `mn = ${mn.toFixed(2)} (α = ${alphaDeg.toFixed(1)}°)`;
+    } else {
+      modDisp.innerText = `m = ${m_norm.toFixed(2)} mm`;
+    }
+  }
 
   const catEl = document.getElementById('gearModuleCategory');
   if (catEl) {
+    const teethInfo = `z₁ = ${z1}, z₂ = ${z2}`;
     if (activeModuleObj.cat === 'green') {
-      catEl.innerText = isIt ? 'Serie 1: Consigliato (UNI)' : 'Series 1: Recommended';
+      catEl.innerText = isIt ? `Serie 1 Consigliata | ${teethInfo}` : `Series 1 Recommended | ${teethInfo}`;
       catEl.className = 'text-[11px] text-emerald-400 font-medium';
     } else if (activeModuleObj.cat === 'orange') {
-      catEl.innerText = isIt ? 'Serie 2: Sconsigliato' : 'Series 2: Discouraged';
+      catEl.innerText = isIt ? `Serie 2 Sconsigliata | ${teethInfo}` : `Series 2 Discouraged | ${teethInfo}`;
       catEl.className = 'text-[11px] text-amber-400 font-medium';
     } else {
-      catEl.innerText = isIt ? 'Serie 3: Fortemente Sconsigliato' : 'Series 3: Strongly Discouraged';
+      catEl.innerText = isIt ? `Serie 3 Sconsigliata | ${teethInfo}` : `Series 3 Discouraged | ${teethInfo}`;
       catEl.className = 'text-[11px] text-rose-400 font-medium';
     }
   }
@@ -594,12 +656,12 @@ function calculateGears() {
   if (centerDisp) centerDisp.innerText = `${a_center.toFixed(2)} mm`;
 
   const centerSub = document.getElementById('gearCenterSub');
-  if (centerSub) centerSub.innerText = `dp₁: ${dp1.toFixed(1)} | dp₂: ${dp2.toFixed(1)} mm`;
+  if (centerSub) centerSub.innerText = `dp₁: ${dp1.toFixed(1)} | dp₂: ${dp2.toFixed(1)} mm (z₁: ${z1}, z₂: ${z2})`;
 
   // Breakdown analitico
   const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
   setTxt('bkMmin', `${m_min.toFixed(2)} mm`);
-  setTxt('bkMnorm', `${m_norm.toFixed(2)} mm`);
+  setTxt('bkMnorm', `${m_norm.toFixed(2)} mm (z₁: ${z1}, z₂: ${z2})`);
   setTxt('bkPhiLim', `${phi.toFixed(3)}`);
   setTxt('bkLface', `${L_face.toFixed(1)} mm`);
   setTxt('bkFc', `${Math.round(Fc)} N`);
