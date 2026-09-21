@@ -1,6 +1,6 @@
 // ==========================================
 // MODULE 3: CYLINDRICAL GEARS (HERTZ & LEWIS)
-// Conforme al formulario di Costruzione di Macchine
+// Progetto Diretto & Verifica Inversa (W_max)
 // ==========================================
 
 const STANDARD_MODULES = [
@@ -112,6 +112,110 @@ function drawGearScheme(d1, d2, a) {
 }
 
 function calculateGears() {
+  const isIt = (typeof currentLang !== 'undefined' && currentLang === 'it');
+  const gearsOpMode = (typeof currentGearOpMode !== 'undefined') ? currentGearOpMode : 'design';
+
+  // ========================================================
+  // MODALITÀ 2: VERIFICA INVERSA (CALCOLO POTENZA MASSIMA W_MAX)
+  // ========================================================
+  if (gearsOpMode === 'wmax') {
+    const toothType = document.getElementById('gwToothType')?.value || 'spur';
+    const m_input = parseFloat(document.getElementById('gwModule')?.value) || 2.0;
+    const L_mm = parseFloat(document.getElementById('gwFaceWidth')?.value) || 30.0;
+    const z1 = parseInt(document.getElementById('gwZ1')?.value) || 20;
+    const z2 = parseInt(document.getElementById('gwZ2')?.value) || 40;
+    const n1 = parseFloat(document.getElementById('gwSpeed')?.value) || 1450.0;
+    const alphaDeg = (toothType === 'helical') ? (parseFloat(document.getElementById('gwAlpha')?.value) || 15.0) : 0.0;
+    const Ke_GPa = parseFloat(document.getElementById('gwKe')?.value) || 35.0;
+    const Ke_N_mm2 = Ke_GPa * 1000.0;
+    const sigmaH_lim = parseFloat(document.getElementById('gwSigmaH')?.value) || 550.0;
+    const sigmaL_lim = parseFloat(document.getElementById('gwSigmaL')?.value) || 400.0;
+    const xr1 = parseFloat(document.getElementById('gwXr1')?.value) || 0.0;
+
+    const omega1 = (2 * Math.PI * n1) / 60.0;
+    const theta = (20.0 * Math.PI) / 180.0;
+    const tauEff = z2 / z1;
+
+    let mt = m_input;
+    let mn = m_input;
+    let factors = { Phi: 1, Psi: 1, Gamma_T1: 1, Gamma_T2: 1, Gamma_T: 2 };
+    let yLewis = 0.32;
+
+    if (toothType === 'spur') {
+      mt = m_input;
+      mn = m_input;
+      yLewis = getLewisFactor(z1, xr1);
+    } else {
+      mn = m_input;
+      const cosA = Math.cos((alphaDeg * Math.PI) / 180.0);
+      mt = mn / cosA;
+      const z_eq = z1 / Math.pow(cosA, 3);
+      yLewis = getLewisFactor(z_eq, xr1);
+      factors = getHelicalFactors(alphaDeg, z1, z2);
+    }
+
+    // 1. Limite usura Hertz (N*mm/s -> kW)
+    // sigmaH^2 = [8 * Ke * W_N_mm_s * (1+tau)] / [L * omega1 * sin(2*theta) * mt^2 * z1^2] * (Phi / Gamma_T)
+    const factorHelHertz = (toothType === 'helical') ? (factors.Gamma_T / factors.Phi) : 1.0;
+    const W_N_mm_s_H = (Math.pow(sigmaH_lim, 2) * L_mm * omega1 * Math.sin(2 * theta) * Math.pow(mt, 2) * Math.pow(z1, 2) * factorHelHertz) / (8 * Ke_N_mm2 * (1 + tauEff));
+    const P_kW_H = W_N_mm_s_H / 1e6;
+
+    // 2. Limite flessione Lewis (N*mm/s -> kW)
+    // sigmaL = [2 * W_N_mm_s] / [omega1 * L * mt * mn * z1 * y] * (Psi / Gamma_T)
+    const factorHelLewis = (toothType === 'helical') ? (factors.Gamma_T / factors.Psi) : 1.0;
+    const W_N_mm_s_L = (sigmaL_lim * omega1 * L_mm * mt * mn * z1 * yLewis * factorHelLewis) / 2.0;
+    const P_kW_L = W_N_mm_s_L / 1e6;
+
+    // 3. Risultato ammissibile
+    const P_kW_max = Math.min(P_kW_H, P_kW_L);
+    const W_watt_max = P_kW_max * 1000.0;
+    const M1_max = W_watt_max / Math.max(omega1, 0.001);
+
+    const dp1 = mt * z1;
+    const dp2 = mt * z2;
+    const a_center = mt * ((z1 + z2) / 2.0 + xr1);
+    const Fc_max = (2 * M1_max * 1000.0) / dp1;
+
+    // Interfaccia Risultati W_max
+    const pDisp = document.getElementById('gwPmaxDisp');
+    if (pDisp) pDisp.innerText = `${P_kW_max.toFixed(2)} kW`;
+
+    const pLimStatus = document.getElementById('gwLimitingFactor');
+    if (pLimStatus) {
+      if (P_kW_H <= P_kW_L) {
+        pLimStatus.innerText = isIt ? 'Limitato da Usura (Hertz)' : 'Limited by Pitting (Hertz)';
+        pLimStatus.className = 'text-[11px] text-amber-400 font-semibold';
+      } else {
+        pLimStatus.innerText = isIt ? 'Limitato da Flessione (Lewis)' : 'Limited by Bending (Lewis)';
+        pLimStatus.className = 'text-[11px] text-sky-400 font-semibold';
+      }
+    }
+
+    const tqDisp = document.getElementById('gwTorqueMaxDisp');
+    if (tqDisp) tqDisp.innerText = `${M1_max.toFixed(1)} Nm`;
+
+    const hertzLimitDisp = document.getElementById('gwHertzCapDisp');
+    if (hertzLimitDisp) hertzLimitDisp.innerText = `${P_kW_H.toFixed(2)} kW`;
+
+    const lewisLimitDisp = document.getElementById('gwLewisCapDisp');
+    if (lewisLimitDisp) lewisLimitDisp.innerText = `${P_kW_L.toFixed(2)} kW`;
+
+    // Tabella analitica step
+    const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+    setTxt('gwBkDp1', `${dp1.toFixed(1)} mm`);
+    setTxt('gwBkDp2', `${dp2.toFixed(1)} mm`);
+    setTxt('gwBkCenter', `${a_center.toFixed(2)} mm`);
+    setTxt('gwBkFcMax', `${Math.round(Fc_max)} N`);
+    setTxt('gwBkY', `${yLewis.toFixed(3)}`);
+    setTxt('gwBkPhi', `${(L_mm / dp1).toFixed(2)}`);
+
+    drawGearScheme(dp1, dp2, a_center);
+    return;
+  }
+
+  // ========================================================
+  // MODALITÀ 1: PROGETTO DIRETTO (SINTESI)
+  // ========================================================
   const toothSelect = document.getElementById('gearToothType');
   if (!toothSelect) return;
   const gearType = toothSelect.value;
@@ -120,9 +224,7 @@ function calculateGears() {
   const geomModeEl = document.querySelector('input[name="gearGeomMode"]:checked');
   const loadMode = loadModeEl ? loadModeEl.value : 'power';
   const geomMode = geomModeEl ? geomModeEl.value : 'tau';
-  const isIt = (typeof currentLang !== 'undefined' && currentLang === 'it');
 
-  // 1. Carico motore / coppia
   let W_watt = 5500.0;
   let n1_rpm = 1450.0;
   let omega1 = (2 * Math.PI * n1_rpm) / 60.0;
@@ -145,7 +247,6 @@ function calculateGears() {
     if (omegaEl) omegaEl.innerText = `P = ${(W_watt / 1000).toFixed(2)} kW | ω₁ = ${omega1.toFixed(1)} rad/s`;
   }
 
-  // 2. Geometria (z1, z2, tau)
   let z1 = parseInt(document.getElementById('gearZ1')?.value) || 20;
   let z2 = 40;
   let tauEff = 2.0;
