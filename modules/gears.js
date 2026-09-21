@@ -1,9 +1,10 @@
-// ==========================================
+// ============================================================================
 // MODULE 3: CYLINDRICAL GEARS (HERTZ & LEWIS)
 // Conforme al formulario di Costruzione di Macchine
-// Convenzione formale: tau = z1 / z2 < 1.0
-// Algoritmo di Ranking Avanzato: Filtro coppie uniche e priorità errore tau
-// ==========================================
+// Convenzione formale: tau = z1 / z2 < 1.0 (Rapporto cinematico)
+// Curvatura Hertz: (1 + tau) = (1 + z1 / z2)
+// Ottimizzazione combinazioni (z1, z2) con filtri meccanici e chiusura interasse
+// ============================================================================
 
 const STANDARD_MODULES = [
   { m: 1.0, cat: 'green', serie: 1 },
@@ -261,7 +262,7 @@ function calculateGears() {
   const supportsAutoZ = (geomMode === 'tau' || geomMode === 'center') && isAutoZ;
 
   // ========================================================
-  // MOTORE DI OTTIMIZZAZIONE (Filtro Univoco e Priorità Errore)
+  // MOTORE DI OTTIMIZZAZIONE (Ricerca Combinazioni Ottime)
   // ========================================================
   if (supportsAutoZ) {
     if (optTableCard) optTableCard.classList.remove('hidden');
@@ -302,7 +303,8 @@ function calculateGears() {
             } else {
               if (geomMode === 'center') {
                 const cosAlphaExact = (candM * (sumZ + 2.0 * xr1)) / (2.0 * targetI);
-                if (cosAlphaExact < 0.707 || cosAlphaExact > 0.999) continue;
+                // Permette alpha fino a 40° (cos(40°) ≈ 0.766)
+                if (cosAlphaExact < 0.766 || cosAlphaExact > 0.999) continue;
                 alpha_c = (Math.acos(cosAlphaExact) * 180.0) / Math.PI;
                 mt_c = candM / cosAlphaExact;
                 i_c = targetI;
@@ -310,7 +312,7 @@ function calculateGears() {
                 const numHel = 8 * Ke_N_mm2 * W_N_mm_s * (1.0 + curTau) * 0.6;
                 const denHel = 1.0 * omega1 * Math.sin(2 * theta) * Math.pow(curZ1, 3) * Math.pow(sigmaH_lim, 2);
                 const mt_min_c = Math.cbrt(numHel / denHel);
-                const cosA = Math.min(0.999, Math.max(0.707, candM / mt_min_c));
+                const cosA = Math.min(0.999, Math.max(0.766, candM / mt_min_c));
                 alpha_c = (Math.acos(cosA) * 180.0) / Math.PI;
                 mt_c = candM / cosA;
                 i_c = mt_c * (sumZ / 2.0 + xr1);
@@ -333,12 +335,22 @@ function calculateGears() {
               ? (Fc_c / (L_c * candM * y_c))
               : (Fc_c / (L_c * candM * y_c)) * (factors_c.Psi / factors_c.Gamma_T);
 
-            // Nuovo Punteggio: Errore tau conta 10 volte di più, z1 funge da leggero tie-breaker
-            let phiPenalty = 0;
-            if (phi_eff < 0.5) phiPenalty = (0.5 - phi_eff) * 150;
-            else if (phi_eff > 1.0) phiPenalty = (phi_eff - 1.0) * 150;
+            // Filtro resistenza: scarta denti che superano il limite a flessione
+            if (sigL_c > 800) continue;
 
-            const score = (errTau * 10.0) + (curZ1 * 0.5) + phiPenalty;
+            // Penalità progressiva angolo d'elica (oltre i 25° penalizza, pesante sui 35°-40°)
+            let alphaPenalty = 0;
+            if (alpha_c > 25.0 && alpha_c <= 35.0) {
+              alphaPenalty = (alpha_c - 25.0) * 1.5;
+            } else if (alpha_c > 35.0) {
+              alphaPenalty = 15.0 + (alpha_c - 35.0) * 5.0;
+            }
+
+            let phiPenalty = 0;
+            if (phi_eff < 0.5) phiPenalty = (0.5 - phi_eff) * 60;
+            else if (phi_eff > 1.0) phiPenalty = (phi_eff - 1.0) * 60;
+
+            const score = (errTau * 3.5) + (curZ1 * 0.3) + alphaPenalty + phiPenalty;
 
             autoOptCombos.push({
               z1: curZ1,
@@ -361,7 +373,7 @@ function calculateGears() {
 
     autoOptCombos.sort((a, b) => a.score - b.score);
 
-    // FILTRO UNIVOCO: Mantiene SOLO IL MIGLIOR MODULO per ogni coppia (z1, z2)
+    // Mantiene una sola soluzione per coppia univoca (z1, z2)
     const uniqueCombos = [];
     const seen = new Set();
     for (const c of autoOptCombos) {
@@ -371,7 +383,7 @@ function calculateGears() {
         uniqueCombos.push(c);
       }
     }
-    autoOptCombos = uniqueCombos.slice(0, 6); // Mostra le top 6 combinazioni DISTINTE
+    autoOptCombos = uniqueCombos.slice(0, 6);
 
     if (selectedComboIdx >= autoOptCombos.length) selectedComboIdx = 0;
 
@@ -379,7 +391,7 @@ function calculateGears() {
     if (tbody) {
       tbody.innerHTML = '';
       if (autoOptCombos.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-slate-500">${isIt ? 'Nessuna combinazione entro la tolleranza. Allarga la tolleranza % o sblocca i vincoli.' : 'No combinations found within tolerance. Increase tolerance % or release constraints.'}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-slate-500">${isIt ? 'Nessuna combinazione valida trovata entro i limiti di resistenza (Lewis) e α ≤ 40°.' : 'No valid combinations found within Lewis bending limits and α ≤ 40°.'}</td></tr>`;
       } else {
         autoOptCombos.forEach((c, idx) => {
           const isSelected = (idx === selectedComboIdx);
@@ -475,7 +487,6 @@ function calculateGears() {
       if (helicalDetails) helicalDetails.classList.add('hidden');
     }
   } else {
-    // Sintesi canonica standard
     if (gearType === 'spur') {
       if (helicalDetails) helicalDetails.classList.add('hidden');
       z_min = (2 * (1 - xr1)) / Math.pow(Math.sin(theta), 2);
