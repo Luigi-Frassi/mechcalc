@@ -13,7 +13,7 @@
     <div>
       <div class="flex items-center gap-2 mb-8">
         <span class="text-xl font-bold tracking-tight text-blue-500">Mech<span class="text-white">Calc</span></span>
-        <span class="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded">v0.8</span>
+        <span class="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded">v0.9</span>
       </div>
       <nav class="space-y-2">
         <button id="navBtnFits" class="w-full text-left px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-sm flex items-center justify-between transition-colors">
@@ -43,7 +43,7 @@
   <div class="md:hidden bg-slate-950 border-b border-slate-800 p-3 sticky top-0 z-50">
     <div class="flex items-center justify-between mb-2.5 px-1">
       <span class="text-lg font-bold tracking-tight text-blue-500">Mech<span class="text-white">Calc</span></span>
-      <span class="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded">v0.8</span>
+      <span class="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded">v0.9</span>
     </div>
     <div class="grid grid-cols-3 gap-1.5">
       <button id="navBtnFitsMobile" class="text-center py-2 px-1.5 rounded-lg bg-blue-600 text-white font-medium text-xs transition-colors truncate">
@@ -178,7 +178,6 @@
         </div>
       </div>
 
-      <!-- Workshop Notes -->
       <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700/50 mb-8">
         <div class="flex items-center justify-between mb-4">
           <span class="text-xs font-semibold uppercase tracking-wider text-slate-300" data-i18n="machiningSectionTitle">Machining & Surface Finish Guidelines</span>
@@ -383,10 +382,14 @@
 
           <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700/60 text-xs">
             <span class="text-slate-400 font-semibold block mb-2 uppercase tracking-wider" data-i18n="gearGeomModeLabel">Gear Definition:</span>
-            <div class="flex gap-3">
+            <div class="flex flex-wrap gap-3">
               <label class="flex items-center gap-1.5 cursor-pointer text-slate-300">
                 <input type="radio" name="gearGeomMode" value="tau" checked class="text-blue-600 focus:ring-blue-500 bg-slate-900 border-slate-700">
                 <span data-i18n="optGeomTau">Target τ</span>
+              </label>
+              <label class="flex items-center gap-1.5 cursor-pointer text-slate-300">
+                <input type="radio" name="gearGeomMode" value="fixed" class="text-blue-600 focus:ring-blue-500 bg-slate-900 border-slate-700">
+                <span data-i18n="optGeomFixed">Fixed Module + Tol %</span>
               </label>
               <label class="flex items-center gap-1.5 cursor-pointer text-slate-300">
                 <input type="radio" name="gearGeomMode" value="teeth" class="text-blue-600 focus:ring-blue-500 bg-slate-900 border-slate-700">
@@ -394,7 +397,7 @@
               </label>
               <label class="flex items-center gap-1.5 cursor-pointer text-slate-300">
                 <input type="radio" name="gearGeomMode" value="center" class="text-blue-600 focus:ring-blue-500 bg-slate-900 border-slate-700">
-                <span data-i18n="optGeomCenter">Target Center Dist. i</span>
+                <span data-i18n="optGeomCenter">Center Dist. i</span>
               </label>
             </div>
           </div>
@@ -448,6 +451,27 @@
             <p class="text-xs text-blue-400 mt-1 font-mono" id="gearGeomFeedback">z₂: 40 (τ_eff: 0.500)</p>
           </div>
 
+          <!-- Campi Specifici per Modulo Fisso + Tolleranza -->
+          <div id="colFixedModule" class="hidden">
+            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="gearFixedModuleLabel">Imposed Module (m)</label>
+            <div class="relative">
+              <input type="number" id="gearFixedModule" value="2.5" min="0.5" max="50" step="0.25"
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">mm</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1" data-i18n="subFixedModule">Standard milling tool</p>
+          </div>
+
+          <div id="colFixedTol" class="hidden">
+            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="gearFixedTolLabel">Max Ratio Tol. (±%)</label>
+            <div class="relative">
+              <input type="number" id="gearFixedTol" value="3.0" min="0.5" max="15.0" step="0.5"
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">%</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1" data-i18n="subFixedTol">Allowed τ error</p>
+          </div>
+
           <div id="colTargetZ2" class="hidden">
             <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="gearZ2Label">Driven Teeth (z₂)</label>
             <input type="number" id="gearZ2" value="40" min="10" max="250" step="1"
@@ -465,7 +489,7 @@
             <p class="text-xs text-slate-500 mt-1 font-mono" data-i18n="subMountCenter">Mounting center</p>
           </div>
 
-          <div>
+          <div id="colPinionZ1">
             <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="gearZ1Label">Pinion Teeth (z₁)</label>
             <input type="number" id="gearZ1" value="20" min="9" max="150" step="1"
               class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
@@ -500,49 +524,74 @@
           </div>
         </div>
 
+        <!-- Nuova Tabella Interattiva: Combinazioni Ottime con Modulo Fisso -->
+        <div id="gearFixedOptTableCard" class="hidden bg-slate-800/40 p-6 rounded-xl border border-slate-700/50 mb-6">
+          <div class="flex justify-between items-center mb-3">
+            <div>
+              <span class="text-xs font-semibold uppercase tracking-wider text-slate-300" data-i18n="fixedOptTitle">Optimal Teeth Combinations (Starting from z_min)</span>
+              <p class="text-[11px] text-slate-400 mt-0.5" data-i18n="fixedOptSub">Click any combination to apply geometry and update the transmission scheme</p>
+            </div>
+            <span class="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded font-mono">Ranking [Hertz ϕ & Error]</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="text-[11px] uppercase tracking-wider text-slate-400 bg-slate-950/60 border-b border-slate-800">
+                <tr>
+                  <th class="p-2.5">z₁</th>
+                  <th class="p-2.5">z₂</th>
+                  <th class="p-2.5">τ_eff</th>
+                  <th class="p-2.5" data-i18n="thErr">Error %</th>
+                  <th class="p-2.5" data-i18n="thHertzPhi">Hertz ϕ & Face L</th>
+                  <th class="p-2.5">Lewis σL</th>
+                  <th class="p-2.5 text-right" data-i18n="thAction">Action</th>
+                </tr>
+              </thead>
+              <tbody id="fixedOptTableBody" class="divide-y border-slate-800/60 font-mono"></tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- Card Comparativa Serie 3 vs Modulo Consigliato Successivo -->
         <div id="gearSeries3ComparisonCard" class="hidden bg-rose-950/30 border border-rose-500/40 p-5 rounded-xl mb-6 backdrop-blur">
           <div class="flex items-center justify-between mb-3 border-b border-rose-900/60 pb-2">
             <div class="flex items-center gap-2">
-              <span class="text-rose-400 font-bold text-sm" data-i18n="s3WarningTitle">⚠ Rilevato Modulo di Serie 3 (Fortemente Sconsigliato)</span>
+              <span class="text-rose-400 font-bold text-sm" data-i18n="s3WarningTitle">⚠ Series 3 Module Detected (Strongly Discouraged)</span>
               <span class="text-[10px] bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded font-mono">UNI / ISO 54</span>
             </div>
-            <span class="text-xs text-slate-400" data-i18n="s3ComparisonSub">Confronto Soluzioni</span>
+            <span class="text-xs text-slate-400" data-i18n="s3ComparisonSub">Solutions Comparison</span>
           </div>
           <p class="text-xs text-slate-300 mb-4" data-i18n="s3WarningDesc">
-            Il modulo minimo teorico richiede una misura unificata appartenente alla <strong>Serie 3</strong> (costi elevati di utensileria e scarsa reperibilità). Di seguito puoi confrontare la soluzione stretta con il primo modulo unificato consigliato:
+            The theoretical minimum module requires a standardized size belonging to <strong>Series 3</strong> (high tooling costs and poor market availability). Below you can compare the tight solution with the next recommended module:
           </p>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
-            <!-- Soluzione A: Serie 3 -->
             <div class="p-3.5 bg-slate-900/80 rounded-lg border border-slate-800 flex flex-col justify-between">
               <div>
                 <div class="flex justify-between items-center mb-1">
-                  <span class="text-xs text-rose-400 font-semibold" data-i18n="s3OptionATitle">Opzione A: Modulo Minimo Stretto</span>
+                  <span class="text-xs text-rose-400 font-semibold" data-i18n="s3OptionATitle">Option A: Tight Minimum Module</span>
                   <span class="text-[10px] bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded">Serie 3</span>
                 </div>
                 <div class="text-lg font-bold text-white mt-1" id="s3ModStrictVal">m = 3.25 mm</div>
                 <div class="text-xs text-slate-400 mt-1" id="s3PhiStrictVal">ϕ = 0.88 (L = 57.2 mm)</div>
-                <div class="text-[11px] text-slate-500 mt-1" data-i18n="s3OptionANote">Lavora al limite con ingombro radiale minimo.</div>
+                <div class="text-[11px] text-slate-500 mt-1" data-i18n="s3OptionANote">Works at limit with minimal radial envelope.</div>
               </div>
               <button id="btnAdoptStrict" onclick="selectSeries3Solution('strict')" class="mt-3 w-full py-1.5 rounded-lg bg-rose-600/30 border border-rose-500 text-rose-300 font-semibold text-xs transition-all">
-                <span data-i18n="btnAdoptA">Adotta Opzione A (m min)</span>
+                <span data-i18n="btnAdoptA">Adopt Option A (m min)</span>
               </button>
             </div>
 
-            <!-- Soluzione B: Serie 1 o 2 consigliata -->
             <div class="p-3.5 bg-slate-900/80 rounded-lg border border-slate-800 flex flex-col justify-between">
               <div>
                 <div class="flex justify-between items-center mb-1">
-                  <span class="text-xs text-emerald-400 font-semibold" data-i18n="s3OptionBTitle">Opzione B: Scalato al Consigliato</span>
+                  <span class="text-xs text-emerald-400 font-semibold" data-i18n="s3OptionBTitle">Option B: Scaled to Recommended</span>
                   <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded">Serie 1 UNI</span>
                 </div>
                 <div class="text-lg font-bold text-white mt-1" id="s3ModRecVal">m = 3.50 mm (Serie 2)</div>
                 <div class="text-xs text-slate-400 mt-1" id="s3PhiRecVal">ϕ = 0.71 (L = 49.7 mm)</div>
-                <div class="mt-1" id="s3RecLimitStatus">✓ Lavora al limite di Hertz (ϕ ≥ 0.50)</div>
+                <div class="mt-1" id="s3RecLimitStatus">✓ Works at Hertz limit (ϕ ≥ 0.50)</div>
               </div>
               <button id="btnAdoptRecommended" onclick="selectSeries3Solution('recommended')" class="mt-3 w-full py-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white border border-slate-700 text-xs transition-all">
-                <span data-i18n="btnAdoptB">Adotta Opzione B (Consigliato)</span>
+                <span data-i18n="btnAdoptB">Adopt Option B (Recommended)</span>
               </button>
             </div>
           </div>
@@ -915,12 +964,21 @@
         optLoadTorque: "Direct Torque M₁ [Nm]",
         gearGeomModeLabel: "Gear Definition:",
         optGeomTau: "Target τ",
+        optGeomFixed: "Fixed Module + Tol %",
         optGeomTeeth: "Teeth z₁, z₂",
-        optGeomCenter: "Target Center Dist. i",
+        optGeomCenter: "Center Dist. i",
         gearPowerLabel: "Motor Power (W)",
         gearTorqueLabel: "Driver Torque (M₁)",
         gearSpeedLabel: "Driver Speed (n₁)",
         gearTargetTauLabel: "Target Ratio (τ = z₁/z₂ < 1)",
+        gearFixedModuleLabel: "Imposed Module (m)",
+        subFixedModule: "Standard milling tool",
+        gearFixedTolLabel: "Max Ratio Tol. (±%)",
+        subFixedTol: "Allowed τ error",
+        fixedOptTitle: "Optimal Teeth Combinations (Starting from z_min)",
+        fixedOptSub: "Click any combination to apply geometry and update the transmission scheme",
+        thErr: "Error %",
+        thHertzPhi: "Hertz ϕ & Face L",
         gearZ2Label: "Driven Teeth (z₂)",
         gearCenterLabel: "Target Center Dist. (i)",
         gearZ1Label: "Pinion Teeth (z₁)",
@@ -961,7 +1019,7 @@
         // Serie 3 comparison
         s3WarningTitle: "⚠ Series 3 Module Detected (Strongly Discouraged)",
         s3ComparisonSub: "Solutions Comparison",
-        s3WarningDesc: "Theoretical minimum module requires a standardized size belonging to Series 3 (high tooling costs and poor market availability). Below you can compare the tight solution with the next recommended module:",
+        s3WarningDesc: "The theoretical minimum module requires a standardized size belonging to Series 3 (high tooling costs and poor market availability). Below you can compare the tight solution with the next recommended module:",
         s3OptionATitle: "Option A: Tight Minimum Module",
         s3OptionANote: "Works at limit with minimal radial envelope.",
         btnAdoptA: "Adopt Option A (m min)",
@@ -1087,12 +1145,21 @@
         optLoadTorque: "Coppia Diretta M₁ [Nm]",
         gearGeomModeLabel: "Definizione Ingranaggio:",
         optGeomTau: "Target τ",
+        optGeomFixed: "Modulo Fisso + Tol %",
         optGeomTeeth: "Denti z₁, z₂",
         optGeomCenter: "Interasse Target i",
         gearPowerLabel: "Potenza Motore (W)",
         gearTorqueLabel: "Coppia Motrice (M₁)",
         gearSpeedLabel: "Velocità Pignone (n₁)",
         gearTargetTauLabel: "Rapporto Target (τ = z₁/z₂ < 1)",
+        gearFixedModuleLabel: "Modulo Imposto (m)",
+        subFixedModule: "Fresa disponibile",
+        gearFixedTolLabel: "Tolleranza max τ (±%)",
+        subFixedTol: "Errore ammesso su τ",
+        fixedOptTitle: "Combinazioni Denti Ottime (A partire da z_min)",
+        fixedOptSub: "Clicca su una combinazione per applicare la geometria e aggiornare lo schema",
+        thErr: "Errore %",
+        thHertzPhi: "Hertz ϕ & Fascia L",
         gearZ2Label: "Denti Ruota 2 (z₂)",
         gearCenterLabel: "Interasse Target (i)",
         gearZ1Label: "Denti Pignone (z₁)",
@@ -1472,22 +1539,38 @@
     document.querySelectorAll('input[name="gearGeomMode"]').forEach(radio => {
       radio.addEventListener('change', (e) => {
         const colTau = document.getElementById('colTargetTau');
+        const colFixedM = document.getElementById('colFixedModule');
+        const colFixedTol = document.getElementById('colFixedTol');
+        const colZ1 = document.getElementById('colPinionZ1');
         const colZ2 = document.getElementById('colTargetZ2');
         const colCenter = document.getElementById('colTargetCenter');
+
         colTau.classList.add('hidden');
+        colFixedM.classList.add('hidden');
+        colFixedTol.classList.add('hidden');
+        colZ1.classList.remove('hidden');
         colZ2.classList.add('hidden');
         colCenter.classList.add('hidden');
 
-        if (e.target.value === 'tau') colTau.classList.remove('hidden');
-        else if (e.target.value === 'teeth') colZ2.classList.remove('hidden');
-        else colCenter.classList.remove('hidden');
+        if (e.target.value === 'tau') {
+          colTau.classList.remove('hidden');
+        } else if (e.target.value === 'fixed') {
+          colTau.classList.remove('hidden');
+          colFixedM.classList.remove('hidden');
+          colFixedTol.classList.remove('hidden');
+          colZ1.classList.add('hidden'); // z1 è gestito dall'ottimizzatore
+        } else if (e.target.value === 'teeth') {
+          colZ2.classList.remove('hidden');
+        } else {
+          colCenter.classList.remove('hidden');
+        }
 
         if (typeof calculateGears === 'function') calculateGears();
       });
     });
 
     // Gears Design Inputs
-    ['gearToothType', 'gearPower', 'gearTorqueInput', 'gearSpeed', 'gearTargetTau', 'gearZ1', 'gearZ2', 'gearTargetCenter', 'gearXr1', 'gearKeInput', 'gearSigmaH'].forEach(id => {
+    ['gearToothType', 'gearPower', 'gearTorqueInput', 'gearSpeed', 'gearTargetTau', 'gearFixedModule', 'gearFixedTol', 'gearZ1', 'gearZ2', 'gearTargetCenter', 'gearXr1', 'gearKeInput', 'gearSigmaH'].forEach(id => {
       const el = document.getElementById(id);
       if (el) {
         el.addEventListener('input', () => { if (typeof calculateGears === 'function') calculateGears(); });
