@@ -408,19 +408,20 @@ function calculateGears() {
             calculateGears();
           };
 
-          const toothInfo = (gearType === 'helical')
-            ? `<span class="text-amber-400 font-bold">z₁=${c.z1}</span>, <span class="text-purple-400 font-bold">z₂=${c.z2}</span> <span class="text-[10px] text-slate-400">(mn=${c.m}, α=${c.alpha.toFixed(1)}°)</span>`
-            : `<span class="text-blue-400 font-bold">z₁=${c.z1}</span>, <span class="text-purple-400 font-bold">z₂=${c.z2}</span> <span class="text-[10px] text-slate-400">(m=${c.m})</span>`;
+          const toothPair = `<span class="text-blue-400 font-bold">${c.z1}</span> / <span class="text-purple-400 font-bold">${c.z2}</span>`;
+          const modAngle = (gearType === 'helical')
+            ? `<span class="text-amber-300 font-medium">mn=${c.m}</span> <span class="text-[10px] text-slate-400">(α=${c.alpha.toFixed(1)}°)</span>`
+            : `<span class="text-amber-300 font-medium">m=${c.m}</span>`;
 
           tr.innerHTML = `
-            <td class="p-2.5 font-mono">${toothInfo}</td>
-            <td class="p-2.5 font-mono">${c.tau.toFixed(3)}</td>
-            <td class="p-2.5 font-mono ${c.err < 1.0 ? 'text-emerald-400' : 'text-slate-300'}">±${c.err.toFixed(2)}%</td>
-            <td class="p-2.5 font-mono text-slate-300">i = ${c.i.toFixed(1)} mm</td>
+            <td class="p-2.5 font-mono">${toothPair}</td>
+            <td class="p-2.5 font-mono">${modAngle}</td>
+            <td class="p-2.5 font-mono font-bold text-white">${c.tau.toFixed(3)}</td>
+            <td class="p-2.5 font-mono ${c.err < 0.6 ? 'text-emerald-400' : 'text-slate-300'}">±${c.err.toFixed(2)}%</td>
             <td class="p-2.5 font-mono ${phiBadgeClass}">ϕ = ${c.phi.toFixed(2)} (${c.L.toFixed(1)} mm)</td>
             <td class="p-2.5 font-mono ${lewisBadgeClass}">${Math.round(c.sigmaL)} MPa</td>
             <td class="p-2.5 text-right font-mono text-xs">
-              <span class="px-2 py-0.5 rounded text-[10px] ${isSelected ? 'bg-blue-500 text-white' : 'bg-slate-800 text-slate-400'}">
+              <span class="px-2 py-0.5 rounded text-[10px] ${isSelected ? 'bg-blue-500 text-white font-bold' : 'bg-slate-800 text-slate-400 hover:text-white'}">
                 ${isSelected ? (isIt ? '✓ Attiva' : '✓ Active') : (isIt ? 'Seleziona' : 'Select')}
               </span>
             </td>
@@ -663,59 +664,21 @@ function calculateGears() {
     }
   }
 
-  const lewisDisp = document.getElementById('gearLewisDisp');
-  if (lewisDisp) lewisDisp.innerText = `${Math.round(sigma_L)} MPa`;
+---
 
-  const lewisStatus = document.getElementById('gearLewisStatus');
-  if (lewisStatus) {
-    if (sigma_L <= 800) {
-      lewisStatus.innerText = isIt ? '✓ Ammissibile (σL ≤ 800 MPa)' : '✓ Verified (σL ≤ 800 MPa)';
-      lewisStatus.className = 'text-[11px] text-emerald-400 font-semibold';
-    } else {
-      lewisStatus.innerText = isIt ? '⚠ Eccessiva (σL > 800 MPa)' : '⚠ High stress (σL > 800 MPa)';
-      lewisStatus.className = 'text-[11px] text-amber-400 font-semibold';
-    }
-  }
+### 2. Tabella allineata in `index.html`
 
-  const centerDisp = document.getElementById('gearCenterDisp');
-  if (centerDisp) centerDisp.innerText = `${a_center.toFixed(2)} mm`;
+Assicurati che l'intestazione (`<thead>`) della tabella delle combinazioni in `index.html` sia esattamente questa:
 
-  const centerSub = document.getElementById('gearCenterSub');
-  if (centerSub) centerSub.innerText = `dp₁: ${dp1.toFixed(1)} | dp₂: ${dp2.toFixed(1)} mm (z₁: ${z1}, z₂: ${z2})`;
-
-  // Breakdown analitico
-  const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
-  setTxt('bkMmin', `${m_min.toFixed(2)} mm`);
-  setTxt('bkMnorm', `${m_norm.toFixed(2)} mm (z₁: ${z1}, z₂: ${z2})`);
-  setTxt('bkPhiLim', `${phi.toFixed(3)}`);
-  setTxt('bkLface', `${L_face.toFixed(1)} mm`);
-  setTxt('bkFc', `${Math.round(Fc)} N`);
-  setTxt('bkYlewis', `${yLewis.toFixed(3)}`);
-  setTxt('bkSigmaL', `${Math.round(sigma_L)} MPa`);
-
-  const bkUnder = document.getElementById('bkUndercut');
-  if (bkUnder) {
-    const z_check = (gearType === 'spur') ? z1 : (z1 / Math.pow(Math.cos((alphaDeg * Math.PI) / 180.0), 3));
-    if (z_check >= z_min) {
-      bkUnder.innerText = isIt ? `z_eq ≥ z_min (${z_min.toFixed(1)}) → Ok` : `z_eq ≥ z_min (${z_min.toFixed(1)}) → Pass`;
-      bkUnder.className = 'text-emerald-400 font-bold';
-    } else {
-      bkUnder.innerText = isIt ? `z_eq < z_min (${z_min.toFixed(1)}) → Sottotaglio!` : `z_eq < z_min (${z_min.toFixed(1)}) → Undercut!`;
-      bkUnder.className = 'text-amber-400 font-bold';
-    }
-  }
-
-  if (gearType === 'helical') {
-    setTxt('bkAlpha', `${alphaDeg.toFixed(1)}°`);
-    setTxt('bkPhiCorr', `${factors.Phi.toFixed(3)}`);
-    setTxt('bkPsiCorr', `${factors.Psi.toFixed(3)}`);
-    setTxt('bkGammaT', `${factors.Gamma_T.toFixed(3)} (${factors.Gamma_T1.toFixed(2)}+${factors.Gamma_T2.toFixed(2)})`);
-  }
-
-  drawGearScheme(dp1, dp2, a_center);
-}
-
-function selectSeries3Solution(type) {
-  selectedAlternativeModule = type;
-  calculateGears();
-}
+```html
+              <thead class="text-[11px] uppercase tracking-wider text-slate-400 bg-slate-950/60 border-b border-slate-800">
+                <tr>
+                  <th class="p-2.5">z₁ / z₂</th>
+                  <th class="p-2.5">Modulo & α</th>
+                  <th class="p-2.5">τ_eff</th>
+                  <th class="p-2.5">Errore su τ (%)</th>
+                  <th class="p-2.5">Hertz ϕ & Fascia L</th>
+                  <th class="p-2.5">Lewis σL</th>
+                  <th class="p-2.5 text-right">Azione</th>
+                </tr>
+              </thead>
