@@ -1,9 +1,9 @@
 // ==========================================
 // MODULE 3: CYLINDRICAL GEARS (HERTZ & LEWIS)
 // Conforme al formulario di Costruzione di Macchine
-// Convenzione: tau = z1 / z2 < 1.0
-// Algoritmo di Ottimizzazione Denti (Minimo z1 compatto)
-// Supporto denti diritti ed elicoidali su Target tau e Interasse i
+// Convenzione formale: tau = z1 / z2 < 1.0 (Rapporto di trasmissione)
+// Curvatura Hertz: (1 + tau) = (1 + z1 / z2)
+// Ottimizzazione Multi-Modulo & Chiusura Geometrica Interasse
 // ==========================================
 
 const STANDARD_MODULES = [
@@ -265,13 +265,15 @@ function calculateGears() {
   let z2 = 40;
   let tau = 0.5;
 
-  const optTableCard = document.getElementById('gearFixedOptTableCard');
+  let chosenM_normal = 2.0;
+  let chosenAlphaDeg = 0.0;
 
-  // ========================================================
-  // RICERCA AUTOMATICA DENTI (Sia su Tau che su Interasse i)
-  // ========================================================
+  const optTableCard = document.getElementById('gearFixedOptTableCard');
   const supportsAutoZ = (geomMode === 'tau' || geomMode === 'center') && isAutoZ;
 
+  // ========================================================
+  // MOTORE DI OTTIMIZZAZIONE CINEMATICA E STRUTTURALE (Auto-Z)
+  // ========================================================
   if (supportsAutoZ) {
     if (optTableCard) optTableCard.classList.remove('hidden');
 
@@ -280,99 +282,109 @@ function calculateGears() {
     const tolPct = parseFloat(document.getElementById('gearTauTolVal')?.value) || 3.0;
     const targetI = parseFloat(document.getElementById('gearTargetCenter')?.value) || 100.0;
 
-    // Se il modulo è bloccato usa quello, altrimenti usa modulo indicativo per la stima cinematica
-    let candidateM = isLockM ? (parseFloat(document.getElementById('gearLockedMVal')?.value) || 2.5) : 2.5;
+    // Moduli da scansionare: o quello bloccato, oppure l'intera serie standard
+    const moduleScanList = isLockM
+      ? [parseFloat(document.getElementById('gearLockedMVal')?.value) || 2.5]
+      : STANDARD_MODULES.map(item => item.m);
 
     autoOptCombos = [];
 
-    // Limiti di scansione: da z_min a 60
-    for (let curZ1 = z_min; curZ1 <= 60; curZ1++) {
-      let candidateZ2List = [];
+    for (let curZ1 = z_min; curZ1 <= 45; curZ1++) {
+      // Per ogni z1 cerchiamo z2 vicino al rapporto teorico
+      const idealZ2 = Math.round(curZ1 / targetTau);
+      if (idealZ2 <= curZ1) continue;
 
-      if (geomMode === 'center') {
-        // Se interasse è fissato: i = mt * (z1 + z2) / 2
-        // z2 ideale = (2 * i / mt) - z1
-        const idealZ2 = Math.round((2.0 * targetI / candidateM) - curZ1);
-        if (idealZ2 > curZ1) {
-          candidateZ2List = [idealZ2 - 1, idealZ2, idealZ2 + 1];
-        }
-      } else {
-        const idealZ2 = Math.round(curZ1 / targetTau);
-        if (idealZ2 > curZ1) {
-          candidateZ2List = [idealZ2 - 1, idealZ2, idealZ2 + 1];
-        }
-      }
-
-      for (let curZ2 of candidateZ2List) {
+      for (let curZ2 of [idealZ2 - 2, idealZ2 - 1, idealZ2, idealZ2 + 1, idealZ2 + 2]) {
         if (curZ2 <= curZ1) continue;
         const curTau = curZ1 / curZ2;
         const errTau = Math.abs((curTau - targetTau) / targetTau) * 100.0;
 
         if (errTau <= tolPct) {
-          let alpha_c = 0.0;
-          let mt_c = candidateM;
-          let factors_c = { Phi: 1, Psi: 1, Gamma_T: 2 };
+          const sumZ = curZ1 + curZ2;
 
-          if (gearType === 'helical') {
-            // Stima mt da Hertz elicoidale
-            const numHel = 8 * Ke_N_mm2 * W_N_mm_s * (1.0 + curTau) * 0.6;
-            const denHel = 1.0 * omega1 * Math.sin(2 * theta) * Math.pow(curZ1, 3) * Math.pow(sigmaH_lim, 2);
-            const mt_min_c = Math.cbrt(numHel / denHel);
-            const cosA = Math.min(0.999, Math.max(0.707, candidateM / mt_min_c));
-            alpha_c = (Math.acos(cosA) * 180.0) / Math.PI;
-            mt_c = candidateM / Math.cos((alpha_c * Math.PI) / 180.0);
-            factors_c = getHelicalFactors(alpha_c, curZ1, curZ2);
+          for (let candM of moduleScanList) {
+            let alpha_c = 0.0;
+            let mt_c = candM;
+            let i_c = targetI;
+            let factors_c = { Phi: 1, Psi: 1, Gamma_T: 2 };
+
+            if (gearType === 'spur') {
+              mt_c = candM;
+              i_c = mt_c * (sumZ / 2.0 + xr1);
+              // Se interasse fisso a denti diritti, deve coincidere esattamente
+              if (geomMode === 'center' && Math.abs(i_c - targetI) > 0.5) continue;
+            } else {
+              // Denti elicoidali
+              if (geomMode === 'center') {
+                // Chiusura geometrica: cos(alpha) = mn * sumZ / (2 * targetI)
+                const cosAlphaExact = (candM * (sumZ + 2.0 * xr1)) / (2.0 * targetI);
+                if (cosAlphaExact < 0.707 || cosAlphaExact > 0.999) continue; // alpha tra 2° e 45°
+                alpha_c = (Math.acos(cosAlphaExact) * 180.0) / Math.PI;
+                mt_c = candM / cosAlphaExact;
+                i_c = targetI;
+              } else {
+                // Stima mt da Hertz puro
+                const numHel = 8 * Ke_N_mm2 * W_N_mm_s * (1.0 + curTau) * 0.6;
+                const denHel = 1.0 * omega1 * Math.sin(2 * theta) * Math.pow(curZ1, 3) * Math.pow(sigmaH_lim, 2);
+                const mt_min_c = Math.cbrt(numHel / denHel);
+                const cosA = Math.min(0.999, Math.max(0.707, candM / mt_min_c));
+                alpha_c = (Math.acos(cosA) * 180.0) / Math.PI;
+                mt_c = candM / cosA;
+                i_c = mt_c * (sumZ / 2.0 + xr1);
+              }
+              factors_c = getHelicalFactors(alpha_c, curZ1, curZ2);
+            }
+
+            // Calcolo del phi necessario per lavorare a sigmaH_lim
+            const phiVal = (gearType === 'spur')
+              ? (8 * Ke_N_mm2 * W_N_mm_s * (1.0 + curTau)) / (omega1 * Math.sin(2 * theta) * Math.pow(curZ1, 3) * Math.pow(mt_c, 3) * Math.pow(sigmaH_lim, 2))
+              : (8 * Ke_N_mm2 * W_N_mm_s * (1.0 + curTau) / (omega1 * Math.sin(2 * theta) * Math.pow(curZ1, 3) * Math.pow(mt_c, 3) * Math.pow(sigmaH_lim, 2))) * (factors_c.Phi / factors_c.Gamma_T);
+
+            const dp1_c = mt_c * curZ1;
+            const L_c = isLockL ? (parseFloat(document.getElementById('gearLockedLVal')?.value) || 30.0) : (phiVal * dp1_c);
+            const phi_eff = L_c / dp1_c;
+
+            // Tensione Lewis
+            const Fc_c = (2 * M1_Nm * 1000.0) / dp1_c;
+            const z_eq = (gearType === 'spur') ? curZ1 : (curZ1 / Math.pow(Math.cos((alpha_c * Math.PI) / 180.0), 3));
+            const y_c = getLewisFactor(z_eq, xr1);
+            const sigL_c = (gearType === 'spur')
+              ? (Fc_c / (L_c * candM * y_c))
+              : (Fc_c / (L_c * candM * y_c)) * (factors_c.Psi / factors_c.Gamma_T);
+
+            // Criterio di Ranking: privilegia z1 compatto e phi nel range [0.5, 1.0]
+            let phiPenalty = 0;
+            if (phi_eff < 0.5) phiPenalty = (0.5 - phi_eff) * 100;
+            else if (phi_eff > 1.0) phiPenalty = (phi_eff - 1.0) * 100;
+
+            const score = (curZ1 * 1.5) + (errTau * 2.0) + phiPenalty;
+
+            autoOptCombos.push({
+              z1: curZ1,
+              z2: curZ2,
+              tau: curTau,
+              err: errTau,
+              m: candM,
+              mt: mt_c,
+              alpha: alpha_c,
+              i: i_c,
+              phi: phi_eff,
+              L: L_c,
+              sigmaL: sigL_c,
+              score: score
+            });
           }
-
-          const phiVal = (gearType === 'spur')
-            ? (8 * Ke_N_mm2 * W_N_mm_s * (1.0 + curTau)) / (omega1 * Math.sin(2 * theta) * Math.pow(curZ1, 3) * Math.pow(candidateM, 3) * Math.pow(sigmaH_lim, 2))
-            : (8 * Ke_N_mm2 * W_N_mm_s * (1.0 + curTau) / (omega1 * Math.sin(2 * theta) * Math.pow(curZ1, 3) * Math.pow(mt_c, 3) * Math.pow(sigmaH_lim, 2))) * (factors_c.Phi / factors_c.Gamma_T);
-
-          const dp1_c = mt_c * curZ1;
-          const L_c = isLockL ? (parseFloat(document.getElementById('gearLockedLVal')?.value) || 30.0) : (phiVal * dp1_c);
-          const phi_eff = L_c / dp1_c;
-
-          const Fc_c = (2 * M1_Nm * 1000.0) / dp1_c;
-          const z_eq = (gearType === 'spur') ? curZ1 : (curZ1 / Math.pow(Math.cos((alpha_c * Math.PI) / 180.0), 3));
-          const y_c = getLewisFactor(z_eq, xr1);
-          const sigL_c = (gearType === 'spur')
-            ? (Fc_c / (L_c * candidateM * y_c))
-            : (Fc_c / (L_c * candidateM * y_c)) * (factors_c.Psi / factors_c.Gamma_T);
-
-          const i_eff = mt_c * ((curZ1 + curZ2) / 2.0 + xr1);
-
-          // Criterio di Ranking ingegneristico:
-          // 1. Privilegia fortemente z1 basso (compattezza riduttore)
-          // 2. Penalizza phi fuori range [0.5, 1.0]
-          // 3. Penalizza errore su tau
-          let phiPenalty = 0;
-          if (phi_eff < 0.5) phiPenalty = (0.5 - phi_eff) * 80;
-          else if (phi_eff > 1.0) phiPenalty = (phi_eff - 1.0) * 80;
-
-          const score = (curZ1 * 2.0) + (errTau * 1.5) + phiPenalty;
-
-          autoOptCombos.push({
-            z1: curZ1,
-            z2: curZ2,
-            tau: curTau,
-            err: errTau,
-            phi: phi_eff,
-            L: L_c,
-            sigmaL: sigL_c,
-            alpha: alpha_c,
-            i: i_eff,
-            score: score
-          });
         }
       }
     }
 
     autoOptCombos.sort((a, b) => a.score - b.score);
 
+    // Rimuovi duplicati identici
     const uniqueCombos = [];
     const seen = new Set();
     for (const c of autoOptCombos) {
-      const key = `${c.z1}_${c.z2}`;
+      const key = `${c.z1}_${c.z2}_${c.m}_${Math.round(c.alpha * 10)}`;
       if (!seen.has(key)) {
         seen.add(key);
         uniqueCombos.push(c);
@@ -386,7 +398,7 @@ function calculateGears() {
     if (tbody) {
       tbody.innerHTML = '';
       if (autoOptCombos.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-slate-500">${isIt ? 'Nessuna combinazione entro la tolleranza. Allarga la tolleranza % o modifica il modulo.' : 'No combinations found within specified ratio tolerance.'}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-slate-500">${isIt ? 'Nessuna combinazione entro la tolleranza. Allarga la tolleranza % o sblocca i vincoli.' : 'No combinations found within tolerance. Increase tolerance % or release constraints.'}</td></tr>`;
       } else {
         autoOptCombos.forEach((c, idx) => {
           const isSelected = (idx === selectedComboIdx);
@@ -402,8 +414,8 @@ function calculateGears() {
           };
 
           const toothInfo = (gearType === 'helical')
-            ? `<span class="text-amber-400 font-bold">z₁=${c.z1}</span>, <span class="text-purple-400 font-bold">z₂=${c.z2}</span> <span class="text-[10px] text-slate-400">(α=${c.alpha.toFixed(1)}°)</span>`
-            : `<span class="text-blue-400 font-bold">z₁=${c.z1}</span>, <span class="text-purple-400 font-bold">z₂=${c.z2}</span>`;
+            ? `<span class="text-amber-400 font-bold">z₁=${c.z1}</span>, <span class="text-purple-400 font-bold">z₂=${c.z2}</span> <span class="text-[10px] text-slate-400">(mn=${c.m}, α=${c.alpha.toFixed(1)}°)</span>`
+            : `<span class="text-blue-400 font-bold">z₁=${c.z1}</span>, <span class="text-purple-400 font-bold">z₂=${c.z2}</span> <span class="text-[10px] text-slate-400">(m=${c.m})</span>`;
 
           tr.innerHTML = `
             <td class="p-2.5 font-mono">${toothInfo}</td>
@@ -428,6 +440,8 @@ function calculateGears() {
       z1 = activeCombo.z1;
       z2 = activeCombo.z2;
       tau = activeCombo.tau;
+      chosenM_normal = activeCombo.m;
+      chosenAlphaDeg = activeCombo.alpha;
     }
   } else {
     if (optTableCard) optTableCard.classList.add('hidden');
@@ -457,64 +471,82 @@ function calculateGears() {
     }
   }
 
+  // ========================================================
+  // CALCOLO DEFINITIVO DEI RISULTATI DELLA TRASMISSIONE
+  // ========================================================
   let m_min = 1.0;
   let strictModuleObj = STANDARD_MODULES[4];
   let recommendedModuleObj = null;
-  let alphaDeg = 0.0;
+  let alphaDeg = chosenAlphaDeg;
   let factors = { Phi: 1, Psi: 1, Gamma_T1: 1, Gamma_T2: 1, Gamma_T: 2 };
 
   const helicalDetails = document.getElementById('helicalStepDetails');
 
-  if (gearType === 'spur') {
-    if (helicalDetails) helicalDetails.classList.add('hidden');
-    z_min = (2 * (1 - xr1)) / Math.pow(Math.sin(theta), 2);
-
-    const numHertz = 8 * Ke_N_mm2 * W_N_mm_s * (1.0 + tau);
-    const denHertz = 1.0 * omega1 * Math.sin(2 * theta) * Math.pow(z1, 3) * Math.pow(sigmaH_lim, 2);
-    m_min = Math.cbrt(numHertz / denHertz);
-
-    if (isLockM) {
-      const lockedVal = parseFloat(document.getElementById('gearLockedMVal')?.value) || 2.5;
-      strictModuleObj = STANDARD_MODULES.find(item => item.m === lockedVal) || { m: lockedVal, cat: 'green', serie: 1 };
+  if (supportsAutoZ && autoOptCombos.length > 0) {
+    // I parametri sono già stati determinati dall'ottimizzatore
+    const activeCombo = autoOptCombos[selectedComboIdx];
+    strictModuleObj = STANDARD_MODULES.find(item => item.m === activeCombo.m) || { m: activeCombo.m, cat: 'green', serie: 1 };
+    m_min = activeCombo.m;
+    alphaDeg = activeCombo.alpha;
+    if (gearType === 'helical') {
+      if (helicalDetails) helicalDetails.classList.remove('hidden');
+      factors = getHelicalFactors(alphaDeg, z1, z2);
     } else {
-      strictModuleObj = STANDARD_MODULES.find(item => item.m >= m_min) || STANDARD_MODULES[STANDARD_MODULES.length - 1];
-      if (strictModuleObj.cat === 'red') {
-        recommendedModuleObj = STANDARD_MODULES.find(item => item.m > strictModuleObj.m && item.cat !== 'red');
-      }
+      if (helicalDetails) helicalDetails.classList.add('hidden');
     }
   } else {
-    if (helicalDetails) helicalDetails.classList.remove('hidden');
+    // Sintesi canonica standard
+    if (gearType === 'spur') {
+      if (helicalDetails) helicalDetails.classList.add('hidden');
+      z_min = (2 * (1 - xr1)) / Math.pow(Math.sin(theta), 2);
 
-    const numHertzHel = 8 * Ke_N_mm2 * W_N_mm_s * (1.0 + tau) * 0.6;
-    const denHertzHel = 1.0 * omega1 * Math.sin(2 * theta) * Math.pow(z1, 3) * Math.pow(sigmaH_lim, 2);
-    const mt_min = Math.cbrt(numHertzHel / denHertzHel);
-    m_min = mt_min;
+      const numHertz = 8 * Ke_N_mm2 * W_N_mm_s * (1.0 + tau);
+      const denHertz = 1.0 * omega1 * Math.sin(2 * theta) * Math.pow(z1, 3) * Math.pow(sigmaH_lim, 2);
+      m_min = Math.cbrt(numHertz / denHertz);
 
-    if (isLockM) {
-      const lockedVal = parseFloat(document.getElementById('gearLockedMVal')?.value) || 2.5;
-      strictModuleObj = STANDARD_MODULES.find(item => item.m === lockedVal) || { m: lockedVal, cat: 'green', serie: 1 };
-    } else {
-      const candidates = STANDARD_MODULES.filter(item => item.m <= mt_min * 1.01 && item.m >= mt_min * 0.70);
-      strictModuleObj = candidates.length > 0 ? candidates[candidates.length - 1] : (STANDARD_MODULES.find(item => item.m >= mt_min) || STANDARD_MODULES[4]);
-      if (strictModuleObj.cat === 'red') {
-        recommendedModuleObj = STANDARD_MODULES.find(item => item.m > strictModuleObj.m && item.cat !== 'red');
+      if (isLockM) {
+        const lockedVal = parseFloat(document.getElementById('gearLockedMVal')?.value) || 2.5;
+        strictModuleObj = STANDARD_MODULES.find(item => item.m === lockedVal) || { m: lockedVal, cat: 'green', serie: 1 };
+      } else {
+        strictModuleObj = STANDARD_MODULES.find(item => item.m >= m_min) || STANDARD_MODULES[STANDARD_MODULES.length - 1];
+        if (strictModuleObj.cat === 'red') {
+          recommendedModuleObj = STANDARD_MODULES.find(item => item.m > strictModuleObj.m && item.cat !== 'red');
+        }
       }
+    } else {
+      if (helicalDetails) helicalDetails.classList.remove('hidden');
+
+      const numHertzHel = 8 * Ke_N_mm2 * W_N_mm_s * (1.0 + tau) * 0.6;
+      const denHertzHel = 1.0 * omega1 * Math.sin(2 * theta) * Math.pow(z1, 3) * Math.pow(sigmaH_lim, 2);
+      const mt_min = Math.cbrt(numHertzHel / denHertzHel);
+      m_min = mt_min;
+
+      if (isLockM) {
+        const lockedVal = parseFloat(document.getElementById('gearLockedMVal')?.value) || 2.5;
+        strictModuleObj = STANDARD_MODULES.find(item => item.m === lockedVal) || { m: lockedVal, cat: 'green', serie: 1 };
+      } else {
+        const candidates = STANDARD_MODULES.filter(item => item.m <= mt_min * 1.01 && item.m >= mt_min * 0.70);
+        strictModuleObj = candidates.length > 0 ? candidates[candidates.length - 1] : (STANDARD_MODULES.find(item => item.m >= mt_min) || STANDARD_MODULES[4]);
+        if (strictModuleObj.cat === 'red') {
+          recommendedModuleObj = STANDARD_MODULES.find(item => item.m > strictModuleObj.m && item.cat !== 'red');
+        }
+      }
+
+      if (geomMode === 'center') {
+        const targetI = parseFloat(document.getElementById('gearTargetCenter')?.value) || 100.0;
+        const cosAlphaExact = (strictModuleObj.m * (z1 + z2 + 2.0 * xr1)) / (2.0 * targetI);
+        alphaDeg = (cosAlphaExact >= 0.707 && cosAlphaExact <= 0.999) ? ((Math.acos(cosAlphaExact) * 180.0) / Math.PI) : 15.0;
+      } else {
+        const cosAlpha = Math.min(0.999, Math.max(0.707, strictModuleObj.m / mt_min));
+        alphaDeg = (Math.acos(cosAlpha) * 180.0) / Math.PI;
+      }
+
+      factors = getHelicalFactors(alphaDeg, z1, z2);
     }
-
-    const cosAlpha = Math.min(0.999, Math.max(0.707, strictModuleObj.m / mt_min));
-    alphaDeg = (Math.acos(cosAlpha) * 180.0) / Math.PI;
-
-    const cosA = Math.cos((alphaDeg * Math.PI) / 180.0);
-    const sinA = Math.sin((alphaDeg * Math.PI) / 180.0);
-    const cosTh = Math.cos(theta);
-    const sinTh = Math.sin(theta);
-    z_min = (2 * (1 - xr1) / Math.pow(sinTh, 2)) * cosA * (1 - Math.pow(sinA, 2) * Math.pow(cosTh, 2));
-
-    factors = getHelicalFactors(alphaDeg, z1, z2);
   }
 
   let activeModuleObj = strictModuleObj;
-  if (selectedAlternativeModule && (selectedAlternativeModule === 'recommended') && recommendedModuleObj && !isLockM) {
+  if (selectedAlternativeModule && (selectedAlternativeModule === 'recommended') && recommendedModuleObj && !isLockM && !supportsAutoZ) {
     activeModuleObj = recommendedModuleObj;
   }
 
@@ -557,7 +589,7 @@ function calculateGears() {
   // Box comparativo Serie 3
   const compCard = document.getElementById('gearSeries3ComparisonCard');
   if (compCard) {
-    if (!isLockM && strictModuleObj.cat === 'red' && recommendedModuleObj) {
+    if (!isLockM && !supportsAutoZ && strictModuleObj.cat === 'red' && recommendedModuleObj) {
       compCard.classList.remove('hidden');
 
       const phiStrict = (gearType === 'spur')
@@ -670,11 +702,12 @@ function calculateGears() {
 
   const bkUnder = document.getElementById('bkUndercut');
   if (bkUnder) {
-    if (z1 >= z_min) {
-      bkUnder.innerText = isIt ? `z₁ ≥ z_min (${z_min.toFixed(1)}) → Ok` : `z₁ ≥ z_min (${z_min.toFixed(1)}) → Pass`;
+    const z_check = (gearType === 'spur') ? z1 : (z1 / Math.pow(Math.cos((alphaDeg * Math.PI) / 180.0), 3));
+    if (z_check >= z_min) {
+      bkUnder.innerText = isIt ? `z_eq ≥ z_min (${z_min.toFixed(1)}) → Ok` : `z_eq ≥ z_min (${z_min.toFixed(1)}) → Pass`;
       bkUnder.className = 'text-emerald-400 font-bold';
     } else {
-      bkUnder.innerText = isIt ? `z₁ < z_min (${z_min.toFixed(1)}) → Sottotaglio!` : `z₁ < z_min (${z_min.toFixed(1)}) → Undercut!`;
+      bkUnder.innerText = isIt ? `z_eq < z_min (${z_min.toFixed(1)}) → Sottotaglio!` : `z_eq < z_min (${z_min.toFixed(1)}) → Undercut!`;
       bkUnder.className = 'text-amber-400 font-bold';
     }
   }
