@@ -1,9 +1,8 @@
 // ==========================================
 // MODULE 3: CYLINDRICAL GEARS (HERTZ & LEWIS)
 // Conforme al formulario di Costruzione di Macchine
-// Convenzione formale: tau = z1 / z2 < 1.0 (Rapporto di trasmissione)
-// Curvatura Hertz: (1 + tau) = (1 + z1 / z2)
-// Ottimizzazione Multi-Modulo & Chiusura Geometrica Interasse
+// Convenzione formale: tau = z1 / z2 < 1.0
+// Algoritmo di Ranking Avanzato: Filtro coppie uniche e priorità errore tau
 // ==========================================
 
 const STANDARD_MODULES = [
@@ -74,7 +73,6 @@ function drawGearScheme(d1, d2, a) {
   const r2 = d2 / 2;
   const totalWidth = d1 + d2 + 40;
   const maxDiameter = Math.max(d1, d2);
-
   const scale = Math.min(480 / Math.max(totalWidth, 1), 150 / Math.max(maxDiameter * 1.15, 1), 1.5);
 
   const R1 = r1 * scale;
@@ -82,30 +80,21 @@ function drawGearScheme(d1, d2, a) {
   const cx1 = 60 + R1;
   const cy = 115;
   const cx2 = cx1 + a * scale;
-
   const dimY = cy + Math.max(R1, R2) + 24;
 
-  svg.innerHTML += `
-    <line x1="${cx1 - R1 - 20}" y1="${cy}" x2="${cx2 + R2 + 20}" y2="${cy}" stroke="#334155" stroke-dasharray="6 4" stroke-width="1.2" />
-  `;
-
+  svg.innerHTML += `<line x1="${cx1 - R1 - 20}" y1="${cy}" x2="${cx2 + R2 + 20}" y2="${cy}" stroke="#334155" stroke-dasharray="6 4" stroke-width="1.2" />`;
   svg.innerHTML += `
     <circle cx="${cx1}" cy="${cy}" r="${R1}" fill="rgba(251, 191, 36, 0.12)" stroke="#fbbf24" stroke-width="2" />
     <circle cx="${cx1}" cy="${cy}" r="4" fill="#fbbf24" />
     <text x="${cx1}" y="${cy - R1 - 8}" fill="#fbbf24" font-size="11" font-weight="bold" font-family="monospace" text-anchor="middle">z₁ (dp=${d1.toFixed(1)})</text>
   `;
-
   svg.innerHTML += `
     <circle cx="${cx2}" cy="${cy}" r="${R2}" fill="rgba(168, 85, 247, 0.12)" stroke="#a855f7" stroke-width="2" />
     <circle cx="${cx2}" cy="${cy}" r="4" fill="#a855f7" />
     <text x="${cx2}" y="${cy - R2 - 8}" fill="#a855f7" font-size="11" font-weight="bold" font-family="monospace" text-anchor="middle">z₂ (dp=${d2.toFixed(1)})</text>
   `;
-
   const contactX = cx1 + R1;
-  svg.innerHTML += `
-    <circle cx="${contactX}" cy="${cy}" r="3.5" fill="#38bdf8" />
-  `;
-
+  svg.innerHTML += `<circle cx="${contactX}" cy="${cy}" r="3.5" fill="#38bdf8" />`;
   svg.innerHTML += `
     <line x1="${cx1}" y1="${cy}" x2="${cx1}" y2="${dimY + 8}" stroke="#0284c7" stroke-width="0.8" stroke-dasharray="2 2" />
     <line x1="${cx2}" y1="${cy}" x2="${cx2}" y2="${dimY + 8}" stroke="#0284c7" stroke-width="0.8" stroke-dasharray="2 2" />
@@ -272,7 +261,7 @@ function calculateGears() {
   const supportsAutoZ = (geomMode === 'tau' || geomMode === 'center') && isAutoZ;
 
   // ========================================================
-  // MOTORE DI OTTIMIZZAZIONE CINEMATICA E STRUTTURALE (Auto-Z)
+  // MOTORE DI OTTIMIZZAZIONE (Filtro Univoco e Priorità Errore)
   // ========================================================
   if (supportsAutoZ) {
     if (optTableCard) optTableCard.classList.remove('hidden');
@@ -282,15 +271,13 @@ function calculateGears() {
     const tolPct = parseFloat(document.getElementById('gearTauTolVal')?.value) || 3.0;
     const targetI = parseFloat(document.getElementById('gearTargetCenter')?.value) || 100.0;
 
-    // Moduli da scansionare: o quello bloccato, oppure l'intera serie standard
     const moduleScanList = isLockM
       ? [parseFloat(document.getElementById('gearLockedMVal')?.value) || 2.5]
       : STANDARD_MODULES.map(item => item.m);
 
     autoOptCombos = [];
 
-    for (let curZ1 = z_min; curZ1 <= 45; curZ1++) {
-      // Per ogni z1 cerchiamo z2 vicino al rapporto teorico
+    for (let curZ1 = z_min; curZ1 <= 50; curZ1++) {
       const idealZ2 = Math.round(curZ1 / targetTau);
       if (idealZ2 <= curZ1) continue;
 
@@ -311,19 +298,15 @@ function calculateGears() {
             if (gearType === 'spur') {
               mt_c = candM;
               i_c = mt_c * (sumZ / 2.0 + xr1);
-              // Se interasse fisso a denti diritti, deve coincidere esattamente
               if (geomMode === 'center' && Math.abs(i_c - targetI) > 0.5) continue;
             } else {
-              // Denti elicoidali
               if (geomMode === 'center') {
-                // Chiusura geometrica: cos(alpha) = mn * sumZ / (2 * targetI)
                 const cosAlphaExact = (candM * (sumZ + 2.0 * xr1)) / (2.0 * targetI);
-                if (cosAlphaExact < 0.707 || cosAlphaExact > 0.999) continue; // alpha tra 2° e 45°
+                if (cosAlphaExact < 0.707 || cosAlphaExact > 0.999) continue;
                 alpha_c = (Math.acos(cosAlphaExact) * 180.0) / Math.PI;
                 mt_c = candM / cosAlphaExact;
                 i_c = targetI;
               } else {
-                // Stima mt da Hertz puro
                 const numHel = 8 * Ke_N_mm2 * W_N_mm_s * (1.0 + curTau) * 0.6;
                 const denHel = 1.0 * omega1 * Math.sin(2 * theta) * Math.pow(curZ1, 3) * Math.pow(sigmaH_lim, 2);
                 const mt_min_c = Math.cbrt(numHel / denHel);
@@ -335,7 +318,6 @@ function calculateGears() {
               factors_c = getHelicalFactors(alpha_c, curZ1, curZ2);
             }
 
-            // Calcolo del phi necessario per lavorare a sigmaH_lim
             const phiVal = (gearType === 'spur')
               ? (8 * Ke_N_mm2 * W_N_mm_s * (1.0 + curTau)) / (omega1 * Math.sin(2 * theta) * Math.pow(curZ1, 3) * Math.pow(mt_c, 3) * Math.pow(sigmaH_lim, 2))
               : (8 * Ke_N_mm2 * W_N_mm_s * (1.0 + curTau) / (omega1 * Math.sin(2 * theta) * Math.pow(curZ1, 3) * Math.pow(mt_c, 3) * Math.pow(sigmaH_lim, 2))) * (factors_c.Phi / factors_c.Gamma_T);
@@ -344,7 +326,6 @@ function calculateGears() {
             const L_c = isLockL ? (parseFloat(document.getElementById('gearLockedLVal')?.value) || 30.0) : (phiVal * dp1_c);
             const phi_eff = L_c / dp1_c;
 
-            // Tensione Lewis
             const Fc_c = (2 * M1_Nm * 1000.0) / dp1_c;
             const z_eq = (gearType === 'spur') ? curZ1 : (curZ1 / Math.pow(Math.cos((alpha_c * Math.PI) / 180.0), 3));
             const y_c = getLewisFactor(z_eq, xr1);
@@ -352,12 +333,12 @@ function calculateGears() {
               ? (Fc_c / (L_c * candM * y_c))
               : (Fc_c / (L_c * candM * y_c)) * (factors_c.Psi / factors_c.Gamma_T);
 
-            // Criterio di Ranking: privilegia z1 compatto e phi nel range [0.5, 1.0]
+            // Nuovo Punteggio: Errore tau conta 10 volte di più, z1 funge da leggero tie-breaker
             let phiPenalty = 0;
-            if (phi_eff < 0.5) phiPenalty = (0.5 - phi_eff) * 100;
-            else if (phi_eff > 1.0) phiPenalty = (phi_eff - 1.0) * 100;
+            if (phi_eff < 0.5) phiPenalty = (0.5 - phi_eff) * 150;
+            else if (phi_eff > 1.0) phiPenalty = (phi_eff - 1.0) * 150;
 
-            const score = (curZ1 * 1.5) + (errTau * 2.0) + phiPenalty;
+            const score = (errTau * 10.0) + (curZ1 * 0.5) + phiPenalty;
 
             autoOptCombos.push({
               z1: curZ1,
@@ -380,17 +361,17 @@ function calculateGears() {
 
     autoOptCombos.sort((a, b) => a.score - b.score);
 
-    // Rimuovi duplicati identici
+    // FILTRO UNIVOCO: Mantiene SOLO IL MIGLIOR MODULO per ogni coppia (z1, z2)
     const uniqueCombos = [];
     const seen = new Set();
     for (const c of autoOptCombos) {
-      const key = `${c.z1}_${c.z2}_${c.m}_${Math.round(c.alpha * 10)}`;
+      const key = `${c.z1}_${c.z2}`;
       if (!seen.has(key)) {
         seen.add(key);
         uniqueCombos.push(c);
       }
     }
-    autoOptCombos = uniqueCombos.slice(0, 5);
+    autoOptCombos = uniqueCombos.slice(0, 6); // Mostra le top 6 combinazioni DISTINTE
 
     if (selectedComboIdx >= autoOptCombos.length) selectedComboIdx = 0;
 
@@ -483,7 +464,6 @@ function calculateGears() {
   const helicalDetails = document.getElementById('helicalStepDetails');
 
   if (supportsAutoZ && autoOptCombos.length > 0) {
-    // I parametri sono già stati determinati dall'ottimizzatore
     const activeCombo = autoOptCombos[selectedComboIdx];
     strictModuleObj = STANDARD_MODULES.find(item => item.m === activeCombo.m) || { m: activeCombo.m, cat: 'green', serie: 1 };
     m_min = activeCombo.m;
