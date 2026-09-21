@@ -382,14 +382,10 @@
 
           <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700/60 text-xs">
             <span class="text-slate-400 font-semibold block mb-2 uppercase tracking-wider" data-i18n="gearGeomModeLabel">Gear Definition:</span>
-            <div class="flex flex-wrap gap-3">
+            <div class="flex gap-4">
               <label class="flex items-center gap-1.5 cursor-pointer text-slate-300">
                 <input type="radio" name="gearGeomMode" value="tau" checked class="text-blue-600 focus:ring-blue-500 bg-slate-900 border-slate-700">
-                <span data-i18n="optGeomTau">Target τ</span>
-              </label>
-              <label class="flex items-center gap-1.5 cursor-pointer text-slate-300">
-                <input type="radio" name="gearGeomMode" value="fixed" class="text-blue-600 focus:ring-blue-500 bg-slate-900 border-slate-700">
-                <span data-i18n="optGeomFixed">Fixed Module + Tol %</span>
+                <span data-i18n="optGeomTau">Target Ratio τ</span>
               </label>
               <label class="flex items-center gap-1.5 cursor-pointer text-slate-300">
                 <input type="radio" name="gearGeomMode" value="teeth" class="text-blue-600 focus:ring-blue-500 bg-slate-900 border-slate-700">
@@ -401,6 +397,26 @@
               </label>
             </div>
           </div>
+        </div>
+
+        <!-- Barra Pulsanti Vincoli Indipendenti (Toggle Modifiers) -->
+        <div class="flex flex-wrap gap-2.5 mb-4 bg-slate-800/30 p-2.5 rounded-xl border border-slate-800 text-xs">
+          <span class="text-slate-400 font-medium py-1 px-1.5" data-i18n="activeConstraintsLabel">Active Modifiers:</span>
+          
+          <label class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-900/80 cursor-pointer hover:border-slate-500 transition-colors">
+            <input type="checkbox" id="toggleAutoZ" class="rounded text-blue-600 focus:ring-blue-500 bg-slate-900 border-slate-700">
+            <span data-i18n="btnAutoZ">Auto-Teeth (Tol. % on τ)</span>
+          </label>
+
+          <label class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-900/80 cursor-pointer hover:border-slate-500 transition-colors">
+            <input type="checkbox" id="toggleLockM" class="rounded text-blue-600 focus:ring-blue-500 bg-slate-900 border-slate-700">
+            <span data-i18n="btnLockM">Lock Module (m)</span>
+          </label>
+
+          <label class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-900/80 cursor-pointer hover:border-slate-500 transition-colors">
+            <input type="checkbox" id="toggleLockL" class="rounded text-blue-600 focus:ring-blue-500 bg-slate-900 border-slate-700">
+            <span data-i18n="btnLockL">Lock Face Width (L)</span>
+          </label>
         </div>
 
         <!-- Parametri di Input Sintesi -->
@@ -451,25 +467,35 @@
             <p class="text-xs text-blue-400 mt-1 font-mono" id="gearGeomFeedback">z₂: 40 (τ_eff: 0.500)</p>
           </div>
 
-          <!-- Campi Specifici per Modulo Fisso + Tolleranza -->
-          <div id="colFixedModule" class="hidden">
-            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="gearFixedModuleLabel">Imposed Module (m)</label>
+          <!-- Campi Vincolo Attivabili da Toggle -->
+          <div id="colTauTol" class="hidden">
+            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="tauTolLabel">Max Ratio Error (±%)</label>
             <div class="relative">
-              <input type="number" id="gearFixedModule" value="2.5" min="0.5" max="50" step="0.25"
-                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-              <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">mm</span>
-            </div>
-            <p class="text-xs text-slate-500 mt-1" data-i18n="subFixedModule">Standard milling tool</p>
-          </div>
-
-          <div id="colFixedTol" class="hidden">
-            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="gearFixedTolLabel">Max Ratio Tol. (±%)</label>
-            <div class="relative">
-              <input type="number" id="gearFixedTol" value="3.0" min="0.5" max="15.0" step="0.5"
+              <input type="number" id="gearTauTolVal" value="3.0" min="0.5" max="15.0" step="0.5"
                 class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
               <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">%</span>
             </div>
-            <p class="text-xs text-slate-500 mt-1" data-i18n="subFixedTol">Allowed τ error</p>
+            <p class="text-xs text-slate-500 mt-1" data-i18n="subTauTol">Allowed τ error</p>
+          </div>
+
+          <div id="colLockedM" class="hidden">
+            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="lockedMLabel">Locked Module (m)</label>
+            <div class="relative">
+              <input type="number" id="gearLockedMVal" value="2.5" min="0.5" max="50" step="0.25"
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">mm</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1" data-i18n="subLockedM">Milling tool size</p>
+          </div>
+
+          <div id="colLockedL" class="hidden">
+            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="lockedLLabel">Locked Face Width (L)</label>
+            <div class="relative">
+              <input type="number" id="gearLockedLVal" value="30" min="2" max="1000" step="1"
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">mm</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1" data-i18n="subLockedL">Fixed gear width</p>
           </div>
 
           <div id="colTargetZ2" class="hidden">
@@ -524,7 +550,7 @@
           </div>
         </div>
 
-        <!-- Nuova Tabella Interattiva: Combinazioni Ottime con Modulo Fisso -->
+        <!-- Tabella Interattiva per Combinazioni Ottime da Vincolo Auto-Z -->
         <div id="gearFixedOptTableCard" class="hidden bg-slate-800/40 p-6 rounded-xl border border-slate-700/50 mb-6">
           <div class="flex justify-between items-center mb-3">
             <div>
@@ -540,7 +566,7 @@
                   <th class="p-2.5">z₁</th>
                   <th class="p-2.5">z₂</th>
                   <th class="p-2.5">τ_eff</th>
-                  <th class="p-2.5" data-i18n="thErr">Error %</th>
+                  <th class="p-2.5" data-i18n="thErr">Error on τ (%)</th>
                   <th class="p-2.5" data-i18n="thHertzPhi">Hertz ϕ & Face L</th>
                   <th class="p-2.5">Lewis σL</th>
                   <th class="p-2.5 text-right" data-i18n="thAction">Action</th>
@@ -963,22 +989,27 @@
         optLoadPower: "Power P [kW] & Speed n₁",
         optLoadTorque: "Direct Torque M₁ [Nm]",
         gearGeomModeLabel: "Gear Definition:",
-        optGeomTau: "Target τ",
-        optGeomFixed: "Fixed Module + Tol %",
+        optGeomTau: "Target Ratio τ",
         optGeomTeeth: "Teeth z₁, z₂",
         optGeomCenter: "Center Dist. i",
+        activeConstraintsLabel: "Active Modifiers:",
+        btnAutoZ: "Auto-Teeth (Tol. % on τ)",
+        btnLockM: "Lock Module (m)",
+        btnLockL: "Lock Face Width (L)",
+        tauTolLabel: "Max Ratio Error (±%)",
+        subTauTol: "Allowed τ error",
+        lockedMLabel: "Locked Module (m)",
+        subLockedM: "Milling tool size",
+        lockedLLabel: "Locked Face Width (L)",
+        subLockedL: "Fixed gear width",
+        fixedOptTitle: "Optimal Teeth Combinations (Starting from z_min)",
+        fixedOptSub: "Click any combination to apply geometry and update the transmission scheme",
+        thErr: "Error on τ (%)",
+        thHertzPhi: "Hertz ϕ & Face L",
         gearPowerLabel: "Motor Power (W)",
         gearTorqueLabel: "Driver Torque (M₁)",
         gearSpeedLabel: "Driver Speed (n₁)",
         gearTargetTauLabel: "Target Ratio (τ = z₁/z₂ < 1)",
-        gearFixedModuleLabel: "Imposed Module (m)",
-        subFixedModule: "Standard milling tool",
-        gearFixedTolLabel: "Max Ratio Tol. (±%)",
-        subFixedTol: "Allowed τ error",
-        fixedOptTitle: "Optimal Teeth Combinations (Starting from z_min)",
-        fixedOptSub: "Click any combination to apply geometry and update the transmission scheme",
-        thErr: "Error %",
-        thHertzPhi: "Hertz ϕ & Face L",
         gearZ2Label: "Driven Teeth (z₂)",
         gearCenterLabel: "Target Center Dist. (i)",
         gearZ1Label: "Pinion Teeth (z₁)",
@@ -1145,21 +1176,26 @@
         optLoadTorque: "Coppia Diretta M₁ [Nm]",
         gearGeomModeLabel: "Definizione Ingranaggio:",
         optGeomTau: "Target τ",
-        optGeomFixed: "Modulo Fisso + Tol %",
         optGeomTeeth: "Denti z₁, z₂",
         optGeomCenter: "Interasse Target i",
+        activeConstraintsLabel: "Vincoli Attivi Modulari:",
+        btnAutoZ: "Trova Denti Ottimi (Tol. % su τ)",
+        btnLockM: "Fissa Modulo (m)",
+        btnLockL: "Fissa Fascia (L)",
+        tauTolLabel: "Tolleranza max su τ (±%)",
+        subTauTol: "Errore ammesso su τ",
+        lockedMLabel: "Modulo Bloccato (m)",
+        subLockedM: "Fresa disponibile",
+        lockedLLabel: "Larghezza Fascia (L)",
+        subLockedL: "Spessore imposto",
+        fixedOptTitle: "Combinazioni Denti Ottime (A partire da z_min)",
+        fixedOptSub: "Clicca su una combinazione per applicare la geometria e aggiornare lo schema",
+        thErr: "Errore su τ (%)",
+        thHertzPhi: "Hertz ϕ & Fascia L",
         gearPowerLabel: "Potenza Motore (W)",
         gearTorqueLabel: "Coppia Motrice (M₁)",
         gearSpeedLabel: "Velocità Pignone (n₁)",
         gearTargetTauLabel: "Rapporto Target (τ = z₁/z₂ < 1)",
-        gearFixedModuleLabel: "Modulo Imposto (m)",
-        subFixedModule: "Fresa disponibile",
-        gearFixedTolLabel: "Tolleranza max τ (±%)",
-        subFixedTol: "Errore ammesso su τ",
-        fixedOptTitle: "Combinazioni Denti Ottime (A partire da z_min)",
-        fixedOptSub: "Clicca su una combinazione per applicare la geometria e aggiornare lo schema",
-        thErr: "Errore %",
-        thHertzPhi: "Hertz ϕ & Fascia L",
         gearZ2Label: "Denti Ruota 2 (z₂)",
         gearCenterLabel: "Interasse Target (i)",
         gearZ1Label: "Denti Pignone (z₁)",
@@ -1539,26 +1575,19 @@
     document.querySelectorAll('input[name="gearGeomMode"]').forEach(radio => {
       radio.addEventListener('change', (e) => {
         const colTau = document.getElementById('colTargetTau');
-        const colFixedM = document.getElementById('colFixedModule');
-        const colFixedTol = document.getElementById('colFixedTol');
         const colZ1 = document.getElementById('colPinionZ1');
         const colZ2 = document.getElementById('colTargetZ2');
         const colCenter = document.getElementById('colTargetCenter');
 
         colTau.classList.add('hidden');
-        colFixedM.classList.add('hidden');
-        colFixedTol.classList.add('hidden');
         colZ1.classList.remove('hidden');
         colZ2.classList.add('hidden');
         colCenter.classList.add('hidden');
 
         if (e.target.value === 'tau') {
           colTau.classList.remove('hidden');
-        } else if (e.target.value === 'fixed') {
-          colTau.classList.remove('hidden');
-          colFixedM.classList.remove('hidden');
-          colFixedTol.classList.remove('hidden');
-          colZ1.classList.add('hidden'); // z1 è gestito dall'ottimizzatore
+          const isAutoZ = document.getElementById('toggleAutoZ')?.checked;
+          if (isAutoZ) colZ1.classList.add('hidden');
         } else if (e.target.value === 'teeth') {
           colZ2.classList.remove('hidden');
         } else {
@@ -1569,8 +1598,36 @@
       });
     });
 
-    // Gears Design Inputs
-    ['gearToothType', 'gearPower', 'gearTorqueInput', 'gearSpeed', 'gearTargetTau', 'gearFixedModule', 'gearFixedTol', 'gearZ1', 'gearZ2', 'gearTargetCenter', 'gearXr1', 'gearKeInput', 'gearSigmaH'].forEach(id => {
+    // Gears Modifier Toggles
+    document.getElementById('toggleAutoZ').addEventListener('change', (e) => {
+      const colTol = document.getElementById('colTauTol');
+      const colZ1 = document.getElementById('colPinionZ1');
+      if (e.target.checked) {
+        colTol.classList.remove('hidden');
+        colZ1.classList.add('hidden');
+      } else {
+        colTol.classList.add('hidden');
+        colZ1.classList.remove('hidden');
+      }
+      if (typeof calculateGears === 'function') calculateGears();
+    });
+
+    document.getElementById('toggleLockM').addEventListener('change', (e) => {
+      const colM = document.getElementById('colLockedM');
+      if (e.target.checked) colM.classList.remove('hidden');
+      else colM.classList.add('hidden');
+      if (typeof calculateGears === 'function') calculateGears();
+    });
+
+    document.getElementById('toggleLockL').addEventListener('change', (e) => {
+      const colL = document.getElementById('colLockedL');
+      if (e.target.checked) colL.classList.remove('hidden');
+      else colL.classList.add('hidden');
+      if (typeof calculateGears === 'function') calculateGears();
+    });
+
+    // Gears Design Inputs Listeners
+    ['gearToothType', 'gearPower', 'gearTorqueInput', 'gearSpeed', 'gearTargetTau', 'gearTauTolVal', 'gearLockedMVal', 'gearLockedLVal', 'gearZ1', 'gearZ2', 'gearTargetCenter', 'gearXr1', 'gearKeInput', 'gearSigmaH'].forEach(id => {
       const el = document.getElementById(id);
       if (el) {
         el.addEventListener('input', () => { if (typeof calculateGears === 'function') calculateGears(); });
@@ -1578,7 +1635,7 @@
       }
     });
 
-    // Gears Wmax Inputs
+    // Gears Wmax Inputs Listeners
     ['gwToothType', 'gwModule', 'gwFaceWidth', 'gwZ1', 'gwZ2', 'gwSpeed', 'gwAlpha', 'gwXr1', 'gwKe', 'gwSigmaH', 'gwSigmaL'].forEach(id => {
       const el = document.getElementById(id);
       if (el) {
@@ -1612,11 +1669,8 @@
       });
     }
 
-    // Global Bridge for Series 3 Switcher
     window.selectSeries3Solution = function(type) {
-      if (typeof selectSeries3Solution === 'function') {
-        selectSeries3Solution(type);
-      }
+      if (typeof selectSeries3Solution === 'function') selectSeries3Solution(type);
     };
 
     document.getElementById('unitMetric').addEventListener('click', () => setUnit('metric'));
