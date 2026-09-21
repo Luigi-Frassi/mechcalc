@@ -316,10 +316,10 @@ function calculateGears() {
   const bkUnder = document.getElementById('bkUndercut');
   if (bkUnder) {
     if (z1 >= z_min) {
-      bkUnder.innerText = `z₁ ≥ z_min (${z_min.toFixed(1)}) → Ok`;
+      bkUnder.innerText = isIt ? `z₁ ≥ z_min (${z_min.toFixed(1)}) → Ok` : `z₁ ≥ z_min (${z_min.toFixed(1)}) → Pass`;
       bkUnder.className = 'text-emerald-400 font-bold';
     } else {
-      bkUnder.innerText = `z₁ < z_min (${z_min.toFixed(1)}) → Sottotaglio!`;
+      bkUnder.innerText = isIt ? `z₁ < z_min (${z_min.toFixed(1)}) → Sottotaglio!` : `z₁ < z_min (${z_min.toFixed(1)}) → Undercut!`;
       bkUnder.className = 'text-amber-400 font-bold';
     }
   }
