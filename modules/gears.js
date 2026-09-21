@@ -262,7 +262,7 @@ function calculateGears() {
   const supportsAutoZ = (geomMode === 'tau' || geomMode === 'center') && isAutoZ;
 
   // ========================================================
-  // MOTORE DI OTTIMIZZAZIONE (Ricerca Combinazioni Ottime)
+  // MOTORE DI OTTIMIZZAZIONE (Priorità a z1 minimo e moduli standard)
   // ========================================================
   if (supportsAutoZ) {
     if (optTableCard) optTableCard.classList.remove('hidden');
@@ -303,7 +303,7 @@ function calculateGears() {
             } else {
               if (geomMode === 'center') {
                 const cosAlphaExact = (candM * (sumZ + 2.0 * xr1)) / (2.0 * targetI);
-                // Permette alpha fino a 40° (cos(40°) ≈ 0.766)
+                // Consente alpha fino a 40° (cos(40°) ≈ 0.766)
                 if (cosAlphaExact < 0.766 || cosAlphaExact > 0.999) continue;
                 alpha_c = (Math.acos(cosAlphaExact) * 180.0) / Math.PI;
                 mt_c = candM / cosAlphaExact;
@@ -335,22 +335,24 @@ function calculateGears() {
               ? (Fc_c / (L_c * candM * y_c))
               : (Fc_c / (L_c * candM * y_c)) * (factors_c.Psi / factors_c.Gamma_T);
 
-            // Filtro resistenza: scarta denti che superano il limite a flessione
+            // Filtro resistenza flessione Lewis
             if (sigL_c > 800) continue;
 
-            // Penalità progressiva angolo d'elica (oltre i 25° penalizza, pesante sui 35°-40°)
-            let alphaPenalty = 0;
-            if (alpha_c > 25.0 && alpha_c <= 35.0) {
-              alphaPenalty = (alpha_c - 25.0) * 1.5;
-            } else if (alpha_c > 35.0) {
-              alphaPenalty = 15.0 + (alpha_c - 35.0) * 5.0;
-            }
+            // 1. Penalità forte se il modulo appartiene alla Serie 3 sconsigliata (rosso)
+            const modObj = STANDARD_MODULES.find(item => item.m === candM);
+            const seriePenalty = (modObj && modObj.cat === 'red') ? 6.0 : 0.0;
 
+            // 2. Penalità progressiva per angolo d'elica lontano da 20°
+            let alphaPenalty = Math.abs(alpha_c - 20.0) * 0.35;
+            if (alpha_c > 35.0) alphaPenalty += (alpha_c - 35.0) * 4.0;
+
+            // 3. Penalità per fascia fuori range [0.5, 1.0]
             let phiPenalty = 0;
-            if (phi_eff < 0.5) phiPenalty = (0.5 - phi_eff) * 60;
-            else if (phi_eff > 1.0) phiPenalty = (phi_eff - 1.0) * 60;
+            if (phi_eff < 0.5) phiPenalty = (0.5 - phi_eff) * 50;
+            else if (phi_eff > 1.0) phiPenalty = (phi_eff - 1.0) * 50;
 
-            const score = (errTau * 3.5) + (curZ1 * 0.3) + alphaPenalty + phiPenalty;
+            // Punteggio: Priorità a z1 minimo e precisione su tau
+            const score = (curZ1 * 1.5) + (errTau * 1.0) + seriePenalty + alphaPenalty + phiPenalty;
 
             autoOptCombos.push({
               z1: curZ1,
@@ -373,7 +375,7 @@ function calculateGears() {
 
     autoOptCombos.sort((a, b) => a.score - b.score);
 
-    // Mantiene una sola soluzione per coppia univoca (z1, z2)
+    // Mantiene una sola combinazione migliore per ogni coppia (z1, z2)
     const uniqueCombos = [];
     const seen = new Set();
     for (const c of autoOptCombos) {
@@ -383,7 +385,7 @@ function calculateGears() {
         uniqueCombos.push(c);
       }
     }
-    autoOptCombos = uniqueCombos.slice(0, 6);
+    autoOptCombos = uniqueCombos.slice(0, 8); // Mostra fino a 8 righe
 
     if (selectedComboIdx >= autoOptCombos.length) selectedComboIdx = 0;
 
