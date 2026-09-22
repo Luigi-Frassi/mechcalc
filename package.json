@@ -1,0 +1,31 @@
+{
+  "name": "mechcalc",
+  "version": "0.9.0",
+  "description": "MechCalc - Engineering Toolbox for mechanical design calculations",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx serve .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Luigi-Frassi/mechcalc.git"
+  },
+  "keywords": [
+    "mechanical-engineering",
+    "engineering-tools",
+    "tolerances",
+    "fits",
+    "gears",
+    "belts"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Luigi-Frassi/mechcalc/issues"
+  },
+  "homepage": "https://github.com/Luigi-Frassi/mechcalc#readme",
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
+  }
+}
