@@ -81,6 +81,28 @@
       </div>
     </header>
 
+    <!-- Demo Quick-Presets Bar -->
+    <div class="mb-6 bg-slate-950/70 border border-slate-800 p-3 rounded-xl flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Demo rapida (1-Click):</span>
+      </div>
+      <div class="flex flex-wrap gap-2 text-xs">
+        <button id="demoHelicalBtn" onclick="loadDemoPreset('helical50kw')" 
+          class="px-3 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 font-medium transition-all flex items-center gap-1.5">
+          <span>⚙️ Riduttore Elicoidale (50 kW)</span>
+        </button>
+        <button id="demoSpurBtn" onclick="loadDemoPreset('spur5kw')" 
+          class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium transition-all flex items-center gap-1.5">
+          <span>⚙️ Ingranaggi Diritti (5.5 kW)</span>
+        </button>
+        <button id="demoFitBtn" onclick="loadDemoPreset('bearingFit')" 
+          class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium transition-all flex items-center gap-1.5">
+          <span>🎯 Cuscinetto Ø30 (H7/k6)</span>
+        </button>
+      </div>
+    </div>
+
     <!-- ==================== MODULE 1: TOLERANCES & FITS ==================== -->
     <div id="moduleFitsSection">
       <div class="flex gap-2 mb-6 border-b border-slate-800 pb-3">
@@ -1677,8 +1699,105 @@
     document.getElementById('unitImperial').addEventListener('click', () => setUnit('imperial'));
     document.getElementById('langEN').addEventListener('click', () => updateLanguage('en'));
     document.getElementById('langIT').addEventListener('click', () => updateLanguage('it'));
+
+    function loadDemoPreset(presetKey) {
+      if (presetKey === 'helical50kw') {
+        switchModule('gears');
+        setGearOpMode('design');
+
+        // Imposta tipo dentatura elicoidale
+        const toothType = document.getElementById('gearToothType');
+        if (toothType) toothType.value = 'helical';
+
+        // Carico: Potenza 50 kW, 369.75 rpm
+        const loadPowerRadio = document.querySelector('input[name="gearLoadMode"][value="power"]');
+        if (loadPowerRadio) loadPowerRadio.checked = true;
+        document.getElementById('colGearPower')?.classList.remove('hidden');
+        document.getElementById('colGearTorque')?.classList.add('hidden');
+        document.getElementById('gearPower').value = 50.0;
+        document.getElementById('gearSpeed').value = 369.75;
+
+        // Geometria: Target tau con Auto-Z e interasse target 182 mm
+        const geomCenterRadio = document.querySelector('input[name="gearGeomMode"][value="center"]');
+        if (geomCenterRadio) geomCenterRadio.checked = true;
+        document.getElementById('colTargetTau')?.classList.remove('hidden');
+        document.getElementById('colTargetCenter')?.classList.remove('hidden');
+        document.getElementById('colPinionZ1')?.classList.add('hidden');
+        document.getElementById('colTargetZ2')?.classList.add('hidden');
+
+        document.getElementById('gearTargetTau').value = 0.245;
+        document.getElementById('gearTargetCenter').value = 182.0;
+
+        // Attiva toggle AutoZ (tolleranza 0.7%)
+        const autoZ = document.getElementById('toggleAutoZ');
+        if (autoZ) {
+          autoZ.checked = true;
+          document.getElementById('colTauTol')?.classList.remove('hidden');
+          document.getElementById('gearTauTolVal').value = 0.7;
+        }
+
+        // Reset blocchi modulo e fascia
+        const lockM = document.getElementById('toggleLockM');
+        if (lockM) { lockM.checked = false; document.getElementById('colLockedM')?.classList.add('hidden'); }
+        const lockL = document.getElementById('toggleLockL');
+        if (lockL) { lockL.checked = false; document.getElementById('colLockedL')?.classList.add('hidden'); }
+
+        // Parametri materiale
+        document.getElementById('gearXr1').value = 0.0;
+        document.getElementById('gearKeInput').value = 35.0;
+        document.getElementById('gearSigmaH').value = 1160.0;
+
+        if (typeof calculateGears === 'function') calculateGears();
+
+      } else if (presetKey === 'spur5kw') {
+        switchModule('gears');
+        setGearOpMode('design');
+
+        const toothType = document.getElementById('gearToothType');
+        if (toothType) toothType.value = 'spur';
+
+        const loadPowerRadio = document.querySelector('input[name="gearLoadMode"][value="power"]');
+        if (loadPowerRadio) loadPowerRadio.checked = true;
+        document.getElementById('colGearPower')?.classList.remove('hidden');
+        document.getElementById('colGearTorque')?.classList.add('hidden');
+        document.getElementById('gearPower').value = 5.5;
+        document.getElementById('gearSpeed').value = 1450.0;
+
+        const geomTauRadio = document.querySelector('input[name="gearGeomMode"][value="tau"]');
+        if (geomTauRadio) geomTauRadio.checked = true;
+        document.getElementById('colTargetTau')?.classList.remove('hidden');
+        document.getElementById('colPinionZ1')?.classList.remove('hidden');
+        document.getElementById('colTargetCenter')?.classList.add('hidden');
+        document.getElementById('colTargetZ2')?.classList.add('hidden');
+
+        const autoZ = document.getElementById('toggleAutoZ');
+        if (autoZ) { autoZ.checked = false; document.getElementById('colTauTol')?.classList.add('hidden'); }
+
+        document.getElementById('gearZ1').value = 20;
+        document.getElementById('gearTargetTau').value = 0.5;
+        document.getElementById('gearXr1').value = 0.0;
+        document.getElementById('gearKeInput').value = 35.0;
+        document.getElementById('gearSigmaH').value = 550.0;
+
+        if (typeof calculateGears === 'function') calculateGears();
+
+      } else if (presetKey === 'bearingFit') {
+        switchModule('fits');
+        setMode('direct');
+
+        const dInput = document.getElementById('nominalDiameter');
+        if (dInput) dInput.value = 30;
+
+        const fitSelect = document.getElementById('fitType');
+        if (fitSelect) fitSelect.value = 'H7/k6';
+
+        if (typeof calculateFits === 'function') calculateFits();
+      }
+    }
   </script>
 
+
+  
   <!-- ==================== SUBMODULES ==================== -->
   <script src="modules/fits.js"></script>
   <script src="modules/belts.js"></script>
