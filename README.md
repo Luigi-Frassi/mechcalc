@@ -10,7 +10,7 @@
 [![Privacy](https://img.shields.io/badge/Privacy-Zero%20Tracking-10B981.svg)]()
 [![Deployed on Vercel](https://img.shields.io/badge/Deploy-Vercel-black.svg?logo=vercel)]()
 
-[**Explore the Web App**](https://mechcalc.vercel.app) • [**Report an Issue**](https://github.com/[Luigi-Frassi]/mechcalc/issues)
+[**Explore the Web App**](https://mechcalc-nu.vercel.app/) • [**Report an Issue**](https://github.com/[Luigi-Frassi]/mechcalc/issues)
 
 </div>
 
