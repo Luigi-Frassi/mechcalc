@@ -89,7 +89,7 @@ No dependencies, package managers, or build steps required:
 
 ```bash
 # Clone the repository
-git clone https://github.com/[your-username]/mechcalc.git
+git clone https://github.com/[Luigi-Frassi]/mechcalc.git
 
 # Enter project directory
 cd mechcalc
