@@ -37,6 +37,7 @@ Solves the full gear pair synthesis problem with strict mounting constraints:
 * **Dual Hertz & Lewis Checks**:
   * Evaluates pitting resistance at the Hertzian contact limit to determine the required face width factor $\phi$.
   * Filters out combinations exceeding tooth root bending limits ($\sigma_L \le 800\text{ MPa}$).
+* **Helical Correction Factors**: $\Phi$, $\Psi$ and $\Gamma_{t1} + \Gamma_{t2}$ are taken from the course chart (digitized from the original vector plot, $\alpha$ = 0–50°, $z$ = 9–100, interpolation in $1/\sqrt{z}$ between the curves).
 * **Series 3 Warning System**: Detects non-preferred tooling modules (Series 3) and compares them against scalable Series 1/2 alternatives.
 * **Inverse Rating Mode ($W_{\max}$)**: Calculates maximum allowable power and torque for existing gear geometry.
 
@@ -79,6 +80,8 @@ mechcalc/
 │       ├── fits-ui.js
 │       ├── belts-ui.js
 │       └── gears-ui.js
+├── tests/
+│   └── validation.test.js    # Core vs. worked exam problems (node, no dependencies)
 └── README.md                 # Documentation
 ```
 
@@ -90,13 +93,32 @@ Each `ui/*.js` file depends on the matching `core/*.js` file, so `index.html` lo
 
 ---
 
+## ✅ Validation
+
+The gear module is checked against worked exam problems of the course *Costruzione di Macchine* (exam papers 2018–2022, solved by hand): spur and helical $W_{\max}$, Hertz face-width factor $\phi$ in design mode, Lewis stresses and the helical correction factors read from the chart.
+
+| Check | Cases | Max deviation |
+| :--- | :---: | :---: |
+| Hertz, spur gears ($W_{\max}$, $M_{\max}$, $\phi$, $L$, $F_c$) | 9 | 0.7 % |
+| Hertz, helical gears ($W_{\max}$ / capacity at the designed face width) | 3 | 1.0 % |
+| Lewis bending stress $\sigma_L$ | 3 | 2.6 % |
+| Helical factors $\Phi$, $\Gamma_t$, $\Psi$ vs. values read by eye from the chart | 11 | 0.02 |
+
+The Lewis deviation comes from the form factor $y$, which MechCalc computes with an approximate formula instead of the table. Run the suite (no dependencies) with:
+
+```bash
+node tests/validation.test.js
+```
+
+---
+
 ## 💻 Running Locally
 
 No dependencies, package managers, or build steps required:
 
 ```bash
 # Clone the repository
-git clone https://github.com/[Luigi-Frassi]/mechcalc.git
+git clone https://github.com/Luigi-Frassi/mechcalc.git
 
 # Enter project directory
 cd mechcalc
