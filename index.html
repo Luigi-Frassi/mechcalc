@@ -1724,6 +1724,17 @@
       if (btnFit) btnFit.className = (activeKey === 'bearingFit') ? activeClass : inactiveClass;
     }
 
+    // A demo preset stays highlighted only until the user changes the loaded configuration.
+    // input/change fire only on user edits (presets set .value from code, which fires no event).
+    // Clicks are caught in the capture phase, before the handlers rebuild the tables.
+    function clearDemoHighlight() { updateDemoButtonsState(null); }
+    document.addEventListener('input', clearDemoHighlight);
+    document.addEventListener('change', clearDemoHighlight);
+    document.addEventListener('click', (e) => {
+      const configClick = '#modeDirect, #modeReverse, #gearModeDesign, #gearModeWmax, #btnAdoptStrict, #btnAdoptRecommended, #comparisonTableBody tr, #fixedOptTableBody tr';
+      if (e.target instanceof Element && e.target.closest(configClick)) clearDemoHighlight();
+    }, true);
+
     function loadDemoPreset(presetKey) {
       updateDemoButtonsState(presetKey);
 
