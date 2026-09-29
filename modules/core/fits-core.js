@@ -3,7 +3,7 @@
  * Zero DOM dependencies / Headless calculation module
  */
 
-export const ISO_STEPS = [
+const ISO_STEPS = [
   { min: 3, max: 6, it6: 8, it7: 12, f7_es: -10, g6_es: -4, h6_es: 0, js6_es: 4, k6_es: 9, p6_es: 20 },
   { min: 6, max: 10, it6: 9, it7: 15, f7_es: -13, g6_es: -5, h6_es: 0, js6_es: 4.5, k6_es: 10, p6_es: 24 },
   { min: 10, max: 18, it6: 11, it7: 18, f7_es: -16, g6_es: -6, h6_es: 0, js6_es: 5.5, k6_es: 12, p6_es: 29 },
@@ -18,14 +18,14 @@ export const ISO_STEPS = [
   { min: 400, max: 500, it6: 40, it7: 63, f7_es: -68, g6_es: -20, h6_es: 0, js6_es: 20, k6_es: 45, p6_es: 108 }
 ];
 
-export const STANDARD_FITS = ['H7/f7', 'H7/g6', 'H7/h6', 'H7/js6', 'H7/k6', 'H7/p6'];
+const STANDARD_FITS = ['H7/f7', 'H7/g6', 'H7/h6', 'H7/js6', 'H7/k6', 'H7/p6'];
 
-export function getISOStep(dMm) {
+function getISOStep(dMm) {
   if (dMm < 3 || dMm > 500 || isNaN(dMm)) return null;
   return ISO_STEPS.find(s => dMm > s.min && dMm <= s.max) || (dMm <= 3 ? ISO_STEPS[0] : ISO_STEPS[ISO_STEPS.length - 1]);
 }
 
-export function getShaftDeviations(step, shaftClass) {
+function getShaftDeviations(step, shaftClass) {
   let es = 0, ei = 0;
   if (shaftClass === 'f7') { es = step.f7_es; ei = es - step.it7; }
   else if (shaftClass === 'g6') { es = step.g6_es; ei = es - step.it6; }
@@ -36,7 +36,7 @@ export function getShaftDeviations(step, shaftClass) {
   return { es, ei };
 }
 
-export function calculateFitAnalytical(dMm, fitKey = 'H7/g6') {
+function calculateFitAnalytical(dMm, fitKey = 'H7/g6') {
   const step = getISOStep(dMm);
   if (!step) {
     throw new Error('Diametro fuori campo ISO 286 (3 - 500 mm)');
@@ -80,7 +80,7 @@ export function calculateFitAnalytical(dMm, fitKey = 'H7/g6') {
   };
 }
 
-export function findReverseFit(dMm, targetMicron, nature = 'clearance') {
+function findReverseFit(dMm, targetMicron, nature = 'clearance') {
   const step = getISOStep(dMm);
   if (!step) return null;
 
@@ -102,14 +102,11 @@ export function findReverseFit(dMm, targetMicron, nature = 'clearance') {
   return bestFit;
 }
 
-// Supporto per inclusione diretta script browser globale
-if (typeof window !== 'undefined') {
-  window.MechCalcFitsCore = {
-    ISO_STEPS,
-    STANDARD_FITS,
-    getISOStep,
-    getShaftDeviations,
-    calculateFitAnalytical,
-    findReverseFit
-  };
-}
+window.MechCalcFitsCore = {
+  ISO_STEPS,
+  STANDARD_FITS,
+  getISOStep,
+  getShaftDeviations,
+  calculateFitAnalytical,
+  findReverseFit
+};
