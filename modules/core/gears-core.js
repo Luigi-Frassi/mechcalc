@@ -3,7 +3,7 @@
  * Pure mathematical calculations: Headless, zero DOM dependencies.
  */
 
-export const STANDARD_MODULES = [
+const STANDARD_MODULES = [
   { m: 1.0, cat: 'green', serie: 1 },
   { m: 1.125, cat: 'orange', serie: 2 },
   { m: 1.25, cat: 'green', serie: 1 },
@@ -36,13 +36,13 @@ export const STANDARD_MODULES = [
   { m: 20.0, cat: 'green', serie: 1 }
 ];
 
-export function getLewisFactor(z, xr = 0) {
+function getLewisFactor(z, xr = 0) {
   const zClamped = Math.max(z, 9);
   const yBase = 0.4715 - (2.84 / zClamped);
   return Math.max(0.20, yBase + 0.25 * xr);
 }
 
-export function getHelicalFactors(alphaDeg, z1, z2) {
+function getHelicalFactors(alphaDeg, z1, z2) {
   const a = Math.max(0, Math.min(45, alphaDeg));
   const Phi = 1.0 - 0.0139 * a - 0.000014 * Math.pow(a, 2);
   const Psi = 1.0 + 0.000089 * Math.pow(a, 2);
@@ -58,10 +58,7 @@ export function getHelicalFactors(alphaDeg, z1, z2) {
   return { Phi, Psi, Gamma_T1, Gamma_T2, Gamma_T };
 }
 
-/**
- * Calcolo di verifica inversa W_max (potenza e coppia ammissibili)
- */
-export function calculateWmax({
+function calculateWmax({
   toothType = 'spur',
   m_input = 5.0,
   L_mm = 60.0,
@@ -129,10 +126,7 @@ export function calculateWmax({
   };
 }
 
-/**
- * Ottimizzatore numerico combinazioni (z1, z2) conformi a target tau e interasse
- */
-export function findOptimalCombos({
+function findOptimalCombos({
   targetTau = 0.5,
   tolPct = 3.0,
   targetI = 100.0,
@@ -259,13 +253,10 @@ export function findOptimalCombos({
   return uniqueCombos.slice(0, 8);
 }
 
-// Supporto per script classico browser
-if (typeof window !== 'undefined') {
-  window.MechCalcGearsCore = {
-    STANDARD_MODULES,
-    getLewisFactor,
-    getHelicalFactors,
-    calculateWmax,
-    findOptimalCombos
-  };
-}
+window.MechCalcGearsCore = {
+  STANDARD_MODULES,
+  getLewisFactor,
+  getHelicalFactors,
+  calculateWmax,
+  findOptimalCombos
+};
