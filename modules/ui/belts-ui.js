@@ -1,22 +1,7 @@
 // ==========================================
 // MODULE 2: SYNCHRONOUS TIMING BELTS (ISO 5296 / DIN 7721)
+// UI: reads inputs, calls the core (core/belts-core.js), writes results and draws the SVG.
 // ==========================================
-
-const catalogWidths = {
-  '2': [6, 9, 12],            // GT2
-  '3': [6, 9, 15],            // HTD 3M
-  '5': [9, 15, 25],           // HTD 5M
-  '5_T5': [10, 16, 25],       // T5
-  '8': [20, 30, 50, 85]       // HTD 8M
-};
-
-const baseAllowableForce = {
-  '2': 7.0,     // N per mm di larghezza
-  '3': 12.0,    // N per mm di larghezza
-  '5': 24.0,    // N per mm di larghezza
-  '5_T5': 22.0, // N per mm di larghezza
-  '8': 48.0     // N per mm di larghezza
-};
 
 function drawBeltScheme(dp1, dp2, C) {
   const svg = document.getElementById('beltChart');
@@ -123,7 +108,6 @@ function drawBeltScheme(dp1, dp2, C) {
 
 function calculateBelts() {
   const profKey = document.getElementById('beltProfile').value;
-  const p = parseFloat(profKey);
   const z1 = parseInt(document.getElementById('pulleyZ1').value) || 20;
   const c0Input = parseFloat(document.getElementById('desiredCenter').value) || 150;
   const t = translations[currentLang];
@@ -134,12 +118,11 @@ function calculateBelts() {
     z2 = parseInt(document.getElementById('pulleyZ2').value) || 40;
   } else {
     const targetTau = parseFloat(document.getElementById('targetTau').value) || 2.0;
-    z2 = Math.max(10, Math.round(z1 * targetTau));
+    const tau = beltZ2FromTau(z1, targetTau);
+    z2 = tau.z2;
     window._computedZ2 = z2;
-    const actualTau = z2 / z1;
-    const errPct = ((actualTau - targetTau) / targetTau) * 100;
-    const signErr = errPct >= 0 ? `+` : ``;
-    document.getElementById('tauFeedback').innerText = `z₂: ${z2} (${currentLang === 'it' ? 'effettivo' : 'actual'} τ: ${actualTau.toFixed(2)}, Δ: ${signErr}${errPct.toFixed(1)}%)`;
+    const signErr = tau.errPct >= 0 ? `+` : ``;
+    document.getElementById('tauFeedback').innerText = `z₂: ${z2} (${currentLang === 'it' ? 'effettivo' : 'actual'} τ: ${tau.actualTau.toFixed(2)}, Δ: ${signErr}${tau.errPct.toFixed(1)}%)`;
   }
 
   const P_kW = parseFloat(document.getElementById('motorPower').value) || 1.5;
@@ -148,29 +131,19 @@ function calculateBelts() {
 
   const C0_mm = currentUnit === 'metric' ? c0Input : c0Input * 25.4;
 
-  const dp1 = (z1 * p) / Math.PI;
-  const dp2 = (z2 * p) / Math.PI;
+  const r = computeBelts({ profKey, z1, z2, C0_mm, P_kW, n1_rpm, c0 });
 
-  const dp1Str = currentUnit === 'metric' ? `${dp1.toFixed(2)} mm` : `${(dp1 / 25.4).toFixed(3)} in`;
-  const dp2Str = currentUnit === 'metric' ? `${dp2.toFixed(2)} mm` : `${(dp2 / 25.4).toFixed(3)} in`;
+  const dp1Str = currentUnit === 'metric' ? `${r.dp1.toFixed(2)} mm` : `${(r.dp1 / 25.4).toFixed(3)} in`;
+  const dp2Str = currentUnit === 'metric' ? `${r.dp2.toFixed(2)} mm` : `${(r.dp2 / 25.4).toFixed(3)} in`;
   document.getElementById('dp1Info').innerText = `dp₁: ${dp1Str}`;
   document.getElementById('dp2Info').innerText = `dp₂: ${dp2Str}`;
+  document.getElementById('ratioInfo').innerText = `Ratio: 1 : ${r.ratio.toFixed(2)}`;
 
-  const ratio = z2 / z1;
-  document.getElementById('ratioInfo').innerText = `Ratio: 1 : ${ratio.toFixed(2)}`;
+  document.getElementById('torqueDisp').innerText = `Torque: ${r.torqueNm.toFixed(2)} Nm`;
+  document.getElementById('beltSpeedDisp').innerText = `Belt speed: ${r.beltSpeed.toFixed(2)} m/s`;
+  document.getElementById('designPowerDisp').innerText = `Design Power Pc: ${r.Pc_kW.toFixed(2)} kW`;
 
-  // Cinematica e carichi di calcolo
-  const omega1 = (2 * Math.PI * n1_rpm) / 60;
-  const torqueNm = (P_kW * 1000) / Math.max(omega1, 0.001);
-  const beltSpeed = (Math.PI * dp1 * n1_rpm) / 60000;
-  const Pc_kW = P_kW * c0;
-
-  document.getElementById('torqueDisp').innerText = `Torque: ${torqueNm.toFixed(2)} Nm`;
-  document.getElementById('beltSpeedDisp').innerText = `Belt speed: ${beltSpeed.toFixed(2)} m/s`;
-  document.getElementById('designPowerDisp').innerText = `Design Power Pc: ${Pc_kW.toFixed(2)} kW`;
-
-  const minTheoreticalC = (dp1 + dp2) / 2 + 2;
-  if (C0_mm <= minTheoreticalC) {
+  if (!r.valid) {
     document.getElementById('exactCenterDisp').innerText = "--";
     document.getElementById('centerDiffDisp').innerText = t.centerTooSmall;
     document.getElementById('centerDiffDisp').className = "text-[11px] text-rose-400 mt-0.5 font-medium";
@@ -183,65 +156,21 @@ function calculateBelts() {
 
   document.getElementById('centerDiffDisp').className = "text-[11px] text-slate-500 mt-0.5";
 
-  // 1. Sviluppo primitivo teorico
-  const L0 = 2 * C0_mm + (Math.PI / 2) * (dp1 + dp2) + Math.pow(dp2 - dp1, 2) / (4 * C0_mm);
-  const zb0 = L0 / p;
-  const zb = Math.max(z1 + z2 + 2, Math.round(zb0));
-  const Lp = zb * p;
-
-  // 2. Risoluzione quadratica esatta dell'interasse C
-  const B = 4 * Lp - 2 * Math.PI * (dp1 + dp2);
-  const rad = Math.pow(B, 2) - 32 * Math.pow(dp2 - dp1, 2);
-  let exactC_mm = C0_mm;
-
-  if (rad >= 0) {
-    exactC_mm = (B + Math.sqrt(rad)) / 16;
-  }
-
-  // 3. Denti in presa e fattori correttivi da catalogo
-  const wrapRad1 = Math.PI - 2 * Math.asin(Math.min(1, Math.abs(dp2 - dp1) / (2 * exactC_mm)));
-  const wrapDeg1 = (wrapRad1 * 180) / Math.PI;
-  const z_mesh = (z1 * (wrapDeg1 / 360));
-
-  let c1 = 1.0;
-  if (z_mesh < 6 && z_mesh >= 5) c1 = 0.8;
-  else if (z_mesh < 5 && z_mesh >= 4) c1 = 0.6;
-  else if (z_mesh < 4) c1 = 0.4;
-
-  let c2 = 1.0;
-  if (zb < 70) c2 = 0.9;
-  else if (zb > 150) c2 = 1.1;
-
-  // 4. Sforzo tangenziale e selezione larghezza commerciale
-  const Ft = (Pc_kW * 1000) / Math.max(beltSpeed, 0.1);
-  const fAllowable = (baseAllowableForce[profKey] || 20.0) * c1 * c2;
-  const reqWidthMm = Ft / fAllowable;
-
-  const widths = catalogWidths[profKey] || [9, 15, 25];
-  let chosenWidth = widths[widths.length - 1];
-  for (let w of widths) {
-    if (w >= reqWidthMm) {
-      chosenWidth = w;
-      break;
-    }
-  }
-
   // Visualizzazione dati geometrici
-  const cDiff = exactC_mm - C0_mm;
-  const signDiff = cDiff >= 0 ? `+` : ``;
+  const signDiff = r.cDiff >= 0 ? `+` : ``;
 
   if (currentUnit === 'metric') {
-    document.getElementById('exactCenterDisp').innerText = `${exactC_mm.toFixed(2)} mm`;
-    document.getElementById('centerDiffDisp').innerText = `Δ: ${signDiff}${cDiff.toFixed(2)} mm vs target`;
-    document.getElementById('beltPitchLengthDisp').innerText = `Lp: ${Lp.toFixed(2)} mm (${currentLang === 'it' ? 'arrotondato ad intero' : 'rounded to int'})`;
+    document.getElementById('exactCenterDisp').innerText = `${r.exactC_mm.toFixed(2)} mm`;
+    document.getElementById('centerDiffDisp').innerText = `Δ: ${signDiff}${r.cDiff.toFixed(2)} mm vs target`;
+    document.getElementById('beltPitchLengthDisp').innerText = `Lp: ${r.Lp.toFixed(2)} mm (${currentLang === 'it' ? 'arrotondato ad intero' : 'rounded to int'})`;
   } else {
-    document.getElementById('exactCenterDisp').innerText = `${(exactC_mm / 25.4).toFixed(3)} in`;
-    document.getElementById('centerDiffDisp').innerText = `Δ: ${signDiff}${(cDiff / 25.4).toFixed(3)} in vs target`;
-    document.getElementById('beltPitchLengthDisp').innerText = `Lp: ${(Lp / 25.4).toFixed(3)} in (${currentLang === 'it' ? 'arrotondato ad intero' : 'rounded to int'})`;
+    document.getElementById('exactCenterDisp').innerText = `${(r.exactC_mm / 25.4).toFixed(3)} in`;
+    document.getElementById('centerDiffDisp').innerText = `Δ: ${signDiff}${(r.cDiff / 25.4).toFixed(3)} in vs target`;
+    document.getElementById('beltPitchLengthDisp').innerText = `Lp: ${(r.Lp / 25.4).toFixed(3)} in (${currentLang === 'it' ? 'arrotondato ad intero' : 'rounded to int'})`;
   }
 
-  document.getElementById('beltTeethDisp').innerText = `${zb} ${currentLang === 'it' ? 'denti' : 'teeth'}`;
-  document.getElementById('teethInMeshDisp').innerText = `${z_mesh.toFixed(1)} ${currentLang === 'it' ? 'denti' : 'teeth'}`;
+  document.getElementById('beltTeethDisp').innerText = `${r.zb} ${currentLang === 'it' ? 'denti' : 'teeth'}`;
+  document.getElementById('teethInMeshDisp').innerText = `${r.z_mesh.toFixed(1)} ${currentLang === 'it' ? 'denti' : 'teeth'}`;
 
   // Card 3 dinamica
   const card3Title = document.getElementById('card3Title');
@@ -250,21 +179,21 @@ function calculateBelts() {
 
   if (currentBeltMode === 'geom') {
     card3Title.innerText = t.wrapAngleCard;
-    card3Value.innerText = `${wrapDeg1.toFixed(1)}°`;
-    card3Sub.innerText = `Ratio: ${ratio.toFixed(2)}`;
+    card3Value.innerText = `${r.wrapDeg1.toFixed(1)}°`;
+    card3Sub.innerText = `Ratio: ${r.ratio.toFixed(2)}`;
   } else {
     card3Title.innerText = t.recWidthCard;
-    card3Value.innerText = currentUnit === 'metric' ? `${chosenWidth} mm` : `${(chosenWidth / 25.4).toFixed(2)} in (${chosenWidth} mm)`;
-    card3Sub.innerText = `Req. min: ${reqWidthMm.toFixed(1)} mm`;
+    card3Value.innerText = currentUnit === 'metric' ? `${r.chosenWidth} mm` : `${(r.chosenWidth / 25.4).toFixed(2)} in (${r.chosenWidth} mm)`;
+    card3Sub.innerText = `Req. min: ${r.reqWidthMm.toFixed(1)} mm`;
 
     // Aggiornamento breakdown fattori
-    document.getElementById('breakdownC0').innerText = c0.toFixed(2);
-    document.getElementById('breakdownC1').innerText = c1.toFixed(2);
-    document.getElementById('breakdownC2').innerText = c2.toFixed(2);
-    document.getElementById('breakdownFt').innerText = `${Math.round(Ft)} N`;
+    document.getElementById('breakdownC0').innerText = r.c0.toFixed(2);
+    document.getElementById('breakdownC1').innerText = r.c1.toFixed(2);
+    document.getElementById('breakdownC2').innerText = r.c2.toFixed(2);
+    document.getElementById('breakdownFt').innerText = `${Math.round(r.Ft)} N`;
 
     const checkEl = document.getElementById('powerCheckStatus');
-    if (chosenWidth >= reqWidthMm) {
+    if (r.widthOk) {
       checkEl.innerText = currentLang === 'it' ? '✓ Dimensionamento Valido' : '✓ Capacity Verified';
       checkEl.className = "text-[11px] font-mono text-emerald-400 font-semibold";
     } else {
@@ -274,13 +203,13 @@ function calculateBelts() {
   }
 
   const meshStatusEl = document.getElementById('teethInMeshStatus');
-  if (z_mesh >= 6) {
+  if (r.meshOk) {
     meshStatusEl.innerText = t.meshOptimal;
     meshStatusEl.className = "text-[11px] text-emerald-400 mt-0.5 font-medium";
   } else {
-    meshStatusEl.innerText = `${t.meshWarning} (c₁ = ${c1})`;
+    meshStatusEl.innerText = `${t.meshWarning} (c₁ = ${r.c1})`;
     meshStatusEl.className = "text-[11px] text-amber-400 mt-0.5 font-medium";
   }
 
-  drawBeltScheme(dp1, dp2, exactC_mm);
+  drawBeltScheme(r.dp1, r.dp2, r.exactC_mm);
 }
