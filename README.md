@@ -38,6 +38,7 @@ Solves the full gear pair synthesis problem with strict mounting constraints:
   * Evaluates pitting resistance at the Hertzian contact limit to determine the required face width factor $\phi$.
   * Filters out combinations exceeding tooth root bending limits ($\sigma_L \le 800\text{ MPa}$).
 * **Helical Correction Factors**: $\Phi$, $\Psi$ and $\Gamma_{t1} + \Gamma_{t2}$ are taken from the course chart (digitized from the original vector plot, $\alpha$ = 0–50°, $z$ = 9–100, interpolation in $1/\sqrt{z}$ between the curves).
+* **Lewis Form Factor from the Course Chart**: $y(z', x)$ for profile shifts $x$ = −0.6…+0.6 and equivalent teeth $z' = z/\cos^3\alpha$ = 10–200 (digitized from the chart, interpolated in $\log z'$ and $x$).
 * **Series 3 Warning System**: Detects non-preferred tooling modules (Series 3) and compares them against scalable Series 1/2 alternatives.
 * **Inverse Rating Mode ($W_{\max}$)**: Calculates maximum allowable power and torque for existing gear geometry.
 
@@ -101,10 +102,11 @@ The gear module is checked against worked exam problems of the course *Costruzio
 | :--- | :---: | :---: |
 | Hertz, spur gears ($W_{\max}$, $M_{\max}$, $\phi$, $L$, $F_c$) | 9 | 0.7 % |
 | Hertz, helical gears ($W_{\max}$ / capacity at the designed face width) | 3 | 1.0 % |
-| Lewis bending stress $\sigma_L$ | 3 | 2.6 % |
+| Lewis bending stress $\sigma_L$, spur and helical (same $y$ as the hand solution) | 5 | 0.7 % |
+| Lewis factor $y$ vs. values read by eye from the chart | 5 | 0.021 |
 | Helical factors $\Phi$, $\Gamma_t$, $\Psi$ vs. values read by eye from the chart | 11 | 0.02 |
 
-The Lewis deviation comes from the form factor $y$, which MechCalc computes with an approximate formula instead of the table. Run the suite (no dependencies) with:
+The factor deviations are reading errors of the hand solutions (e.g. $y$ = 0.32 read for $z$ = 18, where the chart gives 0.341). Run the suite (no dependencies) with:
 
 ```bash
 node tests/validation.test.js

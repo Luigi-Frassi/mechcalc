@@ -44,10 +44,54 @@ const STANDARD_MODULES = [
 // Angolo di pressione θ = 20°
 const GEAR_THETA = (20.0 * Math.PI) / 180.0;
 
+// Fattore di forma di Lewis y(z', x) dal diagramma del corso (dentatura 20°, c = 0.25 mn).
+// Curve per spostamento x = -0.6 ... +0.6 (passo 0.1), z' = numero di denti (equivalente
+// per le elicoidali, z' = z / cos³α) su scala logaritmica 10-200.
+// Digitalizzate dalla scansione del diagramma: scarto tipico 0.0003, massimo stimato 0.002.
+// Ogni riga: [x, z' di inizio curva, valori di y ai z' di LEWIS_CHART_Z] (null = prima dell'inizio curva)
+const LEWIS_CHART_Z = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24, 26, 28, 30, 32, 35, 40, 45, 50, 60, 70, 80, 90, 100, 120, 150, 200];
+const LEWIS_CHART = [
+    [-0.6, 28.4, [null, null, null, null, null, null, null, null, null, null, null, null, null, null, 0.2840, 0.2921, 0.3031, 0.3189, 0.3326, 0.3445, 0.3642, 0.3797, 0.3921, 0.4020, 0.4100, 0.4222, 0.4346, 0.4506]],
+    [-0.5, 26.6, [null, null, null, null, null, null, null, null, null, null, null, null, null, 0.2912, 0.2997, 0.3073, 0.3177, 0.3327, 0.3456, 0.3567, 0.3751, 0.3895, 0.4009, 0.4100, 0.4173, 0.4283, 0.4395, 0.4541]],
+    [-0.4, 24.6, [null, null, null, null, null, null, null, null, null, null, null, null, 0.2987, 0.3080, 0.3164, 0.3241, 0.3344, 0.3491, 0.3613, 0.3717, 0.3882, 0.4007, 0.4104, 0.4182, 0.4246, 0.4343, 0.4445, 0.4564]],
+    [-0.3, 22.6, [null, null, null, null, null, null, null, null, null, null, null, 0.3095, 0.3187, 0.3269, 0.3344, 0.3413, 0.3507, 0.3641, 0.3753, 0.3849, 0.4001, 0.4116, 0.4204, 0.4274, 0.4330, 0.4413, 0.4499, 0.4609]],
+    [-0.2, 20.6, [null, null, null, null, null, null, null, null, null, null, 0.3198, 0.3306, 0.3399, 0.3481, 0.3553, 0.3617, 0.3703, 0.3822, 0.3920, 0.4001, 0.4131, 0.4229, 0.4304, 0.4363, 0.4410, 0.4481, 0.4550, 0.4631]],
+    [-0.1, 18.6, [null, null, null, null, null, null, null, null, 0.3232, 0.3303, 0.3424, 0.3522, 0.3605, 0.3675, 0.3737, 0.3791, 0.3863, 0.3963, 0.4045, 0.4115, 0.4227, 0.4312, 0.4379, 0.4431, 0.4473, 0.4534, 0.4594, 0.4666]],
+    [+0.0, 16.4, [null, null, null, null, null, null, 0.3334, 0.3412, 0.3479, 0.3540, 0.3642, 0.3725, 0.3796, 0.3857, 0.3910, 0.3957, 0.4018, 0.4104, 0.4174, 0.4233, 0.4328, 0.4399, 0.4455, 0.4499, 0.4534, 0.4587, 0.4639, 0.4703]],
+    [+0.1, 14.4, [null, null, null, null, 0.3479, 0.3552, 0.3617, 0.3674, 0.3724, 0.3770, 0.3850, 0.3918, 0.3976, 0.4027, 0.4072, 0.4112, 0.4166, 0.4241, 0.4302, 0.4353, 0.4434, 0.4494, 0.4539, 0.4575, 0.4603, 0.4644, 0.4685, 0.4739]],
+    [+0.2, 12.9, [null, null, 0.3594, 0.3681, 0.3755, 0.3817, 0.3872, 0.3920, 0.3962, 0.4000, 0.4065, 0.4119, 0.4165, 0.4205, 0.4241, 0.4273, 0.4314, 0.4373, 0.4421, 0.4461, 0.4525, 0.4573, 0.4611, 0.4640, 0.4664, 0.4700, 0.4739, 0.4790]],
+    [+0.3, 11.4, [null, 0.3883, 0.3946, 0.4001, 0.4048, 0.4090, 0.4128, 0.4161, 0.4192, 0.4219, 0.4268, 0.4308, 0.4344, 0.4375, 0.4402, 0.4426, 0.4458, 0.4502, 0.4538, 0.4567, 0.4614, 0.4650, 0.4678, 0.4701, 0.4720, 0.4750, 0.4782, 0.4816]],
+    [+0.4, 11.2, [0.4102, 0.4153, 0.4197, 0.4236, 0.4270, 0.4301, 0.4329, 0.4354, 0.4377, 0.4397, 0.4434, 0.4466, 0.4493, 0.4517, 0.4538, 0.4556, 0.4581, 0.4615, 0.4642, 0.4665, 0.4701, 0.4729, 0.4751, 0.4769, 0.4784, 0.4807, 0.4832, 0.4855]],
+    [+0.5, 11.2, [0.4396, 0.4430, 0.4459, 0.4484, 0.4505, 0.4524, 0.4541, 0.4556, 0.4570, 0.4582, 0.4605, 0.4624, 0.4641, 0.4655, 0.4669, 0.4681, 0.4697, 0.4719, 0.4738, 0.4754, 0.4779, 0.4798, 0.4813, 0.4826, 0.4836, 0.4852, 0.4870, 0.4893]],
+    [+0.6, 11.2, [0.4704, 0.4716, 0.4727, 0.4738, 0.4747, 0.4755, 0.4763, 0.4770, 0.4776, 0.4782, 0.4792, 0.4800, 0.4807, 0.4813, 0.4819, 0.4823, 0.4829, 0.4837, 0.4844, 0.4849, 0.4859, 0.4867, 0.4875, 0.4882, 0.4888, 0.4899, 0.4911, 0.4916]],
+];
+
+// y lungo una curva (riga della tabella), interpolando in log z'.
+// Prima dell'inizio della curva si estrapola con la pendenza iniziale (y più basso: a favore di sicurezza);
+// oltre z' = 200 si usa il valore a 200.
+function lewisCurveAt(row, z) {
+  const zs = LEWIS_CHART_Z, ys = row[2];
+  let first = ys.findIndex(v => v !== null);
+  const u = Math.log(Math.min(z, zs[zs.length - 1]));
+  if (z <= zs[first]) {
+    const u0 = Math.log(zs[first]), u1 = Math.log(zs[first + 1]);
+    return ys[first] + (ys[first + 1] - ys[first]) * (u - u0) / (u1 - u0);
+  }
+  let i = first;
+  while (i < zs.length - 2 && z > zs[i + 1]) i++;
+  const u0 = Math.log(zs[i]), u1 = Math.log(zs[i + 1]);
+  return ys[i] + (ys[i + 1] - ys[i]) * (u - u0) / (u1 - u0);
+}
+
+// Fattore di Lewis y per z' denti (equivalenti) e spostamento di profilo x:
+// interpolazione lineare tra le curve in x, x limitato a [-0.6, +0.6].
 function getLewisFactor(z, xr = 0) {
-  const zClamped = Math.max(z, 9);
-  const yBase = 0.4715 - (2.84 / zClamped);
-  return Math.max(0.20, yBase + 0.25 * xr);
+  const x = Math.max(-0.6, Math.min(0.6, xr));
+  const k = Math.min(LEWIS_CHART.length - 2, Math.max(0, Math.floor((x + 0.6) / 0.1 + 1e-9)));
+  const r0 = LEWIS_CHART[k], r1 = LEWIS_CHART[k + 1];
+  const t = (x - r0[0]) / (r1[0] - r0[0]);
+  const y = lewisCurveAt(r0, z) + (lewisCurveAt(r1, z) - lewisCurveAt(r0, z)) * t;
+  return Math.max(0.20, y);
 }
 
 // Coefficienti correttivi per le dentature elicoidali (diagramma del corso).
