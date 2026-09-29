@@ -1,130 +1,271 @@
 /**
- * gears-core.js - ISO Cylindrical Gear Synthesis & Rating Engine
- * Pure mathematical calculations: Hertz, Lewis, and analytical center distance closure.
+ * gears-core.js - ISO Cylindrical Gear Synthesis & Rating Engine (Hertz & Lewis)
+ * Pure mathematical calculations: Headless, zero DOM dependencies.
  */
 
-// Moduli unificati standard ISO 54
-export const ISO_MODULES = {
-  SERIES_1: [1.0, 1.25, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0],
-  SERIES_2: [1.125, 1.375, 1.75, 2.25, 2.75, 3.5, 4.5, 5.5, 7.0, 9.0],
-  SERIES_3: [3.25, 3.75, 6.5] // Serie non raccomandata (segnalata con warning)
-};
+export const STANDARD_MODULES = [
+  { m: 1.0, cat: 'green', serie: 1 },
+  { m: 1.125, cat: 'orange', serie: 2 },
+  { m: 1.25, cat: 'green', serie: 1 },
+  { m: 1.375, cat: 'orange', serie: 2 },
+  { m: 1.5, cat: 'green', serie: 1 },
+  { m: 1.75, cat: 'orange', serie: 2 },
+  { m: 2.0, cat: 'green', serie: 1 },
+  { m: 2.25, cat: 'orange', serie: 2 },
+  { m: 2.5, cat: 'green', serie: 1 },
+  { m: 2.75, cat: 'orange', serie: 2 },
+  { m: 3.0, cat: 'green', serie: 1 },
+  { m: 3.25, cat: 'red', serie: 3 },
+  { m: 3.5, cat: 'orange', serie: 2 },
+  { m: 3.75, cat: 'red', serie: 3 },
+  { m: 4.0, cat: 'green', serie: 1 },
+  { m: 4.5, cat: 'orange', serie: 2 },
+  { m: 5.0, cat: 'green', serie: 1 },
+  { m: 5.5, cat: 'orange', serie: 2 },
+  { m: 6.0, cat: 'green', serie: 1 },
+  { m: 6.5, cat: 'red', serie: 3 },
+  { m: 7.0, cat: 'orange', serie: 2 },
+  { m: 8.0, cat: 'green', serie: 1 },
+  { m: 9.0, cat: 'orange', serie: 2 },
+  { m: 10.0, cat: 'green', serie: 1 },
+  { m: 11.0, cat: 'orange', serie: 2 },
+  { m: 12.0, cat: 'green', serie: 1 },
+  { m: 14.0, cat: 'orange', serie: 2 },
+  { m: 16.0, cat: 'green', serie: 1 },
+  { m: 18.0, cat: 'orange', serie: 2 },
+  { m: 20.0, cat: 'green', serie: 1 }
+];
 
-/**
- * Calcolo numero minimo di denti per evitare interferenza/sottotaglio
- * z_min = ceil(2 * (1 - xr) / sin^2(alpha_n))
- */
-export function calculateZMin(pressureAngleDeg = 20, profileShift = 0) {
-  const alphaRad = (pressureAngleDeg * Math.PI) / 180;
-  return Math.ceil((2 * (1 - profileShift)) / Math.pow(Math.sin(alphaRad), 2));
+export function getLewisFactor(z, xr = 0) {
+  const zClamped = Math.max(z, 9);
+  const yBase = 0.4715 - (2.84 / zClamped);
+  return Math.max(0.20, yBase + 0.25 * xr);
+}
+
+export function getHelicalFactors(alphaDeg, z1, z2) {
+  const a = Math.max(0, Math.min(45, alphaDeg));
+  const Phi = 1.0 - 0.0139 * a - 0.000014 * Math.pow(a, 2);
+  const Psi = 1.0 + 0.000089 * Math.pow(a, 2);
+
+  const g0_1 = 1.05 - (1.2 / Math.sqrt(Math.max(z1, 9)));
+  const g0_2 = 1.05 - (1.2 / Math.sqrt(Math.max(z2, 9)));
+  const decay = 1.0 - 0.006 * a - 0.00015 * Math.pow(a, 2);
+
+  const Gamma_T1 = Math.max(0.15, g0_1 * decay);
+  const Gamma_T2 = Math.max(0.15, g0_2 * decay);
+  const Gamma_T = Gamma_T1 + Gamma_T2;
+
+  return { Phi, Psi, Gamma_T1, Gamma_T2, Gamma_T };
 }
 
 /**
- * Sintesi e verifica di una coppia di ruote cilindriche
- * @param {Object} params
- * @param {number} params.power - Potenza da trasmettere (kW)
- * @param {number} params.rpm1 - Velocità pignone (rpm)
- * @param {number} params.targetRatio - Rapporto di trasmissione nominale
- * @param {number} params.module - Modulo normale mn (mm)
- * @param {number|null} params.lockedCenterDistance - Interasse fisso imposto (mm), opzionale
- * @param {number} params.pressureAngleDeg - Angolo di pressione normale (default 20°)
- * @param {number} params.helixAngleDeg - Angolo d'elica iniziale (default 0 per denti diritti)
- * @param {number} params.psiM - Fattore di larghezza b/m (default 10)
- * @param {number} params.sigmaLimit - Tensione ammissibile a flessione Lewis (MPa, default 800)
+ * Calcolo di verifica inversa W_max (potenza e coppia ammissibili)
  */
-export function calculateGearPair({
-  power = 10,
-  rpm1 = 1450,
-  targetRatio = 3.0,
-  module = 2.5,
-  lockedCenterDistance = null,
-  pressureAngleDeg = 20,
-  helixAngleDeg = 0,
-  psiM = 10,
-  sigmaLimit = 800
+export function calculateWmax({
+  toothType = 'spur',
+  m_input = 5.0,
+  L_mm = 60.0,
+  z1 = 23,
+  z2 = 39,
+  n1 = 650.0,
+  alphaDeg = 0.0,
+  Ke_GPa = 35.0,
+  sigmaH_lim = 721.52,
+  sigmaL_lim = 400.0,
+  xr1 = 0.0
 }) {
-  const mn = parseFloat(module);
-  const zMin = calculateZMin(pressureAngleDeg, 0);
-  
-  let z1 = zMin;
-  let z2 = Math.round(z1 * targetRatio);
-  let betaDeg = helixAngleDeg;
-  let betaRad = (betaDeg * Math.PI) / 180;
+  const omega1 = (2 * Math.PI * n1) / 60.0;
+  const theta = (20.0 * Math.PI) / 180.0;
+  const tau = z1 / z2;
+  const Ke_N_mm2 = Ke_GPa * 1000.0;
 
-  // Se l'interasse è rigorosamente bloccato, calcoliamo l'angolo d'elica beta analiticamente:
-  // a = mn * (z1 + z2) / (2 * cos(beta))  ==>  cos(beta) = mn * (z1 + z2) / (2 * a)
-  let isLockedCenterActive = false;
-  if (lockedCenterDistance && lockedCenterDistance > 0) {
-    const aTarget = parseFloat(lockedCenterDistance);
-    const cosBeta = (mn * (z1 + z2)) / (2 * aTarget);
+  let mt = m_input;
+  let mn = m_input;
+  let factors = { Phi: 1, Psi: 1, Gamma_T1: 1, Gamma_T2: 1, Gamma_T: 2 };
+  let yLewis = 0.32;
 
-    if (cosBeta > 1.0) {
-      throw new Error(`Interasse ${aTarget} mm troppo corto per il modulo mn=${mn} con denti minimi (${z1}+${z2})`);
-    } else if (cosBeta < 0.707) {
-      // beta > 45°: elica eccessiva per trasmissioni convenzionali
-      throw new Error(`Angolo d'elica calcolato > 45° (${(Math.acos(cosBeta)*180/Math.PI).toFixed(1)}°). Scegliere modulo minore o aumentare l'interasse.`);
-    }
-
-    betaRad = Math.acos(cosBeta);
-    betaDeg = (betaRad * 180) / Math.PI;
-    isLockedCenterActive = true;
+  if (toothType === 'spur') {
+    mt = m_input;
+    mn = m_input;
+    yLewis = getLewisFactor(z1, xr1);
+  } else {
+    mn = m_input;
+    const cosA = Math.cos((alphaDeg * Math.PI) / 180.0);
+    mt = mn / cosA;
+    const z_eq = z1 / Math.pow(cosA, 3);
+    yLewis = getLewisFactor(z_eq, xr1);
+    factors = getHelicalFactors(alphaDeg, z1, z2);
   }
 
-  // Modulo apparente/frontale: mt = mn / cos(beta)
-  const mt = mn / Math.cos(betaRad);
+  const factorHelHertz = (toothType === 'helical') ? (factors.Gamma_T / factors.Phi) : 1.0;
+  const W_N_mm_s_H = (Math.pow(sigmaH_lim, 2) * L_mm * omega1 * Math.sin(2 * theta) * Math.pow(mt, 2) * Math.pow(z1, 2) * factorHelHertz) / (8 * Ke_N_mm2 * (1.0 + tau));
+  const P_kW_H = W_N_mm_s_H / 1e6;
 
-  // Diametri primitivi
-  const d1 = z1 * mt;
-  const d2 = z2 * mt;
+  const factorHelLewis = (toothType === 'helical') ? (factors.Gamma_T / factors.Psi) : 1.0;
+  const W_N_mm_s_L = (sigmaL_lim * omega1 * L_mm * mt * mn * z1 * yLewis * factorHelLewis) / 2.0;
+  const P_kW_L = W_N_mm_s_L / 1e6;
 
-  // Interasse effettivo
-  const exactCenterDistance = (d1 + d2) / 2;
+  const P_kW_max = Math.min(P_kW_H, P_kW_L);
+  const W_watt_max = P_kW_max * 1000.0;
+  const M1_max = W_watt_max / Math.max(omega1, 0.001);
 
-  // Larghezza di fascia assiale b = psiM * mn
-  const b = psiM * mn;
-
-  // Cinematica e Coppia
-  const actualRatio = z2 / z1;
-  const rpm2 = rpm1 / actualRatio;
-  const omega1 = (2 * Math.PI * rpm1) / 60;
-  const torque1 = (power * 1000) / omega1; // Nm sul pignone
-
-  // Forza tangenziale primitivo: Ft = 2000 * T1 / d1 (N)
-  const ft = (2000 * torque1) / d1;
-
-  // Verifica a flessione al piede del dente (Lewis)
-  // Form factor tipico approssimato Y: Y ~ 0.38 per 20°
-  const yLewis = 0.38;
-  const sigmaBending = ft / (b * mn * yLewis); // MPa (N/mm^2)
-  const isBendingSafe = sigmaBending <= sigmaLimit;
-
-  // Stima fattore di contatto Hertziano semplificato (sigma_H relativo)
-  const isSeries3 = ISO_MODULES.SERIES_3.includes(mn);
+  const dp1 = mt * z1;
+  const dp2 = mt * z2;
+  const a_center = mt * ((z1 + z2) / 2.0 + xr1);
+  const Fc_max = (2 * M1_max * 1000.0) / dp1;
 
   return {
-    module: mn,
-    transverseModule: mt,
-    teeth: { z1, z2, zMin, actualRatio },
-    helixAngleDeg: betaDeg,
-    isLockedCenterActive,
-    centerDistance: exactCenterDistance,
-    faceWidth: b,
-    pitchDiameters: { d1, d2 },
-    kinematics: {
-      rpm1,
-      rpm2,
-      torque1Nm: torque1,
-      tangentialForceN: ft
-    },
-    stress: {
-      sigmaBendingMPa: sigmaBending,
-      sigmaLimitMPa: sigmaLimit,
-      isBendingSafe,
-      bendingRatio: sigmaBending / sigmaLimit
-    },
-    warnings: {
-      isSeries3Warning: isSeries3,
-      message: isSeries3 ? 'Modulo Serie 3 non unificato per produzione standard: preferire Serie 1 o 2.' : null
+    P_kW_max,
+    P_kW_H,
+    P_kW_L,
+    isHertzLimited: P_kW_H <= P_kW_L,
+    M1_max,
+    dp1,
+    dp2,
+    a_center,
+    Fc_max,
+    yLewis,
+    phiRatio: L_mm / dp1
+  };
+}
+
+/**
+ * Ottimizzatore numerico combinazioni (z1, z2) conformi a target tau e interasse
+ */
+export function findOptimalCombos({
+  targetTau = 0.5,
+  tolPct = 3.0,
+  targetI = 100.0,
+  z_min = 17,
+  isLockM = false,
+  lockedMVal = 2.5,
+  isLockL = false,
+  lockedLVal = 30.0,
+  gearType = 'spur',
+  geomMode = 'tau',
+  xr1 = 0.0,
+  W_N_mm_s = 5500000,
+  M1_Nm = 36.2,
+  omega1 = 151.8,
+  Ke_N_mm2 = 35000,
+  sigmaH_lim = 550.0,
+  theta = (20.0 * Math.PI) / 180.0
+}) {
+  let tauNorm = targetTau > 1.0 ? 1.0 / targetTau : targetTau;
+  const moduleScanList = isLockM ? [lockedMVal] : STANDARD_MODULES.map(item => item.m);
+  const combos = [];
+
+  for (let curZ1 = z_min; curZ1 <= 50; curZ1++) {
+    const idealZ2 = Math.round(curZ1 / tauNorm);
+    if (idealZ2 <= curZ1) continue;
+
+    for (let curZ2 of [idealZ2 - 2, idealZ2 - 1, idealZ2, idealZ2 + 1, idealZ2 + 2]) {
+      if (curZ2 <= curZ1) continue;
+      const curTau = curZ1 / curZ2;
+      const errTau = Math.abs((curTau - tauNorm) / tauNorm) * 100.0;
+
+      if (errTau <= tolPct) {
+        const sumZ = curZ1 + curZ2;
+
+        for (let candM of moduleScanList) {
+          let alpha_c = 0.0;
+          let mt_c = candM;
+          let i_c = targetI;
+          let factors_c = { Phi: 1, Psi: 1, Gamma_T: 2 };
+
+          if (gearType === 'spur') {
+            mt_c = candM;
+            i_c = mt_c * (sumZ / 2.0 + xr1);
+            if (geomMode === 'center' && Math.abs(i_c - targetI) > 0.5) continue;
+          } else {
+            if (geomMode === 'center') {
+              const cosAlphaExact = (candM * (sumZ + 2.0 * xr1)) / (2.0 * targetI);
+              if (cosAlphaExact < 0.766 || cosAlphaExact > 0.999) continue;
+              alpha_c = (Math.acos(cosAlphaExact) * 180.0) / Math.PI;
+              mt_c = candM / cosAlphaExact;
+              i_c = targetI;
+            } else {
+              const numHel = 8 * Ke_N_mm2 * W_N_mm_s * (1.0 + curTau) * 0.6;
+              const denHel = 1.0 * omega1 * Math.sin(2 * theta) * Math.pow(curZ1, 3) * Math.pow(sigmaH_lim, 2);
+              const mt_min_c = Math.cbrt(numHel / denHel);
+              const cosA = Math.min(0.999, Math.max(0.766, candM / mt_min_c));
+              alpha_c = (Math.acos(cosA) * 180.0) / Math.PI;
+              mt_c = candM / cosA;
+              i_c = mt_c * (sumZ / 2.0 + xr1);
+            }
+            factors_c = getHelicalFactors(alpha_c, curZ1, curZ2);
+          }
+
+          const phiVal = (gearType === 'spur')
+            ? (8 * Ke_N_mm2 * W_N_mm_s * (1.0 + curTau)) / (omega1 * Math.sin(2 * theta) * Math.pow(curZ1, 3) * Math.pow(mt_c, 3) * Math.pow(sigmaH_lim, 2))
+            : (8 * Ke_N_mm2 * W_N_mm_s * (1.0 + curTau) / (omega1 * Math.sin(2 * theta) * Math.pow(curZ1, 3) * Math.pow(mt_c, 3) * Math.pow(sigmaH_lim, 2))) * (factors_c.Phi / factors_c.Gamma_T);
+
+          const dp1_c = mt_c * curZ1;
+          const L_c = isLockL ? lockedLVal : (phiVal * dp1_c);
+          const phi_eff = L_c / dp1_c;
+
+          const Fc_c = (2 * M1_Nm * 1000.0) / dp1_c;
+          const z_eq = (gearType === 'spur') ? curZ1 : (curZ1 / Math.pow(Math.cos((alpha_c * Math.PI) / 180.0), 3));
+          const y_c = getLewisFactor(z_eq, xr1);
+          const sigL_c = (gearType === 'spur')
+            ? (Fc_c / (L_c * candM * y_c))
+            : (Fc_c / (L_c * candM * y_c)) * (factors_c.Psi / factors_c.Gamma_T);
+
+          if (sigL_c > 800) continue;
+
+          const modObj = STANDARD_MODULES.find(item => item.m === candM);
+          const seriePenalty = (modObj && modObj.cat === 'red') ? 6.0 : 0.0;
+
+          let alphaPenalty = Math.abs(alpha_c - 20.0) * 0.35;
+          if (alpha_c > 35.0) alphaPenalty += (alpha_c - 35.0) * 4.0;
+
+          let phiPenalty = 0;
+          if (phi_eff < 0.5) phiPenalty = (0.5 - phi_eff) * 50;
+          else if (phi_eff > 1.0) phiPenalty = (phi_eff - 1.0) * 50;
+
+          const score = (curZ1 * 1.5) + (errTau * 1.0) + seriePenalty + alphaPenalty + phiPenalty;
+
+          combos.push({
+            z1: curZ1,
+            z2: curZ2,
+            tau: curTau,
+            err: errTau,
+            m: candM,
+            mt: mt_c,
+            alpha: alpha_c,
+            i: i_c,
+            phi: phi_eff,
+            L: L_c,
+            sigmaL: sigL_c,
+            score
+          });
+        }
+      }
     }
+  }
+
+  combos.sort((a, b) => a.score - b.score);
+
+  const uniqueCombos = [];
+  const seen = new Set();
+  for (const c of combos) {
+    const key = `${c.z1}_${c.z2}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      uniqueCombos.push(c);
+    }
+  }
+
+  return uniqueCombos.slice(0, 8);
+}
+
+// Supporto per script classico browser
+if (typeof window !== 'undefined') {
+  window.MechCalcGearsCore = {
+    STANDARD_MODULES,
+    getLewisFactor,
+    getHelicalFactors,
+    calculateWmax,
+    findOptimalCombos
   };
 }
