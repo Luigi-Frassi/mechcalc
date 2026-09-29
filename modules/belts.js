@@ -10,76 +10,79 @@ function drawBeltScheme(dp1, dp2, C) {
   const r1 = dp1 / 2;
   const r2 = dp2 / 2;
 
-  // Dimensionamento box SVG (600 x 240)
+  // Box SVG: 600 x 240
   const maxR = Math.max(r1, r2);
-  const totalW = C + r1 + r2 + 40;
+  const totalW = C + r1 + r2 + 60;
   const totalH = maxR * 2 + 80;
 
-  const scale = Math.min(500 / totalW, 140 / totalH, 1.2);
+  // Scala grafica di adattamento
+  const scale = Math.min(500 / Math.max(totalW, 1), 140 / Math.max(totalH, 1), 1.2);
 
-  const cx1 = 50 + r1 * scale;
-  const cy = 105;
-  const cx2 = cx1 + C * scale;
+  const R1 = Math.max(r1 * scale, 3);
+  const R2 = Math.max(r2 * scale, 3);
+  const scaledDist = Math.max(C * scale, R1 + R2 + 4);
 
-  const R1 = Math.max(r1 * scale, 2);
-  const R2 = Math.max(r2 * scale, 2);
-  const dist = cx2 - cx1;
+  // Centratura orizzontale e verticale nello spazio 600x240
+  const cx1 = (600 - (scaledDist + R1 + R2)) / 2 + R1;
+  const cy = 110;
+  const cx2 = cx1 + scaledDist;
 
-  // Angolo del tratto tangente comune rispetto all'orizzontale
-  const sinTheta = Math.max(-0.999, Math.min(0.999, (R2 - R1) / dist));
-  const cosTheta = Math.sqrt(1 - sinTheta * sinTheta);
+  // Angolo del tratto tangente comune esterno
+  // sin(gamma) = (R2 - R1) / d
+  const deltaR = R2 - R1;
+  const sinGamma = Math.max(-0.999, Math.min(0.999, deltaR / scaledDist));
+  const cosGamma = Math.sqrt(1 - sinGamma * sinGamma);
 
-  // Tangenti Puleggia 1 (sinistra)
-  const t1_top_x = cx1 - R1 * sinTheta;
-  const t1_top_y = cy - R1 * cosTheta;
-  const t1_bot_x = cx1 - R1 * sinTheta;
-  const t1_bot_y = cy + R1 * cosTheta;
+  // Punti di tangenza Puleggia 1 (sinistra)
+  const t1_top_x = cx1 - R1 * sinGamma;
+  const t1_top_y = cy - R1 * cosGamma;
+  const t1_bot_x = cx1 - R1 * sinGamma;
+  const t1_bot_y = cy + R1 * cosGamma;
 
-  // Tangenti Puleggia 2 (destra)
-  const t2_top_x = cx2 - R2 * sinTheta;
-  const t2_top_y = cy - R2 * cosTheta;
-  const t2_bot_x = cx2 - R2 * sinTheta;
-  const t2_bot_y = cy + R2 * cosTheta;
+  // Punti di tangenza Puleggia 2 (destra)
+  const t2_top_x = cx2 - R2 * sinGamma;
+  const t2_top_y = cy - R2 * cosGamma;
+  const t2_bot_x = cx2 - R2 * sinGamma;
+  const t2_bot_y = cy + R2 * cosGamma;
 
-  const largeArc2 = (R2 >= R1) ? 1 : 0;
-  const largeArc1 = (R1 >= R2) ? 1 : 0;
-
+  // Percorso vettoriale chiuso della cinghia (senso orario)
+  // Ramo superiore -> Arco puleggia 2 -> Ramo inferiore -> Arco puleggia 1
   const beltPath = [
     `M ${t1_top_x.toFixed(1)},${t1_top_y.toFixed(1)}`,
     `L ${t2_top_x.toFixed(1)},${t2_top_y.toFixed(1)}`,
-    `A ${R2.toFixed(1)},${R2.toFixed(1)} 0${largeArc2},1 ${t2_bot_x.toFixed(1)},${t2_bot_y.toFixed(1)}`,
+    `A ${R2.toFixed(1)},${R2.toFixed(1)} 0 0 1 ${t2_bot_x.toFixed(1)},${t2_bot_y.toFixed(1)}`,
     `L ${t1_bot_x.toFixed(1)},${t1_bot_y.toFixed(1)}`,
-    `A ${R1.toFixed(1)},${R1.toFixed(1)} 0${largeArc1},1 ${t1_top_x.toFixed(1)},${t1_top_y.toFixed(1)}`,
+    `A ${R1.toFixed(1)},${R1.toFixed(1)} 0 0 1 ${t1_top_x.toFixed(1)},${t1_top_y.toFixed(1)}`,
     'Z'
   ].join(' ');
 
-  const dimY = cy + Math.max(R1, R2) + 28;
+  const dimY = cy + Math.max(R1, R2) + 26;
 
   // 1. Asse mediano tratteggiato
   svg.innerHTML += `
-    <line x1="${cx1 - R1 - 20}" y1="${cy}" x2="${cx2 + R2 + 20}" y2="${cy}" stroke="#334155" stroke-dasharray="6 4" stroke-width="1.2" />
+    <line x1="${cx1 - R1 - 25}" y1="${cy}" x2="${cx2 + R2 + 25}" y2="${cy}" stroke="#334155" stroke-dasharray="6 4" stroke-width="1.2" />
   `;
 
-  // 2. Nastro Cinghia (tracciato azzurro con riempimento trasparente)
+  // 2. Anello chiuso della cinghia
   svg.innerHTML += `
     <path d="${beltPath}" fill="rgba(56, 189, 248, 0.08)" stroke="#38bdf8" stroke-width="3" stroke-linejoin="round" />
   `;
 
-  // 3. Puleggia 1 (Motrice z1)
+  // 3. Puleggia motrice (z1)
   svg.innerHTML += `
     <circle cx="${cx1}" cy="${cy}" r="${R1}" fill="rgba(251, 191, 36, 0.12)" stroke="#fbbf24" stroke-width="2" />
-    <circle cx="${cx1}" cy="${cy}" r="4" fill="#fbbf24" />
+    <circle cx="${cx1}" cy="${cy}" r="3.5" fill="#fbbf24" />
     <text x="${cx1}" y="${cy - R1 - 8}" fill="#fbbf24" font-size="11" font-weight="bold" font-family="monospace" text-anchor="middle">z₁</text>
   `;
 
-  // 4. Puleggia 2 (Condotta z2)
+  // 4. Puleggia condotta (z2)
   svg.innerHTML += `
     <circle cx="${cx2}" cy="${cy}" r="${R2}" fill="rgba(168, 85, 247, 0.12)" stroke="#a855f7" stroke-width="2" />
-    <circle cx="${cx2}" cy="${cy}" r="4" fill="#a855f7" />
+    <circle cx="${cx2}" cy="${cy}" r="3.5" fill="#a855f7" />
     <text x="${cx2}" y="${cy - R2 - 8}" fill="#a855f7" font-size="11" font-weight="bold" font-family="monospace" text-anchor="middle">z₂</text>
   `;
 
-  // 5. Linea di quota dell'interasse
+  // 5. Quota interasse C
   svg.innerHTML += `
     <line x1="${cx1}" y1="${cy}" x2="${cx1}" y2="${dimY + 8}" stroke="#0284c7" stroke-width="0.8" stroke-dasharray="2 2" />
     <line x1="${cx2}" y1="${cy}" x2="${cx2}" y2="${dimY + 8}" stroke="#0284c7" stroke-width="0.8" stroke-dasharray="2 2" />
