@@ -84,7 +84,7 @@ mechcalc/
 
 Each `ui/*.js` file depends on the matching `core/*.js` file, so `index.html` loads the core first.
 
-* **Frontend**: Pure Vanilla JavaScript (ES6+ Modules) & HTML5
+* **Frontend**: Pure Vanilla JavaScript (ES6+, classic `<script>` files, no bundler) & HTML5
 * **Styling**: Tailwind CSS
 * **Rendering**: Inline Mathematical SVG
 
