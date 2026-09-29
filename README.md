@@ -2,12 +2,14 @@
 
 # ⚙️ MechCalc
 
-**Fast, lightweight, ad-free, and privacy-first engineering toolbox for mechanical designers and students.**
+**Quick preliminary sizing of mechanical transmissions and fits: from the requirements to the first dimensions for your CAD.**
+
+*Free, ad-free, runs entirely in the browser.*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Pure Vanilla JS](https://img.shields.io/badge/Stack-Vanilla%20JS%20%7C%20HTML5-F7DF1E.svg?logo=javascript&logoColor=black)]()
 [![Tailwind CSS](https://img.shields.io/badge/CSS-Tailwind%203.x-38B2AC.svg?logo=tailwind-css&logoColor=white)]()
-[![Privacy](https://img.shields.io/badge/Privacy-Zero%20Tracking-10B981.svg)]()
+[![Privacy](https://img.shields.io/badge/Privacy-Cookie--free%20analytics-10B981.svg)](#-privacy)
 [![Deployed on Vercel](https://img.shields.io/badge/Deploy-Vercel-black.svg?logo=vercel)]()
 
 [**Explore the Web App**](https://mechcalc-nu.vercel.app/) • [**Report an Issue**](https://github.com/Luigi-Frassi/mechcalc/issues)
@@ -18,11 +20,14 @@
 
 ## 📌 Overview
 
-**MechCalc** is an open-source, client-side web application designed to eliminate repetitive iterative calculations in mechanical transmission design and tolerance analysis. It provides immediate graphical feedback via mathematical SVGs and features 1-click demo presets.
+**MechCalc** is an open-source web application for **preliminary sizing** (*dimensionamento di massima*). It is meant for whoever has to design a gear pair, a belt drive or a shaft-hub fit from scratch and does not know where to start: enter the requirements (power, speed, ratio, center distance, diameter) and get first-attempt dimensions — module and number of teeth, face width, pitch diameters, belt length, tolerance limits — ready to be drawn in CAD and then refined.
 
-* **Client-Side Speed**: 100% in-browser computation with zero server latency.
-* **Standard-Compliant**: Follows ISO 286-2, ISO 54, and ISO 5296 / DIN 7721 standards.
-* **Privacy by Design**: No telemetry, no third-party cookies, and no analytics scripts.
+It automates the repetitive, iterative hand calculations of machine design, shows the geometry with live SVG sketches and includes 1-click demo presets.
+
+* **From requirements to dimensions**: the result of every module is a set of quotes to start the CAD model from.
+* **Classic machine design methods**: Hertz / Lewis for gears (course charts for helical factors and Lewis form factor), ISO 286-2 tolerances, ISO 54 module series, ISO 5296 / DIN 7721 belt pitches. Values are **preliminary**: detailed verification (e.g. ISO 6336 for gears, the belt manufacturer's catalog, FEM) is the next step.
+* **Validated**: the gear module is checked against worked exam problems (see [Validation](#-validation)).
+* **Client-side**: every calculation runs in your browser; nothing you enter is sent to a server.
 
 ---
 
@@ -142,6 +147,15 @@ python3 -m http.server 8000
 ```
 
 Then visit `http://localhost:8000` in your web browser.
+
+---
+
+## 🔒 Privacy
+
+* All calculations run in the browser: the values you enter are never sent to a server.
+* The site uses [Vercel Web Analytics](https://vercel.com/docs/analytics/privacy-policy) to count page views: no cookies, no cross-site tracking, visitors are counted with an anonymous hash that is discarded after 24 hours, and only aggregated statistics are kept (page, referrer, country, browser, device type).
+* Shareable links carry the calculation in the address; before a page view is sent, a filter removes everything except the open module (`?m=gears`), so your inputs are not recorded.
+* No ads, no third-party cookies.
 
 ---
 

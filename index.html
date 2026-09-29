@@ -6,7 +6,21 @@
   <title>MechCalc - Engineering Toolbox</title>
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- Vercel Web Analytics -->
+  <!-- Vercel Web Analytics: anonymous, cookie-free page views.
+       Privacy filter: only the page and the open module (?m=...) are sent, never the calculation inputs in the URL. -->
+  <script>
+    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    window.va('beforeSend', function (event) {
+      try {
+        var u = new URL(event.url);
+        var m = u.searchParams.get('m');
+        u.search = (m === 'fits' || m === 'belts' || m === 'gears') ? '?m=' + m : '';
+        u.hash = '';
+        event.url = u.toString();
+        return event;
+      } catch (e) { return null; }
+    });
+  </script>
   <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col md:flex-row">
