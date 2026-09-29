@@ -10,86 +10,91 @@ function drawBeltScheme(dp1, dp2, C) {
   const r1 = dp1 / 2;
   const r2 = dp2 / 2;
 
-  // Box SVG: 600 x 240
+  // Box SVG fisso: 600 x 240
   const maxR = Math.max(r1, r2);
   const totalW = C + r1 + r2 + 60;
   const totalH = maxR * 2 + 80;
 
-  // Scala grafica di adattamento
-  const scale = Math.min(500 / Math.max(totalW, 1), 140 / Math.max(totalH, 1), 1.2);
+  // Scala grafica con limite superiore
+  const scale = Math.min(480 / Math.max(totalW, 1), 130 / Math.max(totalH, 1), 1.2);
 
-  const R1 = Math.max(r1 * scale, 3);
-  const R2 = Math.max(r2 * scale, 3);
+  const R1 = Math.max(r1 * scale, 4);
+  const R2 = Math.max(r2 * scale, 4);
   const scaledDist = Math.max(C * scale, R1 + R2 + 4);
 
-  // Centratura orizzontale e verticale nello spazio 600x240
-  const cx1 = (600 - (scaledDist + R1 + R2)) / 2 + R1;
+  // Centratura precisa nel canvas da 600 x 240
+  const contentWidth = scaledDist + R1 + R2;
+  const startX = (600 - contentWidth) / 2;
+  const cx1 = startX + R1;
   const cy = 110;
   const cx2 = cx1 + scaledDist;
 
-  // Angolo del tratto tangente comune esterno
-  // sin(gamma) = (R2 - R1) / d
-  const deltaR = R2 - R1;
-  const sinGamma = Math.max(-0.999, Math.min(0.999, deltaR / scaledDist));
-  const cosGamma = Math.sqrt(1 - sinGamma * sinGamma);
+  // Angolo di inclinazione delle tangenti esterne: sin(beta) = (R2 - R1) / d
+  const beta = Math.asin(Math.max(-0.999, Math.min(0.999, (R2 - R1) / scaledDist)));
+  const cosBeta = Math.cos(beta);
+  const sinBeta = Math.sin(beta);
 
-  // Punti di tangenza Puleggia 1 (sinistra)
-  const t1_top_x = cx1 - R1 * sinGamma;
-  const t1_top_y = cy - R1 * cosGamma;
-  const t1_bot_x = cx1 - R1 * sinGamma;
-  const t1_bot_y = cy + R1 * cosGamma;
+  // Punti di tangenza puleggia 1 (sinistra)
+  const p1_top_x = cx1 - R1 * sinBeta;
+  const p1_top_y = cy - R1 * cosBeta;
+  const p1_bot_x = cx1 + R1 * sinBeta;
+  const p1_bot_y = cy + R1 * cosBeta;
 
-  // Punti di tangenza Puleggia 2 (destra)
-  const t2_top_x = cx2 - R2 * sinGamma;
-  const t2_top_y = cy - R2 * cosGamma;
-  const t2_bot_x = cx2 - R2 * sinGamma;
-  const t2_bot_y = cy + R2 * cosGamma;
+  // Punti di tangenza puleggia 2 (destra)
+  const p2_top_x = cx2 - R2 * sinBeta;
+  const p2_top_y = cy - R2 * cosBeta;
+  const p2_bot_x = cx2 + R2 * sinBeta;
+  const p2_bot_y = cy + R2 * cosBeta;
 
-  // Percorso vettoriale chiuso della cinghia (senso orario)
-  // Ramo superiore -> Arco puleggia 2 -> Ramo inferiore -> Arco puleggia 1
+  // Se R2 >= R1 l'arco esterno su z2 supera i 180° (largeArc2 = 1) e su z1 è < 180° (largeArc1 = 0)
+  const largeArc2 = (R2 >= R1) ? 1 : 0;
+  const largeArc1 = (R1 > R2) ? 1 : 0;
+
+  // Percorso vettoriale chiuso continuo (orario):
+  // Ramo teso top -> Arco z2 -> Ramo bottom -> Arco z1
   const beltPath = [
-    `M ${t1_top_x.toFixed(1)},${t1_top_y.toFixed(1)}`,
-    `L ${t2_top_x.toFixed(1)},${t2_top_y.toFixed(1)}`,
-    `A ${R2.toFixed(1)},${R2.toFixed(1)} 0 0 1 ${t2_bot_x.toFixed(1)},${t2_bot_y.toFixed(1)}`,
-    `L ${t1_bot_x.toFixed(1)},${t1_bot_y.toFixed(1)}`,
-    `A ${R1.toFixed(1)},${R1.toFixed(1)} 0 0 1 ${t1_top_x.toFixed(1)},${t1_top_y.toFixed(1)}`,
+    `M ${p1_top_x.toFixed(2)},${p1_top_y.toFixed(2)}`,
+    `L ${p2_top_x.toFixed(2)},${p2_top_y.toFixed(2)}`,
+    `A ${R2.toFixed(2)},${R2.toFixed(2)} 0${largeArc2},1 ${p2_bot_x.toFixed(2)},${p2_bot_y.toFixed(2)}`,
+    `L ${p1_bot_x.toFixed(2)},${p1_bot_y.toFixed(2)}`,
+    `A ${R1.toFixed(2)},${R1.toFixed(2)} 0${largeArc1},1 ${p1_top_x.toFixed(2)},${p1_top_y.toFixed(2)}`,
     'Z'
   ].join(' ');
 
   const dimY = cy + Math.max(R1, R2) + 26;
 
-  // 1. Asse mediano tratteggiato
+  // 1. Asse mediano orizzontale
   svg.innerHTML += `
     <line x1="${cx1 - R1 - 25}" y1="${cy}" x2="${cx2 + R2 + 25}" y2="${cy}" stroke="#334155" stroke-dasharray="6 4" stroke-width="1.2" />
   `;
 
-  // 2. Anello chiuso della cinghia
+  // 2. Nastro cinghia continuo
   svg.innerHTML += `
     <path d="${beltPath}" fill="rgba(56, 189, 248, 0.08)" stroke="#38bdf8" stroke-width="3" stroke-linejoin="round" />
   `;
 
-  // 3. Puleggia motrice (z1)
+  // 3. Puleggia 1 (z1)
   svg.innerHTML += `
-    <circle cx="${cx1}" cy="${cy}" r="${R1}" fill="rgba(251, 191, 36, 0.12)" stroke="#fbbf24" stroke-width="2" />
+    <circle cx="${cx1}" cy="${cy}" r="${R1}" fill="rgba(251, 191, 36, 0.15)" stroke="#fbbf24" stroke-width="2" />
     <circle cx="${cx1}" cy="${cy}" r="3.5" fill="#fbbf24" />
     <text x="${cx1}" y="${cy - R1 - 8}" fill="#fbbf24" font-size="11" font-weight="bold" font-family="monospace" text-anchor="middle">z₁</text>
   `;
 
-  // 4. Puleggia condotta (z2)
+  // 4. Puleggia 2 (z2)
   svg.innerHTML += `
-    <circle cx="${cx2}" cy="${cy}" r="${R2}" fill="rgba(168, 85, 247, 0.12)" stroke="#a855f7" stroke-width="2" />
+    <circle cx="${cx2}" cy="${cy}" r="${R2}" fill="rgba(168, 85, 247, 0.15)" stroke="#a855f7" stroke-width="2" />
     <circle cx="${cx2}" cy="${cy}" r="3.5" fill="#a855f7" />
     <text x="${cx2}" y="${cy - R2 - 8}" fill="#a855f7" font-size="11" font-weight="bold" font-family="monospace" text-anchor="middle">z₂</text>
   `;
 
-  // 5. Quota interasse C
+  // 5. Linea di quota dell'interasse
   svg.innerHTML += `
     <line x1="${cx1}" y1="${cy}" x2="${cx1}" y2="${dimY + 8}" stroke="#0284c7" stroke-width="0.8" stroke-dasharray="2 2" />
     <line x1="${cx2}" y1="${cy}" x2="${cx2}" y2="${dimY + 8}" stroke="#0284c7" stroke-width="0.8" stroke-dasharray="2 2" />
     <line x1="${cx1}" y1="${dimY}" x2="${cx2}" y2="${dimY}" stroke="#38bdf8" stroke-width="1.2" />
-    <polygon points="${cx1},${dimY} ${cx1+6},${dimY-3} ${cx1+6},${dimY+3}" fill="#38bdf8" />
-    <polygon points="${cx2},${dimY} ${cx2-6},${dimY-3} ${cx2-6},${dimY+3}" fill="#38bdf8" />
-    <text x="${(cx1 + cx2)/2}" y="${dimY + 16}" fill="#38bdf8" font-size="11" font-weight="bold" font-family="monospace" text-anchor="middle">
+    <polygon points="${cx1},${dimY} ${cx1 + 6},${dimY - 3} ${cx1 + 6},${dimY + 3}" fill="#38bdf8" />
+    <polygon points="${cx2},${dimY} ${cx2 - 6},${dimY - 3} ${cx2 - 6},${dimY + 3}" fill="#38bdf8" />
+    <text x="${(cx1 + cx2) / 2}" y="${dimY + 16}" fill="#38bdf8" font-size="11" font-weight="bold" font-family="monospace" text-anchor="middle">
       C = ${currentUnit === 'metric' ? C.toFixed(2) + ' mm' : (C / 25.4).toFixed(3) + ' in'}
     </text>
   `;
