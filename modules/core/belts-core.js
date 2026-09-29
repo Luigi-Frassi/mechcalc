@@ -3,7 +3,7 @@
  * Zero DOM dependencies / Headless calculation module
  */
 
-export const CATALOG_WIDTHS = {
+const CATALOG_WIDTHS = {
   '2': [6, 9, 12],            // GT2
   '3': [6, 9, 15],            // HTD 3M
   '5': [9, 15, 25],           // HTD 5M
@@ -11,7 +11,7 @@ export const CATALOG_WIDTHS = {
   '8': [20, 30, 50, 85]       // HTD 8M
 };
 
-export const BASE_ALLOWABLE_FORCE = {
+const BASE_ALLOWABLE_FORCE = {
   '2': 7.0,     // N per mm di larghezza
   '3': 12.0,    // N per mm di larghezza
   '5': 24.0,    // N per mm di larghezza
@@ -19,23 +19,20 @@ export const BASE_ALLOWABLE_FORCE = {
   '8': 48.0     // N per mm di larghezza
 };
 
-export function parsePitch(profKey) {
+function parsePitch(profKey) {
   if (profKey === '5_T5') return 5.0;
   return parseFloat(profKey) || 5.0;
 }
 
-export function calculatePitchDiameter(teeth, pitch) {
+function calculatePitchDiameter(teeth, pitch) {
   return (teeth * pitch) / Math.PI;
 }
 
-export function computeDrivenTeeth(z1, targetTau) {
+function computeDrivenTeeth(z1, targetTau) {
   return Math.max(10, Math.round(z1 * targetTau));
 }
 
-/**
- * Calcolo analitico completo di cinematica, interasse esatto e trasmissione di potenza
- */
-export function calculateBeltAnalytical({
+function calculateBeltAnalytical({
   profKey = '5',
   z1 = 24,
   z2 = 48,
@@ -61,13 +58,11 @@ export function calculateBeltAnalytical({
     };
   }
 
-  // 1. Sviluppo primitivo continuo e discretizzazione denti normalizzati
   const L0 = 2 * C0_mm + (Math.PI / 2) * (dp1 + dp2) + Math.pow(dp2 - dp1, 2) / (4 * C0_mm);
   const zb0 = L0 / p;
   const zb = Math.max(z1 + z2 + 2, Math.round(zb0));
   const Lp = zb * p;
 
-  // 2. Chiusura analitica quadratica esatta dell'interasse C
   const B = 4 * Lp - 2 * Math.PI * (dp1 + dp2);
   const rad = Math.pow(B, 2) - 32 * Math.pow(dp2 - dp1, 2);
   let exactC_mm = C0_mm;
@@ -75,18 +70,15 @@ export function calculateBeltAnalytical({
     exactC_mm = (B + Math.sqrt(rad)) / 16;
   }
 
-  // 3. Cinematica e carichi di calcolo
   const omega1 = (2 * Math.PI * n1_rpm) / 60;
   const torqueNm = (P_kW * 1000) / Math.max(omega1, 0.001);
   const beltSpeed = (Math.PI * dp1 * n1_rpm) / 60000;
   const Pc_kW = P_kW * c0;
 
-  // 4. Angoli di avvolgimento e denti in presa
   const wrapRad1 = Math.PI - 2 * Math.asin(Math.min(1, Math.abs(dp2 - dp1) / (2 * exactC_mm)));
   const wrapDeg1 = (wrapRad1 * 180) / Math.PI;
   const z_mesh = z1 * (wrapDeg1 / 360);
 
-  // Fattori di servizio catalogo
   let c1 = 1.0;
   if (z_mesh < 6 && z_mesh >= 5) c1 = 0.8;
   else if (z_mesh < 5 && z_mesh >= 4) c1 = 0.6;
@@ -96,7 +88,6 @@ export function calculateBeltAnalytical({
   if (zb < 70) c2 = 0.9;
   else if (zb > 150) c2 = 1.1;
 
-  // 5. Sforzo tangenziale e larghezza commerciale raccomandata
   const Ft = (Pc_kW * 1000) / Math.max(beltSpeed, 0.1);
   const fAllowable = (BASE_ALLOWABLE_FORCE[profKey] || 20.0) * c1 * c2;
   const reqWidthMm = Ft / fAllowable;
@@ -148,14 +139,11 @@ export function calculateBeltAnalytical({
   };
 }
 
-// Supporto globale browser
-if (typeof window !== 'undefined') {
-  window.MechCalcBeltsCore = {
-    CATALOG_WIDTHS,
-    BASE_ALLOWABLE_FORCE,
-    parsePitch,
-    calculatePitchDiameter,
-    computeDrivenTeeth,
-    calculateBeltAnalytical
-  };
-}
+window.MechCalcBeltsCore = {
+  CATALOG_WIDTHS,
+  BASE_ALLOWABLE_FORCE,
+  parsePitch,
+  calculatePitchDiameter,
+  computeDrivenTeeth,
+  calculateBeltAnalytical
+};
