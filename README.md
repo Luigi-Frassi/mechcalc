@@ -67,6 +67,16 @@ Load fully calculated engineering cases with a single click:
 
 ---
 
+## 🔗 Shareable Links
+
+Every calculation is kept in the page address (module, inputs, modes, language, units, selected optimizer row), so the URL can be bookmarked or sent as it is. The **Share** button copies it (on phones it opens the system share sheet). Only values that differ from the defaults are written, e.g.:
+
+```
+https://mechcalc-nu.vercel.app/?m=fits&nominalDiameter=30&fitType=H7%2Fk6
+```
+
+---
+
 ## 🛠️ Architecture & Tech Stack
 
 ```text
@@ -80,9 +90,11 @@ mechcalc/
 │   └── ui/                   # Read inputs, call the core, render results and SVG
 │       ├── fits-ui.js
 │       ├── belts-ui.js
-│       └── gears-ui.js
+│       ├── gears-ui.js
+│       └── share.js          # Shareable links: state <-> URL
 ├── tests/
-│   └── validation.test.js    # Core vs. worked exam problems (node, no dependencies)
+│   ├── validation.test.js    # Core vs. worked exam problems (node, no dependencies)
+│   └── browser_test.py       # Share links & form behaviour in headless Chromium (Playwright)
 └── README.md                 # Documentation
 ```
 

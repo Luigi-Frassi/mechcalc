@@ -73,6 +73,9 @@
         <p class="text-sm text-slate-400 leading-snug" id="moduleSubtitle">H7 Hole-Basis System. Interactive matrix, reverse lookup, and unit conversion.</p>
       </div>
       <div class="flex items-center gap-2 md:gap-3 shrink-0 pt-0.5">
+        <button type="button" class="js-share-btn flex items-center gap-1.5 bg-slate-800/80 hover:bg-slate-700 px-2.5 py-1.5 rounded-lg border border-slate-700 text-xs font-semibold text-slate-300 hover:text-white transition-colors" data-i18n-title="shareTitle" title="Copy a link to this calculation">
+          <span aria-hidden="true">🔗</span><span class="hidden sm:inline" data-i18n="shareBtn">Share</span>
+        </button>
         <div id="unitToggleContainer" class="flex items-center bg-slate-800/80 p-1 rounded-lg border border-slate-700 text-xs font-semibold">
           <button id="unitMetric" class="px-2.5 py-1 rounded bg-blue-600 text-white transition-colors">mm</button>
           <button id="unitImperial" class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition-colors">in</button>
@@ -489,7 +492,7 @@
             <p class="text-xs text-slate-500 mt-1" data-i18n="subMotorShaft">Motor shaft</p>
           </div>
 
-          <div id="colTargetTau">
+          <div id="colGearTargetTau">
             <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="gearTargetTauLabel">Target Ratio (τ = z₁/z₂ &lt; 1)</label>
             <input type="number" id="gearTargetTau" value="0.5" min="0.05" max="0.99" step="0.05"
               class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
@@ -1011,6 +1014,9 @@
         beltWidthOk: "✓ Catalog width sufficient (estimate)",
         beltWidthExceeded: "⚠ Exceeds Catalog Width",
         feedbackLink: "Suggest a feature or report a problem",
+        shareBtn: "Share",
+        shareCopied: "Link copied!",
+        shareTitle: "Copy a link to this calculation",
         feedbackFooter: "Missing something, or found a wrong result? Tell us on GitHub.",
         wrapAngleCard: "Wrap Angle (θ₁)",
         teethInMeshCard: "Teeth in Mesh (z_mesh)",
@@ -1206,6 +1212,9 @@
         beltWidthOk: "✓ Larghezza a catalogo sufficiente (stima)",
         beltWidthExceeded: "⚠ Larghezza Massima Superata",
         feedbackLink: "Suggerisci una funzione o segnala un problema",
+        shareBtn: "Condividi",
+        shareCopied: "Link copiato!",
+        shareTitle: "Copia un link a questo calcolo",
         feedbackFooter: "Manca qualcosa o hai trovato un risultato sbagliato? Scrivici su GitHub.",
         wrapAngleCard: "Angolo di Contatto (θ₁)",
         teethInMeshCard: "Denti in Presa (z_mesh)",
@@ -1535,6 +1544,10 @@
         const key = el.getAttribute('data-i18n');
         if (t[key]) el.innerText = t[key];
       });
+      document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        const key = el.getAttribute('data-i18n-title');
+        if (t[key]) el.title = t[key];
+      });
 
       const optSpur = document.getElementById('optGearSpur');
       const optHelical = document.getElementById('optGearHelical');
@@ -1624,7 +1637,7 @@
     // Gears Geom Switcher
     document.querySelectorAll('input[name="gearGeomMode"]').forEach(radio => {
       radio.addEventListener('change', (e) => {
-        const colTau = document.getElementById('colTargetTau');
+        const colTau = document.getElementById('colGearTargetTau');
         const colZ1 = document.getElementById('colPinionZ1');
         const colZ2 = document.getElementById('colTargetZ2');
         const colCenter = document.getElementById('colTargetCenter');
@@ -1641,7 +1654,11 @@
         } else if (e.target.value === 'teeth') {
           colZ2.classList.remove('hidden');
         } else {
+          // center mode: the target ratio is still needed to choose z1/z2
+          colTau.classList.remove('hidden');
           colCenter.classList.remove('hidden');
+          // with auto-teeth the optimizer picks z1 (same as in tau mode)
+          if (document.getElementById('toggleAutoZ')?.checked) colZ1.classList.add('hidden');
         }
 
         if (typeof calculateGears === 'function') calculateGears();
@@ -1652,9 +1669,11 @@
     document.getElementById('toggleAutoZ').addEventListener('change', (e) => {
       const colTol = document.getElementById('colTauTol');
       const colZ1 = document.getElementById('colPinionZ1');
+      // auto-teeth works only with target ratio or center distance: in "teeth" mode z1 stays an input
+      const geom = document.querySelector('input[name="gearGeomMode"]:checked')?.value || 'tau';
       if (e.target.checked) {
         colTol.classList.remove('hidden');
-        colZ1.classList.add('hidden');
+        if (geom !== 'teeth') colZ1.classList.add('hidden');
       } else {
         colTol.classList.add('hidden');
         colZ1.classList.remove('hidden');
@@ -1771,7 +1790,7 @@
 
         const geomCenterRadio = document.querySelector('input[name="gearGeomMode"][value="center"]');
         if (geomCenterRadio) geomCenterRadio.checked = true;
-        document.getElementById('colTargetTau')?.classList.remove('hidden');
+        document.getElementById('colGearTargetTau')?.classList.remove('hidden');
         document.getElementById('colTargetCenter')?.classList.remove('hidden');
         document.getElementById('colPinionZ1')?.classList.add('hidden');
         document.getElementById('colTargetZ2')?.classList.add('hidden');
@@ -1813,7 +1832,7 @@
 
         const geomTauRadio = document.querySelector('input[name="gearGeomMode"][value="tau"]');
         if (geomTauRadio) geomTauRadio.checked = true;
-        document.getElementById('colTargetTau')?.classList.remove('hidden');
+        document.getElementById('colGearTargetTau')?.classList.remove('hidden');
         document.getElementById('colPinionZ1')?.classList.remove('hidden');
         document.getElementById('colTargetCenter')?.classList.add('hidden');
         document.getElementById('colTargetZ2')?.classList.add('hidden');
@@ -1853,6 +1872,7 @@
   <script src="modules/ui/belts-ui.js"></script>
   <script src="modules/core/gears-core.js"></script>
   <script src="modules/ui/gears-ui.js"></script>
+  <script src="modules/ui/share.js"></script>
 
   <script>
     // Boot sequence
@@ -1862,6 +1882,7 @@
     try { if (typeof calculateFits === 'function') calculateFits(); } catch(e) { console.error(e); }
     try { if (typeof calculateBelts === 'function') calculateBelts(); } catch(e) { console.error(e); }
     try { if (typeof calculateGears === 'function') calculateGears(); } catch(e) { console.error(e); }
+    try { if (typeof initShareLinks === 'function') initShareLinks(); } catch(e) { console.error(e); }
   </script>
 </body>
 </html>

@@ -234,6 +234,14 @@ function calculateGears() {
       z2 = activeCombo.z2;
       tau = activeCombo.tau;
     }
+
+    // Feedback under the target ratio: the combination currently selected in the table
+    const geomElAuto = document.getElementById('gearGeomFeedback');
+    if (geomElAuto) {
+      geomElAuto.innerText = activeCombo
+        ? `z₁ = ${z1}, z₂ = ${z2} (τ = ${tau.toFixed(3)}, err: ±${activeCombo.err.toFixed(2)}%)`
+        : '--';
+    }
   } else {
     if (optTableCard) optTableCard.classList.add('hidden');
 
