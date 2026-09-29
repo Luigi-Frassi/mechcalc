@@ -112,6 +112,13 @@ function calculateBelts() {
   const c0Input = parseFloat(document.getElementById('desiredCenter').value) || 150;
   const t = translations[currentLang];
 
+  // Nota sulla larghezza: visibile solo nella modalità di verifica a potenza
+  const widthNote = document.getElementById('beltWidthNote');
+  if (widthNote) {
+    if (currentBeltMode === 'geom') widthNote.classList.add('hidden');
+    else widthNote.classList.remove('hidden');
+  }
+
   // Gestione puleggia z2: inserimento diretto oppure da target tau
   let z2 = 40;
   if (currentRatioMethod === 'teeth') {
@@ -194,10 +201,10 @@ function calculateBelts() {
 
     const checkEl = document.getElementById('powerCheckStatus');
     if (r.widthOk) {
-      checkEl.innerText = currentLang === 'it' ? '✓ Dimensionamento Valido' : '✓ Capacity Verified';
+      checkEl.innerText = t.beltWidthOk;
       checkEl.className = "text-[11px] font-mono text-emerald-400 font-semibold";
     } else {
-      checkEl.innerText = currentLang === 'it' ? '⚠ Larghezza Massima Superata' : '⚠ Exceeds Catalog Width';
+      checkEl.innerText = t.beltWidthExceeded;
       checkEl.className = "text-[11px] font-mono text-amber-400 font-semibold";
     }
   }

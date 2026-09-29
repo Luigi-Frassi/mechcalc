@@ -37,8 +37,11 @@
         </button>
       </nav>
     </div>
-    <div class="text-xs text-slate-500 border-t border-slate-800 pt-4">
-      Mechanical Design Suite
+    <div class="text-xs text-slate-500 border-t border-slate-800 pt-4 space-y-3">
+      <a href="https://github.com/Luigi-Frassi/mechcalc/issues/new" target="_blank" rel="noopener" class="flex items-start gap-2 px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-blue-500/50 transition-colors">
+        <span>💬</span><span data-i18n="feedbackLink">Suggest a feature or report a problem</span>
+      </a>
+      <div>Mechanical Design Suite</div>
     </div>
   </aside>
 
@@ -335,6 +338,7 @@
           <span class="text-xs font-medium text-slate-400" id="card3Title" data-i18n="wrapAngleCard">Wrap Angle (θ₁)</span>
           <div class="text-xl font-bold text-emerald-400 mt-1" id="card3Value">169.1°</div>
           <div class="text-[11px] text-slate-500 mt-0.5" id="card3Sub">Ratio: 2.000</div>
+          <div class="hidden text-[10px] text-amber-400/80 mt-1.5 leading-snug" id="beltWidthNote" data-i18n="beltWidthNote">Indicative value: check against the belt manufacturer's catalog.</div>
         </div>
 
         <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
@@ -912,6 +916,9 @@
       <p data-i18n="disclaimerText">
         Calculations follow standard analytical machine design equations (ISO 286-2 for fits, ISO 5296 / DIN 7721 for synchronous belts, Hertz/Lewis for gears). Sizing values are preliminary guides for mechanical engineering and CAD design.
       </p>
+      <p class="pt-2">
+        <a href="https://github.com/Luigi-Frassi/mechcalc/issues/new" target="_blank" rel="noopener" class="text-blue-400 hover:text-blue-300 underline underline-offset-2" data-i18n="feedbackFooter">Missing something, or found a wrong result? Tell us on GitHub.</a>
+      </p>
     </footer>
   </main>
 
@@ -1000,6 +1007,11 @@
         exactCenterCard: "Exact Center Dist. (C)",
         beltTeethCard: "Rounded Belt Teeth (zb)",
         recWidthCard: "Recommended Width (W)",
+        beltWidthNote: "Indicative value: allowable load per mm is a fixed average per profile. Check against the belt manufacturer's catalog.",
+        beltWidthOk: "✓ Catalog width sufficient (estimate)",
+        beltWidthExceeded: "⚠ Exceeds Catalog Width",
+        feedbackLink: "Suggest a feature or report a problem",
+        feedbackFooter: "Missing something, or found a wrong result? Tell us on GitHub.",
         wrapAngleCard: "Wrap Angle (θ₁)",
         teethInMeshCard: "Teeth in Mesh (z_mesh)",
         motorPowerLabel: "Motor Power (P)",
@@ -1190,6 +1202,11 @@
         exactCenterCard: "Interasse Esatto (C)",
         beltTeethCard: "Denti Cinghia Arrotondati (zb)",
         recWidthCard: "Larghezza Consigliata (W)",
+        beltWidthNote: "Valore indicativo: il carico ammissibile per mm è un valore medio fisso per profilo. Verificare con il catalogo del produttore della cinghia.",
+        beltWidthOk: "✓ Larghezza a catalogo sufficiente (stima)",
+        beltWidthExceeded: "⚠ Larghezza Massima Superata",
+        feedbackLink: "Suggerisci una funzione o segnala un problema",
+        feedbackFooter: "Manca qualcosa o hai trovato un risultato sbagliato? Scrivici su GitHub.",
         wrapAngleCard: "Angolo di Contatto (θ₁)",
         teethInMeshCard: "Denti in Presa (z_mesh)",
         motorPowerLabel: "Potenza Motore (P)",
