@@ -7,7 +7,12 @@
   <script src="https://cdn.tailwindcss.com"></script>
   
   <!-- Vercel Web Analytics -->
-  <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
+  <script>
+    window.va = window.va || function () { 
+      (window.vaq = window.vaq || []).push(arguments); 
+    };
+  </script>
+  <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col md:flex-row">
 
@@ -84,7 +89,7 @@
       </div>
     </header>
 
-<!-- Demo Quick-Presets Bar -->
+    <!-- Demo Quick-Presets Bar -->
     <div class="mb-6 bg-slate-950/70 border border-slate-800 p-3 rounded-xl flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center gap-2">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -93,11 +98,11 @@
       <div class="flex flex-wrap gap-2 text-xs">
         <button id="demoHelicalBtn" onclick="loadDemoPreset('helical50kw')" 
           class="px-3 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 font-medium transition-all flex items-center gap-1.5">
-          <span>⚙️</span> <span data-i18n="demoHelical">Riduttore Elicoidale (50 kW)</span>
+          <span>⚙️️</span> <span data-i18n="demoHelical">Riduttore Elicoidale (50 kW)</span>
         </button>
         <button id="demoSpurBtn" onclick="loadDemoPreset('spur5kw')" 
           class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium transition-all flex items-center gap-1.5">
-          <span>⚙️</span> <span data-i18n="demoSpur">Ingranaggi Diritti (5.5 kW)</span>
+          <span>⚙️️</span> <span data-i18n="demoSpur">Ingranaggi Diritti (5.5 kW)</span>
         </button>
         <button id="demoFitBtn" onclick="loadDemoPreset('bearingFit')" 
           class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium transition-all flex items-center gap-1.5">
@@ -915,7 +920,7 @@
     </footer>
   </main>
 
-  <!-- ==================== CORE SCRIPT ==================== -->
+  <!-- ==================== CORE SCRIPT (NAV & STATE) ==================== -->
   <script>
     let activeModule = 'fits';
     let currentLang = 'en';
@@ -1064,7 +1069,6 @@
         gearPhiFactor: "Factor Φ (Hertz):",
         gearPsiFactor: "Factor Ψ (Lewis):",
         gearGammaT: "Curvature ΓT:",
-        // Sub-notes
         subIso54: "ISO 54 / Standard",
         subPinionShaft: "Pinion shaft",
         subMotorShaft: "Motor shaft",
@@ -1076,7 +1080,6 @@
         subSigmaHMat: "Quenched & Tempered: ~550 MPa",
         subPittingLimit: "Pitting limit",
         subBendingLimit: "Bending limit",
-        // Serie 3 comparison
         s3WarningTitle: "⚠ Series 3 Module Detected (Strongly Discouraged)",
         s3ComparisonSub: "Solutions Comparison",
         s3WarningDesc: "The theoretical minimum module requires a standardized size belonging to Series 3 (high tooling costs and poor market availability). Below you can compare the tight solution with the next recommended module:",
@@ -1085,7 +1088,6 @@
         btnAdoptA: "Adopt Option A (m min)",
         s3OptionBTitle: "Option B: Scaled to Recommended",
         btnAdoptB: "Adopt Option B (Recommended)",
-        // Wmax specific
         gwModuleLabel: "Nominal Module (m)",
         gwFaceWidthLabel: "Face Width (L)",
         gwSigmaLLabel: "Lewis Limit (σL lim)",
@@ -1254,7 +1256,6 @@
         gearPhiFactor: "Fattore Φ (Hertz):",
         gearPsiFactor: "Fattore Ψ (Lewis):",
         gearGammaT: "Curvatura ΓT:",
-        // Sub-notes
         subIso54: "ISO 54 / Normate",
         subPinionShaft: "Asse pignone",
         subMotorShaft: "Asse motore",
@@ -1266,7 +1267,6 @@
         subSigmaHMat: "Bonificato: ~550 MPa",
         subPittingLimit: "Limite usura pitting",
         subBendingLimit: "Limite flessione dente",
-        // Serie 3 comparison
         s3WarningTitle: "⚠ Rilevato Modulo di Serie 3 (Fortemente Sconsigliato)",
         s3ComparisonSub: "Confronto Soluzioni",
         s3WarningDesc: "Il modulo minimo teorico richiede una misura unificata appartenente alla Serie 3 (costi elevati di utensileria e scarsa reperibilità). Di seguito puoi confrontare la soluzione stretta con il primo modulo unificato consigliato:",
@@ -1275,7 +1275,6 @@
         btnAdoptA: "Adotta Opzione A (m min)",
         s3OptionBTitle: "Opzione B: Scalato al Consigliato",
         btnAdoptB: "Adotta Opzione B (Consigliato)",
-        // Wmax specific
         gwModuleLabel: "Modulo Nominale (m)",
         gwFaceWidthLabel: "Larghezza Fascia (L)",
         gwSigmaLLabel: "Limite Lewis (σL lim)",
@@ -1711,7 +1710,7 @@
     document.getElementById('langEN').addEventListener('click', () => updateLanguage('en'));
     document.getElementById('langIT').addEventListener('click', () => updateLanguage('it'));
 
-   function updateDemoButtonsState(activeKey) {
+    function updateDemoButtonsState(activeKey) {
       const btnHelical = document.getElementById('demoHelicalBtn');
       const btnSpur = document.getElementById('demoSpurBtn');
       const btnFit = document.getElementById('demoFitBtn');
@@ -1816,9 +1815,12 @@
     }
   </script>
 
+  <!-- ==================== CORE MATH ENGINES (Pure Analytical) ==================== -->
+  <script src="modules/core/fits-core.js"></script>
+  <script src="modules/core/belts-core.js"></script>
+  <script src="modules/core/gears-core.js"></script>
 
-  
-  <!-- ==================== SUBMODULES ==================== -->
+  <!-- ==================== UI CONTROLLERS & RENDERERS ==================== -->
   <script src="modules/fits.js"></script>
   <script src="modules/belts.js"></script>
   <script src="modules/gears.js"></script>
