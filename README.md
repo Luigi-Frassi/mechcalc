@@ -69,13 +69,20 @@ Load fully calculated engineering cases with a single click:
 
 ```text
 mechcalc/
-├── index.html          # Core UI shell, demo presets, and translations
+├── index.html                # Core UI shell, demo presets, and translations
 ├── modules/
-│   ├── fits.js         # ISO 286 tolerance lookup tables and renderer
-│   ├── belts.js        # Synchronous timing belt sizing logic
-│   └── gears.js        # Hertz/Lewis synthesis and tooth optimizer
-└── README.md           # Documentation
+│   ├── core/                 # Analytical engines: pure functions, no DOM access
+│   │   ├── fits-core.js      # ISO 286 tolerance tables, fit analysis, reverse lookup
+│   │   ├── belts-core.js     # Synchronous timing belt sizing logic
+│   │   └── gears-core.js     # Hertz/Lewis synthesis, tooth optimizer, W_max rating
+│   └── ui/                   # Read inputs, call the core, render results and SVG
+│       ├── fits-ui.js
+│       ├── belts-ui.js
+│       └── gears-ui.js
+└── README.md                 # Documentation
 ```
+
+Each `ui/*.js` file depends on the matching `core/*.js` file, so `index.html` loads the core first.
 
 * **Frontend**: Pure Vanilla JavaScript (ES6+ Modules) & HTML5
 * **Styling**: Tailwind CSS
