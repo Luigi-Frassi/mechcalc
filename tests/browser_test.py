@@ -17,7 +17,7 @@ BASE = f'http://127.0.0.1:{srv.server_address[1]}/'
 
 SNAP_JS = """() => {
   const vis = el => !!(el.offsetParent || el.getClientRects().length);
-  const sec = ['moduleFitsSection','moduleBeltsSection','moduleGearsSection'].find(id => !document.getElementById(id).classList.contains('hidden'));
+  const sec = ['moduleFitsSection','moduleBeltsSection','moduleGearsSection','moduleShaftsSection'].find(id => !document.getElementById(id).classList.contains('hidden'));
   const root = document.getElementById(sec);
   const inputs = [...root.querySelectorAll('input,select')].filter(vis).map(e => e.id + '=' + (e.type==='checkbox'||e.type==='radio' ? e.checked : e.value));
   const svgs = [...root.querySelectorAll('svg')].map(s => s.innerHTML);
@@ -175,6 +175,51 @@ with sync_playwright() as p:
     label = pg.inner_text('.js-share-btn')
     check('bottone Condividi copia il link', clip == pg.url and 'pulleyZ1=31' in clip, clip)
     check('feedback "Link copiato"', 'copied' in label.lower() or 'copiato' in label.lower(), label)
+
+    # --- 11. shafts module
+    pg = new_page(); pg.goto(BASE); settle(pg)
+    pg.click('#navBtnShafts'); settle(pg)
+    snap = pg.evaluate(SNAP_JS)
+    check('alberi: il modulo si apre', snap['sec'] == 'moduleShaftsSection')
+    check('alberi: risultati calcolati', 'd ≥' in pg.inner_text('#shaftRes1') and 'X =' in pg.inner_text('#shaftRes3'), pg.inner_text('#shaftRes1'))
+    check('alberi: diagramma di Goodman e schizzo disegnati', pg.evaluate("document.getElementById('shaftGoodmanChart').innerHTML.includes('<line') && document.getElementById('shaftSketch').innerHTML.includes('Ø')"))
+    # the page shows exactly what the core computes
+    pg.click('#demoShaftBtn'); settle(pg)
+    core = pg.evaluate('''() => { const { inp, Xreq } = readShaftInputs(); const r = shaftDesign(inp, Xreq); return { d: r.d, D: r.D, dMin: r.dMin, X: r.final.Xfatigue }; }''')
+    check('alberi, preset esame: d scelto = 65 mm come nella soluzione', core['d'] == 65 and core['D'] == 77, str(core))
+    check('alberi, preset esame: la pagina mostra il risultato del core', pg.inner_text('#shaftRes2').startswith('d = 65 mm · D = 77 mm') and f"{core['X']:.2f}" in pg.inner_text('#shaftRes3'), pg.inner_text('#shaftRes2') + ' | ' + pg.inner_text('#shaftRes3'))
+    check('alberi, preset evidenziato', 'blue' in pg.get_attribute('#demoShaftBtn', 'class'))
+    # visibility of the inputs
+    vis = lambda i: pg.evaluate(f"!document.getElementById('{i}').classList.contains('hidden')")
+    set_val(pg, 'shaftNotchType', 'keyway'); settle(pg)
+    check('alberi: linguetta mostra tipo e stato, nasconde r e D/d', vis('colShaftKeyType') and vis('colShaftKeyCond') and not vis('colShaftR') and not vis('colShaftDd'))
+    set_val(pg, 'shaftNotchType', 'shoulder'); pg.click('#shaftModeCheck'); settle(pg)
+    check('alberi, verifica: mostra d e D, nasconde D/d', vis('colShaftDcheck') and vis('colShaftDDcheck') and not vis('colShaftDd'))
+    set_val(pg, 'shaftTorqueInput', 'torque'); settle(pg)
+    check('alberi: Mt diretto nasconde P e n', vis('colShaftMt') and not vis('colShaftPower') and not vis('colShaftSpeed'))
+    # check mode reproduces the exam verification (d = 65, D = 76, r = 2)
+    set_val(pg, 'shaftTorqueInput', 'power'); set_val(pg, 'shaftDcheck', 65); set_val(pg, 'shaftDDcheck', 76); set_val(pg, 'shaftR', 2); settle(pg)
+    xf = pg.inner_text('#shaftRes3')
+    check('alberi, verifica d=65 D=76 r=2: X a fatica ≈ 1.87 (1.82 con i coefficienti letti dal docente)', 'X = 1.87' in xf, xf)
+    # language
+    pg.click('#langIT'); settle(pg)
+    check('alberi in italiano: titolo e schede tradotti', pg.inner_text('#moduleTitle') == 'Progetto a fatica degli alberi' and 'Sicurezza a fatica' in pg.inner_text('#shaftRes3Title'), pg.inner_text('#moduleTitle'))
+    txt = pg.evaluate("document.getElementById('moduleShaftsSection').innerText")
+    check('alberi: nessun testo mancante (undefined/NaN)', 'undefined' not in txt and 'NaN' not in txt)
+    pg.click('#langEN'); settle(pg)
+
+    # share round trip: keyway, finite life, check mode, Italian
+    def a_sh(pg):
+        pg.click('#navBtnShafts'); pg.click('#langIT'); pg.click('#shaftModeCheck')
+        set_val(pg, 'shaftNotchType', 'keyway'); set_val(pg, 'shaftKeyType', 'profile'); set_val(pg, 'shaftKeyCond', 'hardened')
+        set_val(pg, 'shaftDcheck', 42); set_val(pg, 'shaftMf', 320); set_val(pg, 'shaftTorsionCycle', 'pulsating')
+        set_val(pg, 'shaftLife', 'finite'); set_val(pg, 'shaftCycles', 150000); set_val(pg, 'shaftFinish', 'g')
+    _, _, u = roundtrip('alberi: linguetta, vita finita, verifica', a_sh)
+    check('  modalità e linguetta nel link', 'smode=check' in u and 'shaftKeyType=profile' in u, u)
+    def a_sh2(pg):
+        pg.click('#navBtnShafts'); set_val(pg, 'shaftTorqueInput', 'torque'); set_val(pg, 'shaftMt', 250)
+        set_val(pg, 'shaftBendCycle', 'static'); set_val(pg, 'shaftAxial', 5000); set_val(pg, 'shaftDd', 1.3); set_val(pg, 'shaftR', 0.8)
+    roundtrip('alberi: progetto con Mt diretto e sforzo assiale', a_sh2)
 
     check('nessun errore JS in tutto il test', not errors, '; '.join(errors[:3]))
     browser.close()

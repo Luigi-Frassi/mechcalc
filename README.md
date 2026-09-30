@@ -58,6 +58,15 @@ Solves the full gear pair synthesis problem with strict mounting constraints:
 * **Reverse Lookup Engine**: Identifies matching ISO fit classes directly from target clearance or interference values.
 * **Manufacturing Notes**: Provides machining guidelines and recommended surface roughness ($R_a$).
 
+### 4. Shaft Fatigue Design (critical section)
+* **Design mode**: finds the minimum diameter $d$ of the critical section from the Goodman line, with every coefficient re-evaluated at the diameter being tried (the "first attempt" iteration done automatically), then rounds it up to the next standard bearing bore and re-checks the section.
+* **Check mode**: safety factors against fatigue and yield for a known $d$, $D$, $r$.
+* **Loads**: rotating (alternating) or constant bending, torque from power and speed or direct, constant / pulsating / fully reversed torsion, constant axial force.
+* **Method of the machine design course**:
+  $$\sigma_{a,eq} = \sqrt{(K_e\,\sigma_{a})^2 + 3\,(K_e'\,\tau_{a})^2},\qquad \sigma_{m,eq} = \tfrac{\sigma_m}{2} + \sqrt{\left(\tfrac{\sigma_m}{2}\right)^2 + \tau_m^2},\qquad \frac{\sigma_{a,eq}}{b_1 b_2 \sigma_N} + \frac{\sigma_{m,eq}}{\sigma_R} = \frac{1}{X}$$
+* **Coefficients from the course charts**: $K_t$ of shouldered shafts ($B\,(r/d)^a$, bending / torsion / axial), notch sensitivity $q$ (the charts follow Neuber's formula exactly), size factor $b_1$, surface factor $b_2$ (9 finishes), effective factors for keyways; finite life through the Wöhler line between $10^3$ and $10^6$ cycles.
+* **Output**: the dimensions for CAD ($d$, $D$, $r$), every coefficient and stress, a Goodman diagram with the working point.
+
 ---
 
 ## ⚡ 1-Click Demo Presets
@@ -69,6 +78,7 @@ Load fully calculated engineering cases with a single click:
 | **Helical Gearbox** | Industrial reduction with locked center distance | $50\text{ kW}$, $i = 182\text{ mm}$, optimal $(z_1=19, z_2=78)$ |
 | **Spur Gear Pair** | Standard industrial motor reduction | $5.5\text{ kW}$, $1450\text{ rpm}$, ratio $1:2$ |
 | **Bearing Fit** | Precision shaft-to-bearing tolerance | $\varnothing 30\text{ mm}$ (H7/k6) |
+| **Reducer Shaft** | Intermediate shaft of a spur-gear reducer (exam problem) | $30\text{ kW}$, $200\text{ rpm}$, $M_f = 1887\text{ N·m}$ → $\varnothing 65$ |
 
 ---
 
@@ -91,11 +101,13 @@ mechcalc/
 │   ├── core/                 # Analytical engines: pure functions, no DOM access
 │   │   ├── fits-core.js      # ISO 286 tolerance tables, fit analysis, reverse lookup
 │   │   ├── belts-core.js     # Synchronous timing belt sizing logic
-│   │   └── gears-core.js     # Hertz/Lewis synthesis, tooth optimizer, W_max rating
+│   │   ├── gears-core.js     # Hertz/Lewis synthesis, tooth optimizer, W_max rating
+│   │   └── shafts-core.js    # Shaft fatigue design: Kt, q, b1, b2, Goodman, bearing bores
 │   └── ui/                   # Read inputs, call the core, render results and SVG
 │       ├── fits-ui.js
 │       ├── belts-ui.js
 │       ├── gears-ui.js
+│       ├── shafts-ui.js
 │       └── share.js          # Shareable links: state <-> URL
 ├── tests/
 │   ├── validation.test.js    # Core vs. worked exam problems (node, no dependencies)
@@ -122,8 +134,10 @@ The gear module is checked against worked exam problems of the course *Costruzio
 | Lewis bending stress $\sigma_L$, spur and helical (same $y$ as the hand solution) | 5 | 0.7 % |
 | Lewis factor $y$ vs. values read by eye from the chart | 5 | 0.021 |
 | Helical factors $\Phi$, $\Gamma_t$, $\Psi$ vs. values read by eye from the chart | 11 | 0.02 |
+| Shafts: design diameter and safety factors vs. the official solution (exam of 11 April 2003) | 5 | 1.2 % |
+| Shafts: $K_t$, $q$, $b_1$, $b_2$ vs. values read by eye from the charts | 7 | 0.09 on $K_t$, 0.015 otherwise |
 
-The factor deviations are reading errors of the hand solutions (e.g. $y$ = 0.32 read for $z$ = 18, where the chart gives 0.341). Run the suite (no dependencies) with:
+The factor deviations are reading errors of the hand solutions (e.g. $y$ = 0.32 read for $z$ = 18, where the chart gives 0.341; $K_t$ = 2.5 read where the course formula gives 2.41). The official shaft solution writes $X$ = 1.91 for the fatigue check, but that value leaves out the torsion term of the Goodman line: with it, the same coefficients give $X$ = 1.82 (still above the required 1.75). Run the suite (no dependencies) with:
 
 ```bash
 node tests/validation.test.js

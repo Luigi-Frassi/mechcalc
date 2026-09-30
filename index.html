@@ -14,7 +14,7 @@
       try {
         var u = new URL(event.url);
         var m = u.searchParams.get('m');
-        u.search = (m === 'fits' || m === 'belts' || m === 'gears') ? '?m=' + m : '';
+        u.search = (m === 'fits' || m === 'belts' || m === 'gears' || m === 'shafts') ? '?m=' + m : '';
         u.hash = '';
         event.url = u.toString();
         return event;
@@ -45,9 +45,9 @@
           <span data-i18n="navGears">Gears & Reducers</span>
           <span id="dotGears" class="w-2 h-2 rounded-full bg-transparent"></span>
         </button>
-        <button disabled class="w-full text-left px-3 py-2 rounded-lg text-slate-500 font-medium text-sm flex items-center justify-between cursor-not-allowed">
+        <button id="navBtnShafts" class="w-full text-left px-3 py-2 rounded-lg text-slate-400 hover:text-white font-medium text-sm flex items-center justify-between transition-colors">
           <span data-i18n="navShafts">Shafts & Keys</span>
-          <span class="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-400" data-i18n="comingSoon">Soon</span>
+          <span id="dotShafts" class="w-2 h-2 rounded-full bg-transparent"></span>
         </button>
       </nav>
     </div>
@@ -65,7 +65,7 @@
       <span class="text-lg font-bold tracking-tight text-blue-500">Mech<span class="text-white">Calc</span></span>
       <span class="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded">v0.9</span>
     </div>
-    <div class="grid grid-cols-3 gap-1.5">
+    <div class="grid grid-cols-4 gap-1.5">
       <button id="navBtnFitsMobile" class="text-center py-2 px-1.5 rounded-lg bg-blue-600 text-white font-medium text-xs transition-colors truncate">
         <span data-i18n="navFits">Tolerances</span>
       </button>
@@ -74,6 +74,9 @@
       </button>
       <button id="navBtnGearsMobile" class="text-center py-2 px-1.5 rounded-lg bg-slate-800/80 text-slate-300 font-medium text-xs transition-colors truncate">
         <span data-i18n="navGears">Gears</span>
+      </button>
+      <button id="navBtnShaftsMobile" class="text-center py-2 px-1.5 rounded-lg bg-slate-800/80 text-slate-300 font-medium text-xs transition-colors truncate">
+        <span data-i18n="navShafts">Shafts</span>
       </button>
     </div>
   </div>
@@ -122,6 +125,10 @@
         <button id="demoFitBtn" onclick="loadDemoPreset('bearingFit')" 
           class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium transition-all flex items-center gap-1.5">
           <span>🎯</span> <span data-i18n="demoBearing">Cuscinetto Ø30 (H7/k6)</span>
+        </button>
+        <button id="demoShaftBtn" onclick="loadDemoPreset('shaftExam')" 
+          class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium transition-all flex items-center gap-1.5">
+          <span>🔩</span> <span data-i18n="demoShaft">Reducer Shaft (Ø65, exam)</span>
         </button>
       </div>
     </div>
@@ -927,6 +934,291 @@
       </div>
     </div>
 
+
+    <!-- ==================== MODULE 4: SHAFTS (fatigue design of the critical section) ==================== -->
+    <div id="moduleShaftsSection" class="hidden">
+      <div class="flex gap-2 mb-6 border-b border-slate-800 pb-3">
+        <button id="shaftModeDesign" class="px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600/20 text-blue-400 border border-blue-500/30 transition-all"><span data-i18n="shaftModeDesignLabel">Design (find d)</span></button>
+        <button id="shaftModeCheck" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white border border-transparent transition-all"><span data-i18n="shaftModeCheckLabel">Check (d known)</span></button>
+      </div>
+
+      <div class="bg-slate-800/60 p-6 rounded-xl border border-slate-700/60 mb-4 backdrop-blur">
+      <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3" data-i18n="shaftLoadsTitle">Loads on the critical section</h3>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftMfLabel">Bending moment Mf</label>
+          <div class="relative">
+            <input type="number" id="shaftMf" value="1887" min="0" step="any" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">N·m</span>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftBendCycleLabel">Bending cycle</label>
+          <select id="shaftBendCycle" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="rotating" selected data-i18n="optBendRotating">Rotating shaft (alternating)</option>
+            <option value="static" data-i18n="optBendStatic">Constant (non-rotating)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftTorqueInputLabel">Torque from</label>
+          <select id="shaftTorqueInput" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="power" selected data-i18n="optTorqueFromPower">Power and speed</option>
+            <option value="torque" data-i18n="optTorqueDirect">Direct torque Mt</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftTorsionCycleLabel">Torsion cycle</label>
+          <select id="shaftTorsionCycle" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="static" selected data-i18n="optTorsStatic">Constant (steady drive)</option>
+            <option value="pulsating" data-i18n="optTorsPulsating">Pulsating 0 → max</option>
+            <option value="alternating" data-i18n="optTorsAlternating">Fully reversed ±</option>
+          </select>
+        </div>
+        <div id="colShaftPower">
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftPowerLabel">Power P</label>
+          <div class="relative">
+            <input type="number" id="shaftPower" value="30" min="0" step="any" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">kW</span>
+          </div>
+        </div>
+        <div id="colShaftSpeed">
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftSpeedLabel">Speed n</label>
+          <div class="relative">
+            <input type="number" id="shaftSpeed" value="200" min="0" step="any" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">rpm</span>
+          </div>
+        </div>
+        <div id="colShaftMt" class="hidden">
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftMtLabel">Torque Mt</label>
+          <div class="relative">
+            <input type="number" id="shaftMt" value="1432" min="0" step="any" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">N·m</span>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftAxialLabel">Axial force N (constant)</label>
+          <div class="relative">
+            <input type="number" id="shaftAxial" value="0" min="-1e9" step="any" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">N</span>
+          </div>
+        </div>
+      </div>
+      <p class="text-xs text-blue-400 mt-3 font-mono" id="shaftMtInfo"></p>
+      </div>
+
+      <div class="bg-slate-800/60 p-6 rounded-xl border border-slate-700/60 mb-4 backdrop-blur">
+      <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3" data-i18n="shaftMaterialTitle">Material and life</h3>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftSigmaRLabel">Ultimate strength σR</label>
+          <div class="relative">
+            <input type="number" id="shaftSigmaR" value="1080" min="0" step="any" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">MPa</span>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftSigmaSLabel">Yield strength σs</label>
+          <div class="relative">
+            <input type="number" id="shaftSigmaS" value="800" min="0" step="any" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">MPa</span>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftSigmaLFLabel">Fatigue limit σLF</label>
+          <div class="relative">
+            <input type="number" id="shaftSigmaLF" value="520" min="0" step="any" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">MPa</span>
+          </div>
+          <p class="text-xs text-slate-500 mt-1" data-i18n="shaftSigmaLFSub">Rotating bending, 10⁶ cycles</p>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftLifeLabel">Required life</label>
+          <select id="shaftLife" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="infinite" selected data-i18n="optLifeInfinite">Infinite (≥ 10⁶ cycles)</option>
+            <option value="finite" data-i18n="optLifeFinite">Finite: number of cycles</option>
+          </select>
+          <input type="number" id="shaftCycles" value="200000" min="1000" max="1000000" step="any" class="hidden mt-2 w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          <p class="text-xs text-slate-500 mt-1 font-mono" id="shaftSigmaNInfo"></p>
+        </div>
+      </div>
+      </div>
+
+      <div class="bg-slate-800/60 p-6 rounded-xl border border-slate-700/60 mb-4 backdrop-blur">
+      <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3" data-i18n="shaftNotchTitle">Geometry, notch and finish</h3>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftNotchTypeLabel">Critical detail</label>
+          <select id="shaftNotchType" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="shoulder" selected data-i18n="optNotchShoulder">Shoulder (D/d, fillet r)</option>
+            <option value="keyway" data-i18n="optNotchKeyway">Keyway</option>
+            <option value="manual" data-i18n="optNotchManual">Known Ke</option>
+            <option value="none" data-i18n="optNotchNone">Plain section</option>
+          </select>
+        </div>
+        <div id="colShaftDcheck" class="hidden">
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftDcheckLabel">Diameter d</label>
+          <div class="relative">
+            <input type="number" id="shaftDcheck" value="65" min="0" step="any" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">mm</span>
+          </div>
+        </div>
+        <div id="colShaftDd">
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftDdLabel">Shoulder ratio D/d</label>
+          <div class="relative">
+            <input type="number" id="shaftDd" value="1.1" min="1" step="0.01" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">–</span>
+          </div>
+          <p class="text-xs text-slate-500 mt-1" data-i18n="shaftDdSub">First attempt: 1.1–1.3</p>
+        </div>
+        <div id="colShaftDDcheck" class="hidden">
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftDDcheckLabel">Shoulder diameter D</label>
+          <div class="relative">
+            <input type="number" id="shaftDDcheck" value="76" min="0" step="any" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">mm</span>
+          </div>
+        </div>
+        <div id="colShaftR">
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftRLabel">Fillet radius r</label>
+          <div class="relative">
+            <input type="number" id="shaftR" value="1" min="0" step="0.1" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">mm</span>
+          </div>
+          <p class="text-xs text-slate-500 mt-1" data-i18n="shaftRSub">Bearing chamfer: see catalog</p>
+        </div>
+        <div id="colShaftKeyType" class="hidden">
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftKeyTypeLabel">Key type</label>
+          <select id="shaftKeyType" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="sled" selected data-i18n="optKeySled">Sunk (end-milled)</option>
+            <option value="straight" data-i18n="optKeyStraight">Straight (sled-runner)</option>
+            <option value="profile" data-i18n="optKeyProfile">Woodruff / American</option>
+          </select>
+        </div>
+        <div id="colShaftKeyCond" class="hidden">
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftKeyCondLabel">Shaft material condition</label>
+          <select id="shaftKeyCond" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="annealed" selected data-i18n="optKeyAnnealed">Annealed</option>
+            <option value="hardened" data-i18n="optKeyHardened">Hardened</option>
+          </select>
+        </div>
+        <div id="colShaftKe" class="hidden">
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftKeLabel">Bending Ke</label>
+          <div class="relative">
+            <input type="number" id="shaftKe" value="1.4" min="1" step="0.01" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">–</span>
+          </div>
+        </div>
+        <div id="colShaftKeT" class="hidden">
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftKeTLabel">Torsion Ke'</label>
+          <div class="relative">
+            <input type="number" id="shaftKeT" value="1.4" min="1" step="0.01" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">–</span>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftFinishLabel">Surface finish (b₂)</label>
+          <select id="shaftFinish" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="a" data-i18n="finA">a – Fine polishing</option>
+            <option value="b" data-i18n="finB">b – Medium polishing</option>
+            <option value="c" data-i18n="finC">c – Fine grinding</option>
+            <option value="d" data-i18n="finD">d – Medium grinding</option>
+            <option value="e" selected data-i18n="finE">e – Good rough machining</option>
+            <option value="f" data-i18n="finF">f – Normal rough machining</option>
+            <option value="g" data-i18n="finG">g – As rolled</option>
+            <option value="h" data-i18n="finH">h – Fresh-water corrosion</option>
+            <option value="i" data-i18n="finI">i – Sea-water corrosion</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftXLabel">Required safety factor X</label>
+          <div class="relative">
+            <input type="number" id="shaftX" value="1.75" min="1" step="0.05" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">–</span>
+          </div>
+        </div>
+      </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+        <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
+          <span class="text-xs font-medium text-slate-400" id="shaftRes1Title" data-i18n="shaftRes1Title">Minimum diameter</span>
+          <div class="text-xl font-bold text-sky-400 mt-1" id="shaftRes1">--</div>
+          <div class="text-[11px] text-slate-500 mt-0.5" id="shaftRes1Sub"></div>
+        </div>
+        <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
+          <span class="text-xs font-medium text-slate-400" id="shaftRes2Title" data-i18n="shaftRes2Title">Chosen diameter (bearing bore)</span>
+          <div class="text-xl font-bold text-white mt-1" id="shaftRes2">--</div>
+          <div class="text-[11px] text-slate-500 mt-0.5" id="shaftRes2Sub"></div>
+        </div>
+        <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
+          <span class="text-xs font-medium text-slate-400" id="shaftRes3Title" data-i18n="shaftRes3Title">Fatigue safety factor</span>
+          <div class="text-xl font-bold text-emerald-400 mt-1" id="shaftRes3">--</div>
+          <div class="text-[11px] text-slate-500 mt-0.5" id="shaftRes3Sub"></div>
+        </div>
+        <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
+          <span class="text-xs font-medium text-slate-400" id="shaftRes4Title" data-i18n="shaftRes4Title">Yield safety factor</span>
+          <div class="text-xl font-bold text-emerald-400 mt-1" id="shaftRes4">--</div>
+          <div class="text-[11px] text-slate-500 mt-0.5" id="shaftRes4Sub"></div>
+        </div>
+      </div>
+
+      <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700/50 mb-4 font-mono text-xs">
+        <div class="flex justify-between items-center mb-3 border-b border-slate-800 pb-2">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-300" data-i18n="shaftBkTitle">Coefficients and stresses at the chosen diameter</span>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="p-3 bg-slate-900/70 rounded-lg border border-slate-800">
+            <span class="text-slate-400 block mb-1" data-i18n="shaftBkKtLabel">Kt bending / torsion</span>
+            <span class="text-white font-bold text-sm" id="shaftBkKt">--</span>
+          </div>
+          <div class="p-3 bg-slate-900/70 rounded-lg border border-slate-800">
+            <span class="text-slate-400 block mb-1" data-i18n="shaftBkQLabel">q bending / torsion</span>
+            <span class="text-white font-bold text-sm" id="shaftBkQ">--</span>
+          </div>
+          <div class="p-3 bg-slate-900/70 rounded-lg border border-slate-800">
+            <span class="text-slate-400 block mb-1" data-i18n="shaftBkKeLabel">Ke / Ke'</span>
+            <span class="text-amber-400 font-bold text-sm" id="shaftBkKe">--</span>
+          </div>
+          <div class="p-3 bg-slate-900/70 rounded-lg border border-slate-800">
+            <span class="text-slate-400 block mb-1" data-i18n="shaftBkBLabel">b₁ (size) / b₂ (finish)</span>
+            <span class="text-sky-400 font-bold text-sm" id="shaftBkB">--</span>
+          </div>
+          <div class="p-3 bg-slate-900/70 rounded-lg border border-slate-800">
+            <span class="text-slate-400 block mb-1" data-i18n="shaftBkSigmaNLabel">Fatigue strength σN</span>
+            <span class="text-white font-bold text-sm" id="shaftBkSigmaN">--</span>
+          </div>
+          <div class="p-3 bg-slate-900/70 rounded-lg border border-slate-800">
+            <span class="text-slate-400 block mb-1" data-i18n="shaftBkNomLabel">σ bending / τ torsion (nominal)</span>
+            <span class="text-white font-bold text-sm" id="shaftBkNom">--</span>
+          </div>
+          <div class="p-3 bg-slate-900/70 rounded-lg border border-slate-800">
+            <span class="text-slate-400 block mb-1" data-i18n="shaftBkAeqLabel">σa,eq (alternating, Von Mises)</span>
+            <span class="text-rose-400 font-bold text-sm" id="shaftBkAeq">--</span>
+          </div>
+          <div class="p-3 bg-slate-900/70 rounded-lg border border-slate-800">
+            <span class="text-slate-400 block mb-1" data-i18n="shaftBkMeqLabel">σm,eq (mean, max principal)</span>
+            <span class="text-purple-400 font-bold text-sm" id="shaftBkMeq">--</span>
+          </div>
+        </div>
+        <ul class="mt-3 space-y-1 text-[11px] text-amber-400/90 font-sans" id="shaftWarnings"></ul>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-300" data-i18n="shaftGoodmanTitle">Goodman diagram</span>
+          <div class="w-full bg-slate-950/80 rounded-lg p-2 border border-slate-800 mt-2">
+            <svg id="shaftGoodmanChart" viewBox="0 0 300 220" class="w-full h-56"></svg>
+          </div>
+        </div>
+        <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-300" data-i18n="shaftSketchTitle">Dimensions for CAD</span>
+          <div class="w-full bg-slate-950/80 rounded-lg p-2 border border-slate-800 mt-2">
+            <svg id="shaftSketch" viewBox="0 0 300 220" class="w-full h-56"></svg>
+          </div>
+        </div>
+      </div>
+      <p class="text-[11px] text-slate-500 -mt-3 mb-6" data-i18n="shaftMethodNote">Preliminary sizing of one section.</p>
+    </div>
+
     <!-- Technical Footer -->
     <footer class="pt-6 border-t border-slate-800 text-xs text-slate-500 space-y-1">
       <p class="font-medium text-slate-400" data-i18n="disclaimerTitle">Technical note and disclaimer:</p>
@@ -1029,6 +1321,102 @@
         beltWidthExceeded: "⚠ Exceeds Catalog Width",
         feedbackLink: "Suggest a feature or report a problem",
         shareBtn: "Share",
+        shaftModeDesignLabel: "Design (find d)",
+        shaftModeCheckLabel: "Check (d known)",
+        shaftLoadsTitle: "Loads on the critical section",
+        shaftMfLabel: "Bending moment Mf",
+        optBendRotating: "Rotating shaft (alternating)",
+        optBendStatic: "Constant (non-rotating)",
+        shaftBendCycleLabel: "Bending cycle",
+        optTorqueFromPower: "Power and speed",
+        optTorqueDirect: "Direct torque Mt",
+        shaftTorqueInputLabel: "Torque from",
+        optTorsStatic: "Constant (steady drive)",
+        optTorsPulsating: "Pulsating 0 → max",
+        optTorsAlternating: "Fully reversed ±",
+        shaftTorsionCycleLabel: "Torsion cycle",
+        shaftPowerLabel: "Power P",
+        shaftSpeedLabel: "Speed n",
+        shaftMtLabel: "Torque Mt",
+        shaftAxialLabel: "Axial force N (constant)",
+        shaftMaterialTitle: "Material and life",
+        shaftSigmaRLabel: "Ultimate strength σR",
+        shaftSigmaSLabel: "Yield strength σs",
+        shaftSigmaLFSub: "Rotating bending, 10⁶ cycles",
+        shaftSigmaLFLabel: "Fatigue limit σLF",
+        shaftLifeLabel: "Required life",
+        optLifeInfinite: "Infinite (≥ 10⁶ cycles)",
+        optLifeFinite: "Finite: number of cycles",
+        shaftNotchTitle: "Geometry, notch and finish",
+        optNotchShoulder: "Shoulder (D/d, fillet r)",
+        optNotchKeyway: "Keyway",
+        optNotchManual: "Known Ke",
+        optNotchNone: "Plain section",
+        shaftNotchTypeLabel: "Critical detail",
+        shaftDcheckLabel: "Diameter d",
+        shaftDdSub: "First attempt: 1.1–1.3",
+        shaftDdLabel: "Shoulder ratio D/d",
+        shaftDDcheckLabel: "Shoulder diameter D",
+        shaftRSub: "Bearing chamfer: see catalog",
+        shaftRLabel: "Fillet radius r",
+        optKeySled: "Sunk (end-milled)",
+        optKeyStraight: "Straight (sled-runner)",
+        optKeyProfile: "Woodruff / American",
+        shaftKeyTypeLabel: "Key type",
+        optKeyAnnealed: "Annealed",
+        optKeyHardened: "Hardened",
+        shaftKeyCondLabel: "Shaft material condition",
+        shaftKeLabel: "Bending Ke",
+        shaftKeTLabel: "Torsion Ke'",
+        finA: "a – Fine polishing",
+        finB: "b – Medium polishing",
+        finC: "c – Fine grinding",
+        finD: "d – Medium grinding",
+        finE: "e – Good rough machining",
+        finF: "f – Normal rough machining",
+        finG: "g – As rolled",
+        finH: "h – Fresh-water corrosion",
+        finI: "i – Sea-water corrosion",
+        shaftFinishLabel: "Surface finish (b₂)",
+        shaftXLabel: "Required safety factor X",
+        shaftRes1Title: "Minimum diameter",
+        shaftRes2Title: "Chosen diameter (bearing bore)",
+        shaftRes3Title: "Fatigue safety factor",
+        shaftRes4Title: "Yield safety factor",
+        shaftBkTitle: "Coefficients and stresses at the chosen diameter",
+        shaftBkKtLabel: "Kt bending / torsion",
+        shaftBkQLabel: "q bending / torsion",
+        shaftBkKeLabel: "Ke / Ke'",
+        shaftBkBLabel: "b₁ (size) / b₂ (finish)",
+        shaftBkSigmaNLabel: "Fatigue strength σN",
+        shaftBkNomLabel: "σ bending / τ torsion (nominal)",
+        shaftBkAeqLabel: "σa,eq (alternating, Von Mises)",
+        shaftBkMeqLabel: "σm,eq (mean, max principal)",
+        shaftGoodmanTitle: "Goodman diagram",
+        shaftSketchTitle: "Dimensions for CAD",
+        shaftMethodNote: "Preliminary sizing of one section with the classic method (Goodman line, Von Mises on the alternating part, charts for Kt, q, b₁, b₂). Check every other section (shoulders, keyways, bearing seats) and the bearings themselves.",
+        pageTitleShafts: "Shaft Fatigue Design",
+        pageSubtitleShafts: "Critical section: diameter from the Goodman line, notch and size factors, bearing-bore rounding.",
+        shaftResSection: "Section",
+        shaftResStresses: "Equivalent stresses",
+        shaftGovFatigue: "Governed by fatigue (Goodman)",
+        shaftGovYield: "Governed by yield",
+        shaftBearingNote: "next standard bearing bore",
+        shaftOk: "✓ Verified",
+        shaftKo: "⚠ Below required X",
+        shaftRequired: "required",
+        shaftWarnRd: "r/d = {rd} is outside the chart range 0.02–0.30: Kt is extrapolated.",
+        shaftWarnDd: "D/d = {Dd} is outside the torsion chart (1.09–2): Kt for torsion is extrapolated.",
+        shaftWarnSigma: "σR outside 300–1600 MPa: b₂ and q use the nearest chart values.",
+        shaftWarnFinite: "Finite life: σN = {sn} MPa from the Wöhler line (m = {m}).",
+        shaftWarnBadMat: "Check the material data: it must be σLF < σR and σs ≤ σR.",
+        shaftWarnTooLarge: "No diameter up to 2000 mm satisfies the requirements.",
+        shaftWarnRounded: "With the rounded geometry X dropped below the requirement: next bore chosen.",
+        shaftMtFmt: "Mt = {mt} N·m (ω = {w} rad/s)",
+        shaftGoodmanLine: "Goodman",
+        shaftSafeLine: "with X",
+        shaftWorkPoint: "section",
+        demoShaft: "Reducer Shaft (Ø65, exam)",
         shareCopied: "Link copied!",
         shareTitle: "Copy a link to this calculation",
         feedbackFooter: "Missing something, or found a wrong result? Tell us on GitHub.",
@@ -1227,6 +1615,102 @@
         beltWidthExceeded: "⚠ Larghezza Massima Superata",
         feedbackLink: "Suggerisci una funzione o segnala un problema",
         shareBtn: "Condividi",
+        shaftModeDesignLabel: "Progetto (trova d)",
+        shaftModeCheckLabel: "Verifica (d noto)",
+        shaftLoadsTitle: "Carichi sulla sezione critica",
+        shaftMfLabel: "Momento flettente Mf",
+        optBendRotating: "Albero rotante (alterna)",
+        optBendStatic: "Costante (albero fermo)",
+        shaftBendCycleLabel: "Ciclo di flessione",
+        optTorqueFromPower: "Potenza e velocità",
+        optTorqueDirect: "Mt diretto",
+        shaftTorqueInputLabel: "Momento torcente da",
+        optTorsStatic: "Costante (moto uniforme)",
+        optTorsPulsating: "Pulsante 0 → max",
+        optTorsAlternating: "Alterna ±",
+        shaftTorsionCycleLabel: "Ciclo di torsione",
+        shaftPowerLabel: "Potenza P",
+        shaftSpeedLabel: "Velocità n",
+        shaftMtLabel: "Momento torcente Mt",
+        shaftAxialLabel: "Sforzo assiale N (costante)",
+        shaftMaterialTitle: "Materiale e durata",
+        shaftSigmaRLabel: "Rottura σR",
+        shaftSigmaSLabel: "Snervamento σs",
+        shaftSigmaLFSub: "Flessione rotante, 10⁶ cicli",
+        shaftSigmaLFLabel: "Limite di fatica σLF",
+        shaftLifeLabel: "Durata richiesta",
+        optLifeInfinite: "Infinita (≥ 10⁶ cicli)",
+        optLifeFinite: "Finita: numero di cicli",
+        shaftNotchTitle: "Geometria, intaglio e finitura",
+        optNotchShoulder: "Spallamento (D/d, raccordo r)",
+        optNotchKeyway: "Cava per linguetta",
+        optNotchManual: "Ke noto",
+        optNotchNone: "Sezione liscia",
+        shaftNotchTypeLabel: "Dettaglio critico",
+        shaftDcheckLabel: "Diametro d",
+        shaftDdSub: "Prima battuta: 1,1–1,3",
+        shaftDdLabel: "Rapporto spallamento D/d",
+        shaftDDcheckLabel: "Diametro spallamento D",
+        shaftRSub: "Smusso del cuscinetto: vedi catalogo",
+        shaftRLabel: "Raggio di raccordo r",
+        optKeySled: "Incastrata",
+        optKeyStraight: "Dritta",
+        optKeyProfile: "Americana",
+        shaftKeyTypeLabel: "Tipo di linguetta",
+        optKeyAnnealed: "Ricotto",
+        optKeyHardened: "Temprato",
+        shaftKeyCondLabel: "Stato del materiale",
+        shaftKeLabel: "Ke flessione",
+        shaftKeTLabel: "Ke' torsione",
+        finA: "a – Lucidatura fine",
+        finB: "b – Lucidatura media",
+        finC: "c – Rettifica fine",
+        finD: "d – Rettifica media",
+        finE: "e – Sgrossatura buona",
+        finF: "f – Sgrossatura normale",
+        finG: "g – Grezzo di laminazione",
+        finH: "h – Corrosione in acqua dolce",
+        finI: "i – Corrosione in acqua di mare",
+        shaftFinishLabel: "Finitura superficiale (b₂)",
+        shaftXLabel: "Coefficiente di sicurezza X",
+        shaftRes1Title: "Diametro minimo",
+        shaftRes2Title: "Diametro scelto (foro cuscinetto)",
+        shaftRes3Title: "Sicurezza a fatica",
+        shaftRes4Title: "Sicurezza a snervamento",
+        shaftBkTitle: "Coefficienti e tensioni al diametro scelto",
+        shaftBkKtLabel: "Kt flessione / torsione",
+        shaftBkQLabel: "q flessione / torsione",
+        shaftBkKeLabel: "Ke / Ke'",
+        shaftBkBLabel: "b₁ (dimensione) / b₂ (finitura)",
+        shaftBkSigmaNLabel: "Resistenza a fatica σN",
+        shaftBkNomLabel: "σ flessione / τ torsione (nominali)",
+        shaftBkAeqLabel: "σa,eq (alterna, Von Mises)",
+        shaftBkMeqLabel: "σm,eq (media, principale max)",
+        shaftGoodmanTitle: "Diagramma di Goodman",
+        shaftSketchTitle: "Quote per il CAD",
+        shaftMethodNote: "Dimensionamento di massima di una sezione con il metodo classico (retta di Goodman, Von Mises sulla parte alterna, diagrammi di Kt, q, b₁, b₂). Vanno verificate tutte le altre sezioni (spallamenti, cave, sedi dei cuscinetti) e i cuscinetti stessi.",
+        pageTitleShafts: "Progetto a fatica degli alberi",
+        pageSubtitleShafts: "Sezione critica: diametro dalla retta di Goodman, coefficienti d'intaglio e dimensione, arrotondamento al foro del cuscinetto.",
+        shaftResSection: "Sezione",
+        shaftResStresses: "Tensioni equivalenti",
+        shaftGovFatigue: "Governa la fatica (Goodman)",
+        shaftGovYield: "Governa lo snervamento",
+        shaftBearingNote: "foro cuscinetto standard successivo",
+        shaftOk: "✓ Verificato",
+        shaftKo: "⚠ Sotto la X richiesta",
+        shaftRequired: "richiesto",
+        shaftWarnRd: "r/d = {rd} è fuori dal campo dei diagrammi 0,02–0,30: Kt è estrapolato.",
+        shaftWarnDd: "D/d = {Dd} è fuori dal diagramma a torsione (1,09–2): Kt a torsione è estrapolato.",
+        shaftWarnSigma: "σR fuori dal campo 300–1600 MPa: b₂ e q usano i valori estremi dei diagrammi.",
+        shaftWarnFinite: "Vita finita: σN = {sn} MPa dalla retta di Wöhler (m = {m}).",
+        shaftWarnBadMat: "Controlla i dati del materiale: deve essere σLF < σR e σs ≤ σR.",
+        shaftWarnTooLarge: "Nessun diametro fino a 2000 mm soddisfa i requisiti.",
+        shaftWarnRounded: "Con la geometria arrotondata X scendeva sotto il richiesto: scelto il foro successivo.",
+        shaftMtFmt: "Mt = {mt} N·m (ω = {w} rad/s)",
+        shaftGoodmanLine: "Goodman",
+        shaftSafeLine: "con X",
+        shaftWorkPoint: "sezione",
+        demoShaft: "Albero Riduttore (Ø65, esame)",
         shareCopied: "Link copiato!",
         shareTitle: "Copia un link a questo calcolo",
         feedbackFooter: "Manca qualcosa o hai trovato un risultato sbagliato? Scrivici su GitHub.",
@@ -1368,36 +1852,40 @@
       const bFits = document.getElementById('navBtnFits');
       const bBelts = document.getElementById('navBtnBelts');
       const bGears = document.getElementById('navBtnGears');
+      const bShafts = document.getElementById('navBtnShafts');
 
       const bFitsM = document.getElementById('navBtnFitsMobile');
       const bBeltsM = document.getElementById('navBtnBeltsMobile');
       const bGearsM = document.getElementById('navBtnGearsMobile');
+      const bShaftsM = document.getElementById('navBtnShaftsMobile');
 
       const dFits = document.getElementById('dotFits');
       const dBelts = document.getElementById('dotBelts');
       const dGears = document.getElementById('dotGears');
+      const dShafts = document.getElementById('dotShafts');
 
       const sFits = document.getElementById('moduleFitsSection');
       const sBelts = document.getElementById('moduleBeltsSection');
       const sGears = document.getElementById('moduleGearsSection');
+      const sShafts = document.getElementById('moduleShaftsSection');
 
       const titleEl = document.getElementById('moduleTitle');
       const subEl = document.getElementById('moduleSubtitle');
       const t = translations[currentLang];
 
-      [bFits, bBelts, bGears].forEach(b => {
+      [bFits, bBelts, bGears, bShafts].forEach(b => {
         if (b) b.className = "w-full text-left px-3 py-2 rounded-lg text-slate-400 hover:text-white font-medium text-sm flex items-center justify-between transition-colors";
       });
-      [bFitsM, bBeltsM, bGearsM].forEach(b => {
+      [bFitsM, bBeltsM, bGearsM, bShaftsM].forEach(b => {
         if (b) b.className = "text-center py-2 px-1.5 rounded-lg bg-slate-800/80 text-slate-300 font-medium text-xs transition-colors truncate";
       });
-      [dFits, dBelts, dGears].forEach(d => { if (d) d.className = "w-2 h-2 rounded-full bg-transparent"; });
-      [sFits, sBelts, sGears].forEach(s => { if (s) s.classList.add('hidden'); });
+      [dFits, dBelts, dGears, dShafts].forEach(d => { if (d) d.className = "w-2 h-2 rounded-full bg-transparent"; });
+      [sFits, sBelts, sGears, sShafts].forEach(s => { if (s) s.classList.add('hidden'); });
 
       const unitBox = document.getElementById('unitToggleContainer');
       const gearBadge = document.getElementById('gearUnitBadge');
 
-      if (mod === 'gears') {
+      if (mod === 'gears' || mod === 'shafts') {   // metric-only modules
         if (unitBox) unitBox.classList.add('hidden');
         if (gearBadge) gearBadge.classList.remove('hidden');
       } else {
@@ -1429,6 +1917,14 @@
         titleEl.innerText = t.pageTitleGears;
         subEl.innerText = t.pageSubtitleGears;
         if (typeof calculateGears === 'function') calculateGears();
+      } else if (mod === 'shafts') {
+        bShafts.className = "w-full text-left px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-sm flex items-center justify-between transition-colors";
+        bShaftsM.className = "text-center py-2 px-1.5 rounded-lg bg-blue-600 text-white font-medium text-xs transition-colors truncate";
+        dShafts.className = "w-2 h-2 rounded-full bg-blue-300";
+        sShafts.classList.remove('hidden');
+        titleEl.innerText = t.pageTitleShafts;
+        subEl.innerText = t.pageSubtitleShafts;
+        if (typeof calculateShafts === 'function') calculateShafts();
       }
     }
 
@@ -1547,6 +2043,8 @@
         if (typeof calculateBelts === 'function') calculateBelts();
       } else if (activeModule === 'gears') {
         if (typeof calculateGears === 'function') calculateGears();
+      } else if (activeModule === 'shafts') {
+        if (typeof calculateShafts === 'function') calculateShafts();
       }
     }
 
@@ -1582,6 +2080,9 @@
       } else if (activeModule === 'belts') {
         document.getElementById('moduleTitle').innerText = t.pageTitleBelts;
         document.getElementById('moduleSubtitle').innerText = t.pageSubtitleBelts;
+      } else if (activeModule === 'shafts') {
+        document.getElementById('moduleTitle').innerText = t.pageTitleShafts;
+        document.getElementById('moduleSubtitle').innerText = t.pageSubtitleShafts;
       } else {
         document.getElementById('moduleTitle').innerText = t.pageTitleGears;
         document.getElementById('moduleSubtitle').innerText = t.pageSubtitleGears;
@@ -1596,6 +2097,8 @@
         if (typeof calculateBelts === 'function') calculateBelts();
       } else if (activeModule === 'gears') {
         if (typeof calculateGears === 'function') calculateGears();
+      } else if (activeModule === 'shafts') {
+        if (typeof calculateShafts === 'function') calculateShafts();
       }
     }
 
@@ -1606,6 +2109,16 @@
     document.getElementById('navBtnFitsMobile').addEventListener('click', () => switchModule('fits'));
     document.getElementById('navBtnBeltsMobile').addEventListener('click', () => switchModule('belts'));
     document.getElementById('navBtnGearsMobile').addEventListener('click', () => switchModule('gears'));
+    document.getElementById('navBtnShafts').addEventListener('click', () => switchModule('shafts'));
+    document.getElementById('navBtnShaftsMobile').addEventListener('click', () => switchModule('shafts'));
+
+    // Shafts: mode tabs and every input recalculate (visibility is handled inside calculateShafts)
+    document.getElementById('shaftModeDesign').addEventListener('click', () => setShaftMode('design'));
+    document.getElementById('shaftModeCheck').addEventListener('click', () => setShaftMode('check'));
+    document.querySelectorAll('#moduleShaftsSection input, #moduleShaftsSection select').forEach(el => {
+      el.addEventListener('input', () => { if (typeof calculateShafts === 'function') calculateShafts(); });
+      el.addEventListener('change', () => { if (typeof calculateShafts === 'function') calculateShafts(); });
+    });
 
     document.getElementById('nominalDiameter').addEventListener('input', () => { if (typeof calculateFits === 'function') calculateFits(); });
     document.getElementById('fitType').addEventListener('change', () => { if (typeof calculateFits === 'function') calculateFits(); });
@@ -1765,6 +2278,7 @@
       const btnHelical = document.getElementById('demoHelicalBtn');
       const btnSpur = document.getElementById('demoSpurBtn');
       const btnFit = document.getElementById('demoFitBtn');
+      const btnShaft = document.getElementById('demoShaftBtn');
 
       const activeClass = "px-3 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 font-medium transition-all flex items-center gap-1.5";
       const inactiveClass = "px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium transition-all flex items-center gap-1.5";
@@ -1772,6 +2286,7 @@
       if (btnHelical) btnHelical.className = (activeKey === 'helical50kw') ? activeClass : inactiveClass;
       if (btnSpur) btnSpur.className = (activeKey === 'spur5kw') ? activeClass : inactiveClass;
       if (btnFit) btnFit.className = (activeKey === 'bearingFit') ? activeClass : inactiveClass;
+      if (btnShaft) btnShaft.className = (activeKey === 'shaftExam') ? activeClass : inactiveClass;
     }
 
     // A demo preset stays highlighted only until the user changes the loaded configuration.
@@ -1781,7 +2296,7 @@
     document.addEventListener('input', clearDemoHighlight);
     document.addEventListener('change', clearDemoHighlight);
     document.addEventListener('click', (e) => {
-      const configClick = '#modeDirect, #modeReverse, #gearModeDesign, #gearModeWmax, #btnAdoptStrict, #btnAdoptRecommended, #comparisonTableBody tr, #fixedOptTableBody tr';
+      const configClick = '#modeDirect, #modeReverse, #gearModeDesign, #gearModeWmax, #btnAdoptStrict, #btnAdoptRecommended, #comparisonTableBody tr, #fixedOptTableBody tr, #shaftModeDesign, #shaftModeCheck';
       if (e.target instanceof Element && e.target.closest(configClick)) clearDemoHighlight();
     }, true);
 
@@ -1873,6 +2388,19 @@
         if (fitSelect) fitSelect.value = 'H7/k6';
 
         if (typeof calculateFits === 'function') calculateFits();
+
+      } else if (presetKey === 'shaftExam') {
+        // Intermediate shaft of a spur-gear reducer (exam of 11 April 2003): 30 kW at 200 rpm,
+        // rotating bending Mf = 1887 N·m on the bearing-side shoulder, X = 1.75, infinite life
+        switchModule('shafts');
+        const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+        set('shaftMf', 1887); set('shaftBendCycle', 'rotating');
+        set('shaftTorqueInput', 'power'); set('shaftPower', 30); set('shaftSpeed', 200); set('shaftTorsionCycle', 'static');
+        set('shaftAxial', 0);
+        set('shaftSigmaR', 1080); set('shaftSigmaS', 800); set('shaftSigmaLF', 520); set('shaftLife', 'infinite');
+        set('shaftNotchType', 'shoulder'); set('shaftDd', 1.17); set('shaftR', 2);
+        set('shaftFinish', 'e'); set('shaftX', 1.75);
+        setShaftMode('design');
       }
     }
   </script>
@@ -1886,6 +2414,8 @@
   <script src="modules/ui/belts-ui.js"></script>
   <script src="modules/core/gears-core.js"></script>
   <script src="modules/ui/gears-ui.js"></script>
+  <script src="modules/core/shafts-core.js"></script>
+  <script src="modules/ui/shafts-ui.js"></script>
   <script src="modules/ui/share.js"></script>
 
   <script>
@@ -1896,6 +2426,7 @@
     try { if (typeof calculateFits === 'function') calculateFits(); } catch(e) { console.error(e); }
     try { if (typeof calculateBelts === 'function') calculateBelts(); } catch(e) { console.error(e); }
     try { if (typeof calculateGears === 'function') calculateGears(); } catch(e) { console.error(e); }
+    try { if (typeof calculateShafts === 'function') calculateShafts(); } catch(e) { console.error(e); }
     try { if (typeof initShareLinks === 'function') initShareLinks(); } catch(e) { console.error(e); }
   </script>
 </body>

@@ -16,7 +16,7 @@ const vm = require('vm');
 
 const ctx = { Math, console };
 vm.createContext(ctx);
-for (const f of ['core/gears-core.js', 'core/fits-core.js', 'core/belts-core.js']) {
+for (const f of ['core/gears-core.js', 'core/fits-core.js', 'core/belts-core.js', 'core/shafts-core.js']) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'modules', f), 'utf8'), ctx, { filename: f });
 }
 const { computeGearWmax, computeGearDesign, getHelicalFactors, getLewisFactor } =
@@ -157,6 +157,46 @@ for (const [a, z1, z2, phi, g1, g2, psi] of [
 }
 
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// ALBERI — Esame dell'11 aprile 2003, soluzione ufficiale (dattiloscritta) del docente
+// Albero intermedio, sezione C: flessione rotante Mf = 1887 N·m, torsione statica da 30 kW a 200 rpm,
+// σR = 1080, σs = 800, σLF = 520 MPa, X = 1.75, sgrossatura buona.
+// ---------------------------------------------------------------------------
+{
+  const S = vm.runInContext('({ shaftKt, shaftQ, shaftB1, shaftB2, shaftCheck, shaftDesign, shaftDesignFixedCoefficients, shaftFatigueStrength })', ctx);
+  const Mt = 30000 / omega(200);
+  rel('2003-04-11  alberi: momento torcente [N·m]', Mt, 1432, 0.002);
+
+  // coefficienti di primo tentativo (d = 50, D = 55, r = 1) vs. valori letti dal docente
+  abs('2003-04-11  diagramma Kt flessione D/d=1.10 r/d=0.02', S.shaftKt('bending', 0.02, 1.10), 2.5, 0.1, 'formula del corso B(r/d)^a: lettura a occhio del docente');
+  abs('2003-04-11  diagramma q flessione r=1 σR=1080', S.shaftQ('bending', 1, 1080), 0.85, 0.015);
+  abs('2003-04-11  diagramma b1 d=50', S.shaftB1(50), 0.77, 0.01);
+  abs('2003-04-11  diagramma b2 sgrossatura buona σR=1080', S.shaftB2('e', 1080), 0.75, 0.01);
+
+  // passo di progetto con gli stessi coefficienti della soluzione: Wf -> d
+  const fixed = S.shaftDesignFixedCoefficients({ Mf: 1887, Mt, ke: 2.27, b1: 0.77, b2: 0.75, sigmaN: 520, sigmaR: 1080, X: 1.75 });
+  rel('2003-04-11  progetto: Wf [mm³] (coefficienti del docente)', fixed.Wf, 26100, 0.01);
+  rel('2003-04-11  progetto: d [mm] (coefficienti del docente)', fixed.d, 64.3, 0.005);
+
+  // verifica a d = 65, D = 76, r = 2
+  abs('2003-04-11  diagramma Kt flessione D/d=1.17 r/d=0.03', S.shaftKt('bending', 2 / 65, 76 / 65), 2.3, 0.1, 'formula del corso: lettura a occhio del docente');
+  abs('2003-04-11  diagramma q flessione r=2 σR=1080', S.shaftQ('bending', 2, 1080), 0.87, 0.015);
+  abs('2003-04-11  diagramma b1 d=65', S.shaftB1(65), 0.73, 0.005);
+  const base = { loads: { Mf: 1887, bendingCycle: 'rotating', Mt, torsionCycle: 'static', N: 0 }, sigmaR: 1080, sigmaS: 800, sigmaLF: 520, cycles: 0, finish: 'e' };
+  const v = S.shaftCheck({ ...base, notch: { type: 'manual', ke: 2.13 }, b1Override: 0.73, b2Override: 0.75 }, 65);
+  rel('2003-04-11  verifica a fatica: solo termine di flessione [X]', 1 / (v.sigmaAeq / (0.73 * 0.75 * 520)), 1.91, 0.01,
+    'la soluzione ufficiale scrive X = 1.91 ma omette il termine di torsione');
+  rel('2003-04-11  verifica a fatica completa (Goodman) [X]', v.Xfatigue, 1.824, 0.005, 'con torsione: 1.82 > 1.75, verifica comunque positiva');
+  rel('2003-04-11  verifica a snervamento [X]', v.Xyield, 4.5, 0.02);
+  // stessa verifica con i coefficienti ricavati dai diagrammi del corso
+  const vc = S.shaftCheck({ ...base, notch: { type: 'shoulder', Dd: 76 / 65, r: 2 } }, 65);
+  rel('2003-04-11  verifica con i coefficienti dei diagrammi [X]', vc.Xfatigue, 1.824, 0.04, 'Kt dalla formula 2.22 invece di 2.3 letto a occhio');
+
+  // Wöhler: estremi della retta
+  rel('Wöhler: σN a 10³ cicli = σR', S.shaftFatigueStrength(1080, 520, 1e3).sigmaN, 1080, 1e-9);
+  rel('Wöhler: σN a 10⁶ cicli = σLF', S.shaftFatigueStrength(1080, 520, 1e6 - 1).sigmaN, 520, 1e-4);
+}
+
 let failed = 0;
 const w = Math.max(...cases.map(c => c.name.length));
 for (const c of cases) {
