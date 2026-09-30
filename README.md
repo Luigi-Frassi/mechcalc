@@ -58,9 +58,11 @@ Solves the full gear pair synthesis problem with strict mounting constraints:
 * **Reverse Lookup Engine**: Identifies matching ISO fit classes directly from target clearance or interference values.
 * **Manufacturing Notes**: Provides machining guidelines and recommended surface roughness ($R_a$).
 
-### 4. Shaft Fatigue Design (critical section)
-* **Design mode**: finds the minimum diameter $d$ of the critical section from the Goodman line, with every coefficient re-evaluated at the diameter being tried (the "first attempt" iteration done automatically), then rounds it up to the next standard bearing bore and re-checks the section.
-* **Check mode**: safety factors against fatigue and yield for a known $d$, $D$, $r$.
+### 4. Shaft Design: beam model → critical section → fatigue design
+The three steps of the classic method, in three tabs:
+* **1 · Beam & loads**: the shaft on two bearings with up to four elements (spur/helical gears, couplings, generic forces). Gear forces from the torque ($F_t = 2M_t/d$, $F_r = F_t\tan\theta/\cos\alpha$, $F_a = F_t\tan\alpha$, with the couple $F_a\,r$), direction of each force chosen in two perpendicular planes. Output: reactions, required dynamic load rating of the bearings ($C = R\,L^{1/p}$), bending moments in both planes, resultant $M_f$, torque diagram, and the **most stressed section**, which is sent to the design step with one click.
+* **2 · Design section**: finds the minimum diameter $d$ of the critical section from the Goodman line, with every coefficient re-evaluated at the diameter being tried (the "first attempt" iteration done automatically), then rounds it up to the next standard bearing bore and re-checks the section.
+* **3 · Check section**: safety factors against fatigue and yield for a known $d$, $D$, $r$.
 * **Loads**: rotating (alternating) or constant bending, torque from power and speed or direct, constant / pulsating / fully reversed torsion, constant axial force.
 * **Method of the machine design course**:
   $$\sigma_{a,eq} = \sqrt{(K_e\,\sigma_{a})^2 + 3\,(K_e'\,\tau_{a})^2},\qquad \sigma_{m,eq} = \tfrac{\sigma_m}{2} + \sqrt{\left(\tfrac{\sigma_m}{2}\right)^2 + \tau_m^2},\qquad \frac{\sigma_{a,eq}}{b_1 b_2 \sigma_N} + \frac{\sigma_{m,eq}}{\sigma_R} = \frac{1}{X}$$
@@ -78,7 +80,7 @@ Load fully calculated engineering cases with a single click:
 | **Helical Gearbox** | Industrial reduction with locked center distance | $50\text{ kW}$, $i = 182\text{ mm}$, optimal $(z_1=19, z_2=78)$ |
 | **Spur Gear Pair** | Standard industrial motor reduction | $5.5\text{ kW}$, $1450\text{ rpm}$, ratio $1:2$ |
 | **Bearing Fit** | Precision shaft-to-bearing tolerance | $\varnothing 30\text{ mm}$ (H7/k6) |
-| **Reducer Shaft** | Intermediate shaft of a spur-gear reducer (exam problem) | $30\text{ kW}$, $200\text{ rpm}$, $M_f = 1887\text{ N·m}$ → $\varnothing 65$ |
+| **Reducer Shaft** | Intermediate shaft of a spur-gear reducer (exam problem): beam, critical section, design | $30\text{ kW}$, $200\text{ rpm}$, $M_f = 1887\text{ N·m}$ at the bearing → $\varnothing 65$ |
 
 ---
 
@@ -135,6 +137,7 @@ The gear module is checked against worked exam problems of the course *Costruzio
 | Lewis factor $y$ vs. values read by eye from the chart | 5 | 0.021 |
 | Helical factors $\Phi$, $\Gamma_t$, $\Psi$ vs. values read by eye from the chart | 11 | 0.02 |
 | Shafts: design diameter and safety factors vs. the official solution (exam of 11 April 2003) | 5 | 1.2 % |
+| Shafts, beam model: gear forces, reactions, bending moments, bearing $C$ vs. the official and the hand solution | 17 | 0.7 % (1.3 % on a hand-rounded value) |
 | Shafts: $K_t$, $q$, $b_1$, $b_2$ vs. values read by eye from the charts | 7 | 0.09 on $K_t$, 0.015 otherwise |
 
 The factor deviations are reading errors of the hand solutions (e.g. $y$ = 0.32 read for $z$ = 18, where the chart gives 0.341; $K_t$ = 2.5 read where the course formula gives 2.41). The official shaft solution writes $X$ = 1.91 for the fatigue check, but that value leaves out the torsion term of the Goodman line: with it, the same coefficients give $X$ = 1.82 (still above the required 1.75). Run the suite (no dependencies) with:

@@ -192,6 +192,42 @@ for (const [a, z1, z2, phi, g1, g2, psi] of [
   const vc = S.shaftCheck({ ...base, notch: { type: 'shoulder', Dd: 76 / 65, r: 2 } }, 65);
   rel('2003-04-11  verifica con i coefficienti dei diagrammi [X]', vc.Xfatigue, 1.824, 0.04, 'Kt dalla formula 2.22 invece di 2.3 letto a occhio');
 
+  // ---- trave 1D dello stesso esame: appoggi A (x=0) e C (x=240), ruota B (x=67.5, Ø210), pignone D a sbalzo (x=305, Ø105)
+  const B = vm.runInContext('({ shaftBeam, shaftBearingC })', ctx);
+  const beam = (FtB, FrB, FtD, FrD) => B.shaftBeam({ xA: 0, xB: 240, Mt, theta: 20, elements: [
+    { type: 'gear', x: 67.5, d: 210, FtDir: FtB, FrDir: FrB, torque: 'in' },
+    { type: 'gear', x: 305, d: 105, FtDir: FtD, FrDir: FrD, torque: 'out' }] });
+  // versi della soluzione ufficiale: Fr (piano verticale) opposte, Fc (piano orizzontale) concordi
+  const bd = beam('-H', '+V', '-H', '-V');
+  rel('2003-04-11  trave: forza tangenziale su B [N]', bd.loads[0].Ft, 13642, 0.001);
+  rel('2003-04-11  trave: forza radiale su D [N]', bd.loads[1].Fr, 9930.5, 0.001);
+  rel('2003-04-11  trave: reazione in C, piano verticale [kN]', Math.abs(bd.RB.V) / 1000, 11.2, 0.01);
+  rel('2003-04-11  trave: reazione in C, piano orizzontale [kN]', Math.abs(bd.RB.H) / 1000, 38.5, 0.01);
+  rel('2003-04-11  trave: reazione in C [kN]', bd.RB.R / 1000, 40.1, 0.005);
+  rel('2003-04-11  trave: reazione in A, piano orizzontale [kN]', Math.abs(bd.RA.H) / 1000, 2.4, 0.015);
+  rel('2003-04-11  trave: reazione in A [kN]', bd.RA.R / 1000, 6.7, 0.005, 'la soluzione scrive 6.22 kN sul piano verticale: 4965 + 11224 − 9930 = 6259 N');
+  rel('2003-04-11  trave: momento flettente risultante in C [N·m]', bd.at(240).Mf, 1887, 0.001);
+  rel('2003-04-11  trave: sezione critica trovata = C (x = 240 mm)', bd.critical.x, 240, 1e-9);
+  rel('2003-04-11  cuscinetto C: C richiesto per 10⁷ cicli [N]', B.shaftBearingC(bd.RB.R, 10), 86400, 0.002);
+  rel('2003-04-11  cuscinetto A: C richiesto per 10⁷ cicli [N]', B.shaftBearingC(bd.RA.R, 10), 14400, 0.005);
+  // soluzione a mano di Luigi (stessa configurazione, piani chiamati al contrario)
+  const bl = beam('-V', '-H', '-V', '+H');
+  rel('2003-04-11  trave (Luigi): momento in C, piano verticale [N·m]', Math.abs(bl.at(240).Mv), 1774, 0.002);
+  rel('2003-04-11  trave (Luigi): momento in C, piano orizzontale [N·m]', Math.abs(bl.at(240).Mh), 645.5, 0.002);
+  rel('2003-04-11  trave (Luigi): momento in B, piano orizzontale [N·m]', Math.abs(bl.at(67.5).Mh), 422.43, 0.002);
+  rel('2003-04-11  trave (Luigi): momento in B, piano verticale [N·m]', Math.abs(bl.at(67.5).Mv), 161, 0.015, 'a mano 0.0133 invece di 0.0183 nel secondo termine');
+  rel('2003-04-11  trave (Luigi): momento risultante in B [N·m]', bl.at(67.5).Mf, 452.1, 0.002);
+  rel('2003-04-11  trave: torcente fra B e D [N·m]', bl.at(150).T, 1432.4, 0.001);
+
+  // equilibrio con una ruota elicoidale (coppia concentrata Fa·r): la trave deve chiudersi a momento nullo
+  const bh = B.shaftBeam({ xA: 0, xB: 200, Mt: 100, theta: 20, elements: [
+    { type: 'gear', x: 100, d: 100, helix: 20, FtDir: '+H', FrDir: '-V', FaDir: '+x', torque: 'in' },
+    { type: 'coupling', x: 260, torque: 'out' }] });
+  const endM = bh.at(bh.xmax + 1);
+  abs('trave elicoidale: momento nullo oltre l\'ultimo carico [N·m]', Math.hypot(endM.Mv, endM.Mh), 0, 1e-9);
+  abs('trave elicoidale: salto di momento in x=100 = Fa·r [N·m]', bh.at(100, 1).Mv - bh.at(100, -1).Mv, 2000 * Math.tan(20 * Math.PI / 180) * 0.05, 1e-9);
+  abs('trave elicoidale: reazione assiale = −ΣFa [N]', bh.RA.axial, -2000 * Math.tan(20 * Math.PI / 180), 1e-9);
+
   // Wöhler: estremi della retta
   rel('Wöhler: σN a 10³ cicli = σR', S.shaftFatigueStrength(1080, 520, 1e3).sigmaN, 1080, 1e-9);
   rel('Wöhler: σN a 10⁶ cicli = σLF', S.shaftFatigueStrength(1080, 520, 1e6 - 1).sigmaN, 520, 1e-4);

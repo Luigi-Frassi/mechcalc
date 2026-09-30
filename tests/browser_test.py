@@ -181,16 +181,35 @@ with sync_playwright() as p:
     pg.click('#navBtnShafts'); settle(pg)
     snap = pg.evaluate(SNAP_JS)
     check('alberi: il modulo si apre', snap['sec'] == 'moduleShaftsSection')
+    # step 1: beam (default tab), values of the exam of 11 April 2003
+    vis = lambda i: pg.evaluate(f"!document.getElementById('{i}').classList.contains('hidden')")
+    check('alberi: si apre sulla scheda Trave', vis('shaftBeamPanel') and not vis('shaftSectionPanel'))
+    check('alberi, trave: reazione in B = 40.11 kN (soluzione ufficiale 40.1)', 'R = 40.11 kN' in pg.inner_text('#shaftBeamRB'), pg.inner_text('#shaftBeamRB'))
+    check('alberi, trave: C richiesto 14.45 / 86.42 kN (ufficiale 14.4 / 86.4)', pg.inner_text('#shaftBeamC').startswith('14.45 / 86.42'), pg.inner_text('#shaftBeamC'))
+    check('alberi, trave: sezione più sollecitata x = 240, Mf = 1887', 'x = 240.0' in pg.inner_text('#shaftBeamCrit') and '1887' in pg.inner_text('#shaftBeamCritSub'), pg.inner_text('#shaftBeamCrit') + ' ' + pg.inner_text('#shaftBeamCritSub'))
+    check('alberi, trave: diagrammi disegnati', pg.evaluate("document.getElementById('shaftBeamChart').innerHTML.split('<polyline').length - 1") >= 4)
+    check('alberi, trave: forze della ruota B mostrate', 'Ft = 13642 N' in pg.inner_text('#shaftEl1Info'), pg.inner_text('#shaftEl1Info'))
+    # section at B, then the critical one, then transfer to step 2
+    set_val(pg, 'shaftSecX', 67.5); settle(pg)
+    check('alberi, sezione in B: Mf = 452.8 N·m', 'Mf = 452.8' in pg.inner_text('#shaftSecInfo'), pg.inner_text('#shaftSecInfo'))
+    pg.click('#shaftSecCritical'); settle(pg)
+    check('alberi: "vai alla sezione più sollecitata" -> x = 240', pg.input_value('#shaftSecX') == '240', pg.input_value('#shaftSecX'))
+    pg.click('#shaftUseSection'); settle(pg)
+    check('alberi: "dimensiona questa sezione" apre il progetto con Mf = 1887.3', vis('shaftSectionPanel') and pg.input_value('#shaftMf') == '1887.3', pg.input_value('#shaftMf'))
     check('alberi: risultati calcolati', 'd ≥' in pg.inner_text('#shaftRes1') and 'X =' in pg.inner_text('#shaftRes3'), pg.inner_text('#shaftRes1'))
     check('alberi: diagramma di Goodman e schizzo disegnati', pg.evaluate("document.getElementById('shaftGoodmanChart').innerHTML.includes('<line') && document.getElementById('shaftSketch').innerHTML.includes('Ø')"))
+    # a section outside the gears carries no torque
+    pg.click('#shaftModeBeam'); set_val(pg, 'shaftSecX', 30); settle(pg); pg.click('#shaftUseSection'); settle(pg)
+    check('alberi: sezione fra A e B -> niente torsione', not pg.is_checked('#shaftSecTorque'))
     # the page shows exactly what the core computes
     pg.click('#demoShaftBtn'); settle(pg)
+    check('alberi, preset: apre la trave con la sezione C', vis('shaftBeamPanel') and pg.input_value('#shaftSecX') == '240')
+    pg.click('#shaftUseSection'); settle(pg)
     core = pg.evaluate('''() => { const { inp, Xreq } = readShaftInputs(); const r = shaftDesign(inp, Xreq); return { d: r.d, D: r.D, dMin: r.dMin, X: r.final.Xfatigue }; }''')
     check('alberi, preset esame: d scelto = 65 mm come nella soluzione', core['d'] == 65 and core['D'] == 77, str(core))
     check('alberi, preset esame: la pagina mostra il risultato del core', pg.inner_text('#shaftRes2').startswith('d = 65 mm · D = 77 mm') and f"{core['X']:.2f}" in pg.inner_text('#shaftRes3'), pg.inner_text('#shaftRes2') + ' | ' + pg.inner_text('#shaftRes3'))
-    check('alberi, preset evidenziato', 'blue' in pg.get_attribute('#demoShaftBtn', 'class'))
+    check('alberi, preset: evidenziazione tolta dal passaggio alla sezione', 'blue' not in pg.get_attribute('#demoShaftBtn', 'class'))
     # visibility of the inputs
-    vis = lambda i: pg.evaluate(f"!document.getElementById('{i}').classList.contains('hidden')")
     set_val(pg, 'shaftNotchType', 'keyway'); settle(pg)
     check('alberi: linguetta mostra tipo e stato, nasconde r e D/d', vis('colShaftKeyType') and vis('colShaftKeyCond') and not vis('colShaftR') and not vis('colShaftDd'))
     set_val(pg, 'shaftNotchType', 'shoulder'); pg.click('#shaftModeCheck'); settle(pg)
@@ -207,6 +226,22 @@ with sync_playwright() as p:
     txt = pg.evaluate("document.getElementById('moduleShaftsSection').innerText")
     check('alberi: nessun testo mancante (undefined/NaN)', 'undefined' not in txt and 'NaN' not in txt)
     pg.click('#langEN'); settle(pg)
+
+    # beam: element fields follow the element type
+    pg.click('#shaftModeBeam'); set_val(pg, 'shaftEl3Type', 'force'); settle(pg)
+    check('alberi, elemento "forza": campi Fv/Fh visibili, niente diametro', vis('colShaftEl3Fv') and vis('colShaftEl3Fh') and not vis('colShaftEl3D'))
+    set_val(pg, 'shaftEl3Type', 'gear'); set_val(pg, 'shaftEl3Helix', 15); settle(pg)
+    check('alberi, ruota elicoidale: compare il verso di Fa', vis('colShaftEl3FaDir'))
+    check('alberi: coppia non bilanciata segnalata', 'balance' in pg.inner_text('#shaftBeamPanel') or 'bilanciano' in pg.inner_text('#shaftBeamPanel'))
+    set_val(pg, 'shaftEl3Type', 'none'); settle(pg)
+
+    # share round trip: beam with a helical gear and a coupling
+    def a_beam(pg):
+        pg.click('#navBtnShafts')
+        set_val(pg, 'shaftEl2Type', 'coupling'); set_val(pg, 'shaftEl2X', 330)
+        set_val(pg, 'shaftEl1Helix', 18); set_val(pg, 'shaftEl1FaDir', '-x'); set_val(pg, 'shaftAxialBearing', 'B')
+        set_val(pg, 'shaftSecX', 67.5); set_val(pg, 'shaftBearingType', 'roller')
+    roundtrip('alberi: trave con elicoidale e giunto', a_beam)
 
     # share round trip: keyway, finite life, check mode, Italian
     def a_sh(pg):

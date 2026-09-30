@@ -12,8 +12,10 @@ const SHARE_FIELDS = {
     'gearLockedMVal', 'gearLockedLVal', 'gearZ1', 'gearZ2', 'gearTargetCenter', 'gearXr1', 'gearKeInput', 'gearSigmaH',
     'gwToothType', 'gwModule', 'gwFaceWidth', 'gwZ1', 'gwZ2', 'gwSpeed', 'gwAlpha', 'gwXr1', 'gwKe', 'gwSigmaH', 'gwSigmaL'],
   shafts: ['shaftMf', 'shaftBendCycle', 'shaftTorqueInput', 'shaftPower', 'shaftSpeed', 'shaftMt', 'shaftTorsionCycle', 'shaftAxial',
-    'shaftSigmaR', 'shaftSigmaS', 'shaftSigmaLF', 'shaftLife', 'shaftCycles', 'shaftNotchType', 'shaftDcheck', 'shaftDd', 'shaftDDcheck',
-    'shaftR', 'shaftKeyType', 'shaftKeyCond', 'shaftKe', 'shaftKeT', 'shaftFinish', 'shaftX']
+    'shaftSecTorque', 'shaftSigmaR', 'shaftSigmaS', 'shaftSigmaLF', 'shaftLife', 'shaftCycles', 'shaftNotchType', 'shaftDcheck', 'shaftDd', 'shaftDDcheck',
+    'shaftR', 'shaftKeyType', 'shaftKeyCond', 'shaftKe', 'shaftKeT', 'shaftFinish', 'shaftX',
+    'shaftXA', 'shaftXB', 'shaftAxialBearing', 'shaftTheta', 'shaftBearingLife', 'shaftBearingType', 'shaftSecX',
+    ...[1, 2, 3, 4].flatMap(i => ['Type', 'X', 'D', 'Helix', 'Torque', 'FtDir', 'FrDir', 'FaDir', 'Fv', 'Fh', 'Fa', 'E'].map(f => 'shaftEl' + i + f))]
 };
 // Inputs whose value depends on the unit system: always written when the unit is not metric
 const SHARE_UNIT_FIELDS = ['nominalDiameter', 'reverseTargetVal', 'desiredCenter'];
@@ -34,7 +36,7 @@ function readShareState() {
   const s = { m: activeModule, lang: currentLang, unit: currentUnit };
   for (const id of SHARE_FIELDS[activeModule] || []) {
     const el = shareEl(id);
-    if (el) s[id] = String(el.value);
+    if (el) s[id] = el.type === 'checkbox' ? (el.checked ? '1' : '0') : String(el.value);
   }
   if (activeModule === 'fits') {
     s.mode = currentMode;
@@ -100,7 +102,9 @@ function applyShareState(q) {
     if (!q.has(id)) continue;
     const el = shareEl(id), v = q.get(id);
     if (!el) continue;
-    if (el.tagName === 'SELECT') {
+    if (el.type === 'checkbox') {
+      el.checked = v === '1';
+    } else if (el.tagName === 'SELECT') {
       if ([...el.options].some(o => o.value === v)) el.value = v;
     } else if (v !== '' && isFinite(Number(v))) {
       el.value = v;
@@ -140,7 +144,7 @@ function applyShareState(q) {
     if (gop === 'design' || gop === 'wmax') setGearOpMode(gop);
   } else if (m === 'shafts') {
     const smode = q.get('smode');
-    if (smode === 'design' || smode === 'check') currentShaftMode = smode;
+    if (smode === 'beam' || smode === 'design' || smode === 'check') currentShaftMode = smode;
     if (typeof setShaftMode === 'function') setShaftMode(currentShaftMode);
   }
 
@@ -188,7 +192,7 @@ function fallbackCopy(text, done) {
 // Called once from the boot sequence, after the default calculation
 function initShareLinks() {
   shareDefaults = { lang: currentLang, unit: currentUnit, mode: currentMode, bmode: currentBeltMode, ratio: currentRatioMethod, gop: currentGearOpMode,
-    smode: typeof currentShaftMode !== 'undefined' ? currentShaftMode : 'design' };
+    smode: typeof currentShaftMode !== 'undefined' ? currentShaftMode : 'beam' };
   const saved = activeModule;
   for (const m of Object.keys(SHARE_FIELDS)) {
     activeModule = m;

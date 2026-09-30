@@ -246,3 +246,127 @@ function shaftDesignFixedCoefficients({ Mf, Mt, torsionCycle = 'static', ke, keT
   const Wf = X * (aTerm / (b1 * b2 * sigmaN) + mTerm / sigmaR) * 1000;     // mm³ (N·mm / MPa)
   return { Wf, d: Math.cbrt(32 * Wf / Math.PI) };
 }
+
+// ============================================================================
+// SHAFT AS A 1D BEAM on two bearings (preliminary step of the course algorithm)
+// Two bending planes: V (vertical, y) and H (horizontal, z). x along the shaft [mm].
+// Sign convention: forces positive along +y / +z; bending moment at x from the loads on the left,
+// M(x) = Σ F_j (x − x_j) + Σ C_j (C_j = concentrated couple, e.g. axial force at the pitch radius).
+// Units: mm, N, N·m.
+// ============================================================================
+
+const SHAFT_DIRS = ['+V', '-V', '+H', '-H'];
+
+function shaftDirVec(dir) {
+  // returns [plane, sign]
+  const s = (dir || '+V')[0] === '-' ? -1 : 1;
+  const plane = (dir || '+V').slice(1) === 'H' ? 'H' : 'V';
+  return [plane, s];
+}
+
+/**
+ * Forces of one element on the shaft.
+ * el = { type: 'gear'|'coupling'|'force'|'none', x, d, helix, FtDir, FrDir, FaDir, torque: 'in'|'out',
+ *        Fv, Fh, Fa, e }   (force: direct components; e = radial offset of Fa in the H plane [mm])
+ * Mt = torque transmitted by the shaft [N·m], theta = normal pressure angle [deg].
+ */
+function shaftElementLoads(el, Mt, theta = 20) {
+  const out = { x: el.x || 0, Fv: 0, Fh: 0, Fa: 0, Cv: 0, Ch: 0, T: 0, Ft: 0, Fr: 0, FaMag: 0 };
+  if (el.type === 'gear') {
+    const r = (el.d || 0) / 2;                                   // mm
+    const alpha = (el.helix || 0) * Math.PI / 180;
+    const Ft = r > 0 ? Math.abs(Mt) * 1000 / r : 0;             // N
+    const Fr = Ft * Math.tan(theta * Math.PI / 180) / Math.cos(alpha);
+    const Fa = Ft * Math.tan(alpha);
+    out.Ft = Ft; out.Fr = Fr; out.FaMag = Fa;
+    const [pt, st] = shaftDirVec(el.FtDir), [pr, sr] = shaftDirVec(el.FrDir);
+    if (pt === 'V') out.Fv += st * Ft; else out.Fh += st * Ft;
+    if (pr === 'V') out.Fv += sr * Fr; else out.Fh += sr * Fr;
+    if (Fa > 0) {
+      const sa = el.FaDir === '-x' ? -1 : 1;
+      out.Fa = sa * Fa;
+      // the mesh point is on the side opposite to the radial force (Fr points towards the axis):
+      // offset e = −sign(Fr)·r in the plane of Fr -> couple C = Fa·e in that plane
+      const C = out.Fa * (-sr * r) / 1000;                       // N·m
+      if (pr === 'V') out.Cv += C; else out.Ch += C;
+    }
+    out.T = (el.torque === 'out' ? -1 : 1) * Math.abs(Mt);
+  } else if (el.type === 'coupling') {
+    out.T = (el.torque === 'out' ? -1 : 1) * Math.abs(Mt);
+  } else if (el.type === 'force') {
+    out.Fv = el.Fv || 0; out.Fh = el.Fh || 0; out.Fa = el.Fa || 0;
+    out.Ch = out.Fa * (el.e || 0) / 1000;
+  }
+  return out;
+}
+
+/**
+ * Beam solution.
+ * inp = { xA, xB, elements: [...], Mt, theta, axialBearing: 'A'|'B' }
+ */
+function shaftBeam({ xA, xB, elements, Mt, theta = 20, axialBearing = 'A' }) {
+  const loads = (elements || []).filter(e => e && e.type && e.type !== 'none').map(e => ({ ...shaftElementLoads(e, Mt, theta), el: e }));
+  const L = xB - xA;
+  if (!(L > 0)) return { ok: false, reason: 'supports' };
+
+  // equilibrium in each plane: RA + RB + ΣF = 0 and RA·xA + RB·xB + ΣF·x − ΣC = 0 (moments in N·mm, C in N·m)
+  const solve = (fKey, cKey) => {
+    const F = loads.reduce((s, l) => s + l[fKey], 0);
+    const Mx = loads.reduce((s, l) => s + l[fKey] * l.x, 0) - loads.reduce((s, l) => s + l[cKey], 0) * 1000;
+    const RB = (-Mx + F * xA) / L;
+    const RA = -F - RB;
+    return { RA, RB };
+  };
+  const V = solve('Fv', 'Cv'), H = solve('Fh', 'Ch');
+  const FaSum = loads.reduce((s, l) => s + l.Fa, 0);
+  const RaA = axialBearing === 'A' ? -FaSum : 0, RaB = axialBearing === 'B' ? -FaSum : 0;
+
+  const pts = [
+    { x: xA, Fv: V.RA, Fh: H.RA, Cv: 0, Ch: 0, T: 0, Fa: RaA, support: 'A' },
+    { x: xB, Fv: V.RB, Fh: H.RB, Cv: 0, Ch: 0, T: 0, Fa: RaB, support: 'B' },
+    ...loads
+  ];
+  const xmin = Math.min(...pts.map(p => p.x)), xmax = Math.max(...pts.map(p => p.x));
+
+  // internal actions at x (loads on the left; 'side' = -1 just left of a point, +1 just right).
+  // Mv, Mh, Mf, T in N·m; N in N (tension > 0)
+  const at = (x, side = 1) => {
+    let Mv = 0, Mh = 0, T = 0, N = 0, Vv = 0, Vh = 0;
+    for (const p of pts) {
+      const left = side > 0 ? p.x <= x + 1e-9 : p.x < x - 1e-9;
+      if (!left) continue;
+      Mv += p.Fv * (x - p.x) / 1000 + p.Cv;       // N·m
+      Mh += p.Fh * (x - p.x) / 1000 + p.Ch;
+      Vv += p.Fv; Vh += p.Fh;
+      T += p.T;
+      N -= p.Fa;                                   // internal normal force, positive = tension
+    }
+    return { x, Mv, Mh, Mf: Math.hypot(Mv, Mh), T, N, Vv, Vh };
+  };
+
+  // sample: every load point (both sides) plus a fine grid
+  const xs = new Set();
+  for (const p of pts) xs.add(p.x);
+  const n = 200;
+  for (let i = 0; i <= n; i++) xs.add(xmin + (xmax - xmin) * i / n);
+  const samples = [];
+  for (const x of [...xs].sort((a, b) => a - b)) { samples.push(at(x, -1)); samples.push(at(x, 1)); }
+
+  // critical section: largest resultant bending moment (ties -> larger torque)
+  let crit = samples[0];
+  for (const s of samples) if (s.Mf > crit.Mf + 1e-6 || (Math.abs(s.Mf - crit.Mf) <= 1e-6 && Math.abs(s.T) > Math.abs(crit.T))) crit = s;
+
+  return {
+    ok: true, loads, xmin, xmax,
+    RA: { V: V.RA, H: H.RA, R: Math.hypot(V.RA, H.RA), axial: RaA },
+    RB: { V: V.RB, H: H.RB, R: Math.hypot(V.RB, H.RB), axial: RaB },
+    at, samples, critical: crit
+  };
+}
+
+// Required dynamic load rating C = P · L^(1/p), L in millions of revolutions (p = 3 ball, 10/3 roller).
+// P is taken as the radial reaction (axial load not combined: preliminary choice).
+function shaftBearingC(P, Lmillions, type = 'ball') {
+  const p = type === 'roller' ? 10 / 3 : 3;
+  return P * Math.pow(Math.max(Lmillions, 0), 1 / p);
+}
