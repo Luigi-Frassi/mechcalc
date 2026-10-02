@@ -138,6 +138,7 @@ function calculateShafts() {
   const badMaterial = !(inp.sigmaLF > 0 && inp.sigmaR > inp.sigmaLF && inp.sigmaS > 0 && inp.sigmaS <= inp.sigmaR);
   if (badMaterial) warnings.push(t.shaftWarnBadMat);
   if (inp.sigmaR < 300 || inp.sigmaR > 1600) warnings.push(t.shaftWarnSigma);
+  if (shaftSeatAuto && notchType === 'combined') warnings.push(t.shaftSeatAuto);
   if (fat.finite) warnings.push(shaftText(t, 'shaftWarnFinite', { sn: shaftFmt(fat.sigmaN, 0), m: shaftFmt(fat.m, 2) }));
 
   let res, d, D = null, dMin = null, governing = null, roundedBumped = false;
@@ -337,6 +338,7 @@ function readShaftBeamInputs(Mt) {
 }
 
 let lastShaftBeam = null;
+let shaftSeatAuto = false;   // notch set to shoulder + keyway because the section is on a gear seat
 
 // Screen direction of a force in the end view seen from A (V up, +H to the right)
 function shaftEndViewVec(dir) {
@@ -350,28 +352,42 @@ const SHAFT_DIR_WORDS = {
 };
 
 // Small end view of a gear (seen from A): mesh point, Fr towards the axis, Ft tangent
-function shaftGearEndView(el, t) {
-  const c = 36, R = 24;
+function shaftGearEndView(el, t, L) {
+  // viewBox 200 × 170, drawn at 260 px: big enough to read the directions at a glance
+  const c = 100, cy = 96, R = 52, len = 40;
   const [fx, fy] = shaftEndViewVec(el.FrDir), [tx, ty] = shaftEndViewVec(el.FtDir);
-  const mx = c - fx * R, my = c - fy * R;                    // mesh point: opposite to Fr
+  const mx = c - fx * R, my = cy - fy * R;                   // mesh point: opposite to Fr
   const arrow = (x1, y1, x2, y2, col) => {
-    const a = Math.atan2(y2 - y1, x2 - x1), h = 5;
-    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="1.8"/>` +
-      `<polygon points="${x2},${y2} ${x2 - h * Math.cos(a - 0.45)},${y2 - h * Math.sin(a - 0.45)} ${x2 - h * Math.cos(a + 0.45)},${y2 - h * Math.sin(a + 0.45)}" fill="${col}"/>`;
+    const a = Math.atan2(y2 - y1, x2 - x1), h = 9;
+    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="3"/>` +
+      `<polygon points="${x2},${y2} ${x2 - h * Math.cos(a - 0.42)},${y2 - h * Math.sin(a - 0.42)} ${x2 - h * Math.cos(a + 0.42)},${y2 - h * Math.sin(a + 0.42)}" fill="${col}"/>`;
   };
-  let s = `<svg viewBox="0 0 92 78" width="92" height="78" class="shrink-0">`;
-  s += `<line x1="${c}" y1="4" x2="${c}" y2="68" stroke="#334155" stroke-width="0.8" stroke-dasharray="3 2"/>`;
-  s += `<line x1="4" y1="${c}" x2="68" y2="${c}" stroke="#334155" stroke-width="0.8" stroke-dasharray="3 2"/>`;
-  s += `<text x="${c + 2}" y="9" fill="#38bdf8" font-size="7" font-family="monospace">V</text>`;
-  s += `<text x="66" y="${c - 3}" fill="#fbbf24" font-size="7" font-family="monospace">H</text>`;
-  s += `<circle cx="${c}" cy="${c}" r="${R}" fill="none" stroke="#a855f7" stroke-width="1" stroke-dasharray="3 2"/>`;
-  s += `<circle cx="${c}" cy="${c}" r="5" fill="rgba(203,213,225,0.25)" stroke="#cbd5e1" stroke-width="1"/>`;
-  s += arrow(mx, my, mx + fx * 17, my + fy * 17, '#f43f5e');
-  s += arrow(mx, my, mx + tx * 17, my + ty * 17, '#34d399');
-  s += `<circle cx="${mx}" cy="${my}" r="2" fill="#e2e8f0"/>`;
-  s += `<text x="${mx + fx * 17 + (fx ? 0 : 4)}" y="${my + fy * 17 + (fy ? (fy > 0 ? 8 : -2) : -3)}" fill="#f43f5e" font-size="7" font-family="monospace">Fr</text>`;
-  s += `<text x="${mx + tx * 19 + (tx ? (tx > 0 ? 1 : -9) : 3)}" y="${my + ty * 19 + (ty ? (ty > 0 ? 7 : -1) : -3)}" fill="#34d399" font-size="7" font-family="monospace">Ft</text>`;
-  s += `<text x="46" y="76" fill="#64748b" font-size="6.5" text-anchor="middle" font-family="monospace">${t.shaftEndViewTitle}</text>`;
+  // label beside the middle of the arrow, on the side away from the shaft axis
+  // (Fr: on the side opposite to Ft, so the two never overlap)
+  const lab = (x, y, dx, dy, txt, col, side = null) => {
+    const midx = x + dx * len / 2, midy = y + dy * len / 2;
+    let nx = -dy, ny = dx;
+    if (side) { nx = side[0]; ny = side[1]; }
+    else if ((midx + nx - c) * nx + (midy + ny - cy) * ny < 0) { nx = -nx; ny = -ny; }
+    const lx = midx + nx * 8, ly = midy + ny * 8 + (ny > 0 ? 9 : ny < 0 ? -2 : 4);
+    const anchor = nx > 0 ? 'start' : nx < 0 ? 'end' : 'middle';
+    return `<text x="${lx}" y="${ly}" fill="${col}" font-size="11" font-weight="bold" text-anchor="${anchor}" font-family="monospace">${txt}</text>`;
+  };
+  const words = { '+V': '+V', '-V': '−V', '+H': '+H ⊙', '-H': '−H ⊗' };
+  let s = `<svg viewBox="0 0 200 196" width="260" height="255" class="shrink-0 bg-slate-950/60 rounded-lg border border-slate-800">`;
+  // axes of the end view: V up, H to the right (seen from A, +H out of the side view = to the right here)
+  s += `<line x1="${c}" y1="22" x2="${c}" y2="170" stroke="#334155" stroke-width="1" stroke-dasharray="4 3"/>`;
+  s += `<line x1="30" y1="${cy}" x2="170" y2="${cy}" stroke="#334155" stroke-width="1" stroke-dasharray="4 3"/>`;
+  s += `<text x="${c - 5}" y="24" text-anchor="end" fill="#38bdf8" font-size="10" font-family="monospace">+V</text>`;
+  s += `<text x="174" y="${cy + 4}" fill="#fbbf24" font-size="10" font-family="monospace">+H</text>`;
+  s += `<circle cx="${c}" cy="${cy}" r="${R}" fill="rgba(168,85,247,0.06)" stroke="#a855f7" stroke-width="1.4" stroke-dasharray="5 3"/>`;
+  s += `<circle cx="${c}" cy="${cy}" r="11" fill="rgba(203,213,225,0.25)" stroke="#cbd5e1" stroke-width="1.5"/>`;
+  s += arrow(mx, my, mx + fx * len, my + fy * len, '#f43f5e');
+  s += arrow(mx, my, mx + tx * len, my + ty * len, '#34d399');
+  s += `<circle cx="${mx}" cy="${my}" r="4" fill="#e2e8f0"/>`;
+  s += lab(mx, my, fx, fy, `Fr ${words[el.FrDir]}`, '#f43f5e', [-tx, -ty]);
+  s += lab(mx, my, tx, ty, `Ft ${words[el.FtDir]}`, '#34d399');
+  s += `<text x="100" y="190" fill="#94a3b8" font-size="9.5" text-anchor="middle" font-family="monospace">${t.shaftEndViewTitle}${L ? ' · ' + L : ''}</text>`;
   return s + '</svg>';
 }
 
@@ -403,8 +419,8 @@ function calculateShaftBeam(t, Mt) {
         const same = el.FtDir.slice(1) === el.FrDir.slice(1);
         info.innerHTML = '';
         const wrap = document.createElement('div');
-        wrap.className = 'flex items-center gap-3';
-        if (!same) wrap.innerHTML = shaftGearEndView(el, t);
+        wrap.className = 'flex flex-wrap items-center gap-4';
+        if (!same) wrap.innerHTML = shaftGearEndView(el, t, nameOf(el));
         const span = document.createElement('span');
         span.innerText = txt;
         wrap.appendChild(span);
@@ -504,6 +520,10 @@ function shaftUseSection() {
   set('shaftAxial', Math.round(s.N));
   const tq = document.getElementById('shaftSecTorque');
   if (tq) tq.checked = Math.abs(s.T) > 1e-6;
+  // section on the seat of a gear or coupling: in the course the hub sits on a keyway next to a shoulder
+  const seat = lastShaftBeam.loads.some(l => (l.el.type === 'gear' || l.el.type === 'coupling') && Math.abs(l.x - x) < 1e-6);
+  shaftSeatAuto = seat;
+  if (seat) set('shaftNotchType', 'combined');
   setShaftMode('design');
 }
 
