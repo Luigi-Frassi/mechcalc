@@ -124,9 +124,21 @@ function shaftRoundToBearing(d) {
   return SHAFT_BEARING_BORES.find(b => b >= d - 1e-9) || Math.ceil(d / 10) * 10;
 }
 
+// Keyway effective factors: from the table, or given by the problem (key = 'given', keyKe, keyKeT)
+function shaftKeywayFactors(notch) {
+  if (notch.key === 'given') {
+    const ke = Math.max(1, notch.keyKe || 1);
+    return { ke, keT: Math.max(1, notch.keyKeT || ke) };
+  }
+  const row = (SHAFT_KEYWAY[notch.key] || SHAFT_KEYWAY.sled)[notch.condition === 'hardened' ? 'hardened' : 'annealed'];
+  return { ke: row[1], keT: row[0] };
+}
+
 /**
  * Notch factors at a given geometry.
- * notch = { type: 'shoulder', Dd, r } | { type: 'keyway', key, condition } | { type: 'manual', ke, keT } | { type: 'none' }
+ * notch = { type: 'shoulder', Dd, r } | { type: 'keyway', key, condition, keyKe?, keyKeT? }
+ *       | { type: 'combined', Dd, r, key, condition, keyKe?, keyKeT? } (shoulder + keyway: factors multiplied)
+ *       | { type: 'manual', ke, keT } | { type: 'none' }
  */
 function shaftNotchFactors(notch, d, sigmaR) {
   if (notch.type === 'shoulder') {
@@ -145,8 +157,15 @@ function shaftNotchFactors(notch, d, sigmaR) {
     };
   }
   if (notch.type === 'keyway') {
-    const row = (SHAFT_KEYWAY[notch.key] || SHAFT_KEYWAY.sled)[notch.condition === 'hardened' ? 'hardened' : 'annealed'];
-    return { ke: row[1], keT: row[0], keA: row[1] };
+    const k = shaftKeywayFactors(notch);
+    return { ke: k.ke, keT: k.keT, keA: k.ke, keyKe: k.ke, keyKeT: k.keT };
+  }
+  if (notch.type === 'combined') {
+    // shoulder fillet and keyway in the same section: the effective factors multiply
+    const s = shaftNotchFactors({ type: 'shoulder', Dd: notch.Dd, r: notch.r }, d, sigmaR);
+    const k = shaftKeywayFactors(notch);
+    return { ...s, shoulderKe: s.ke, shoulderKeT: s.keT, keyKe: k.ke, keyKeT: k.keT,
+      ke: s.ke * k.ke, keT: s.keT * k.keT, keA: s.keA * k.ke };
   }
   if (notch.type === 'manual') {
     const ke = Math.max(1, notch.ke || 1);
@@ -221,7 +240,7 @@ function shaftDesign(inp, Xreq) {
   let final = null, D = null;
   for (let guard = 0; guard < 60; guard++) {
     let notch = inp.notch;
-    if (notch.type === 'shoulder') {
+    if (notch.type === 'shoulder' || notch.type === 'combined') {
       D = Math.ceil(dR * notch.Dd - 1e-9);
       notch = { ...notch, Dd: D / dR };
     }
@@ -304,16 +323,17 @@ function shaftElementLoads(el, Mt, theta = 20) {
  * Beam solution.
  * inp = { xA, xB, elements: [...], Mt, theta, axialBearing: 'A'|'B' }
  */
-function shaftBeam({ xA, xB, elements, Mt, theta = 20, axialBearing = 'A' }) {
+function shaftBeam({ xA, xB, elements, Mt, theta = 20, axialBearing = 'A', L = null }) {
   const loads = (elements || []).filter(e => e && e.type && e.type !== 'none').map(e => ({ ...shaftElementLoads(e, Mt, theta), el: e }));
-  const L = xB - xA;
-  if (!(L > 0)) return { ok: false, reason: 'supports' };
+  const span = xB - xA;
+  if (!(span > 0)) return { ok: false, reason: 'supports' };
+  const shaftLen = L > 0 ? L : null;     // shaft ends at x = 0 and x = L (optional)
 
   // equilibrium in each plane: RA + RB + ΣF = 0 and RA·xA + RB·xB + ΣF·x − ΣC = 0 (moments in N·mm, C in N·m)
   const solve = (fKey, cKey) => {
     const F = loads.reduce((s, l) => s + l[fKey], 0);
     const Mx = loads.reduce((s, l) => s + l[fKey] * l.x, 0) - loads.reduce((s, l) => s + l[cKey], 0) * 1000;
-    const RB = (-Mx + F * xA) / L;
+    const RB = (-Mx + F * xA) / span;
     const RA = -F - RB;
     return { RA, RB };
   };
@@ -326,7 +346,8 @@ function shaftBeam({ xA, xB, elements, Mt, theta = 20, axialBearing = 'A' }) {
     { x: xB, Fv: V.RB, Fh: H.RB, Cv: 0, Ch: 0, T: 0, Fa: RaB, support: 'B' },
     ...loads
   ];
-  const xmin = Math.min(...pts.map(p => p.x)), xmax = Math.max(...pts.map(p => p.x));
+  const xs0 = pts.map(p => p.x).concat(shaftLen ? [0, shaftLen] : []);
+  const xmin = Math.min(...xs0), xmax = Math.max(...xs0);
 
   // internal actions at x (loads on the left; 'side' = -1 just left of a point, +1 just right).
   // Mv, Mh, Mf, T in N·m; N in N (tension > 0)
@@ -357,10 +378,36 @@ function shaftBeam({ xA, xB, elements, Mt, theta = 20, axialBearing = 'A' }) {
   for (const s of samples) if (s.Mf > crit.Mf + 1e-6 || (Math.abs(s.Mf - crit.Mf) <= 1e-6 && Math.abs(s.T) > Math.abs(crit.T))) crit = s;
 
   return {
-    ok: true, loads, xmin, xmax,
+    ok: true, loads, xmin, xmax, L: shaftLen,
+    labels: shaftPointLabels(xA, xB, loads.map(l => l.x), shaftLen),
     RA: { V: V.RA, H: H.RA, R: Math.hypot(V.RA, H.RA), axial: RaA },
     RB: { V: V.RB, H: H.RB, R: Math.hypot(V.RB, H.RB), axial: RaB },
     at, samples, critical: crit
+  };
+}
+
+/**
+ * Point names as in the course solutions: A and B are the shaft ends (x = 0 and x = L),
+ * then C, D, E, ... are the bearings and the elements from left to right.
+ * A bearing or element exactly at an end takes the name of that end; points at the same x share a name.
+ * Returns { bearing1, bearing2, elements: [names in input order], points: [{ x, name }] sorted by x }.
+ */
+function shaftPointLabels(xA, xB, elementXs, L = null) {
+  const tol = 1e-6;
+  const named = [];                                      // { x, name }
+  if (L > 0) { named.push({ x: 0, name: 'A' }); named.push({ x: L, name: 'B' }); }
+  const inner = [xA, xB, ...elementXs].filter(Number.isFinite);
+  const uniq = [...new Set(inner.map(x => Math.round(x / tol) * tol))].sort((a, b) => a - b);
+  let next = L > 0 ? 2 : 0;                              // 'C' when the ends are named, otherwise 'A'
+  for (const x of uniq) {
+    if (named.some(p => Math.abs(p.x - x) <= tol)) continue;
+    named.push({ x, name: String.fromCharCode(65 + next++) });
+  }
+  const nameAt = x => (named.find(p => Math.abs(p.x - x) <= tol) || {}).name || '?';
+  return {
+    bearing1: nameAt(xA), bearing2: nameAt(xB),
+    elements: elementXs.map(nameAt),
+    points: named.slice().sort((a, b) => a.x - b.x)
   };
 }
 

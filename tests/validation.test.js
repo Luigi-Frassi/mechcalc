@@ -228,6 +228,34 @@ for (const [a, z1, z2, phi, g1, g2, psi] of [
   abs('trave elicoidale: salto di momento in x=100 = Fa·r [N·m]', bh.at(100, 1).Mv - bh.at(100, -1).Mv, 2000 * Math.tan(20 * Math.PI / 180) * 0.05, 1e-9);
   abs('trave elicoidale: reazione assiale = −ΣFa [N]', bh.RA.axial, -2000 * Math.tan(20 * Math.PI / 180), 1e-9);
 
+  // ---- esame del 9 dicembre 2002 (soluzione a mano di Luigi): 14 kW a 115 giri/min, X = 1.25, vita infinita
+  // albero L = 270: estremità A (0) e B (270), cuscinetti C (10) e F (260), ruota D Ø170 (40), pignone E Ø90 (160)
+  const P = vm.runInContext('({ shaftBeam, shaftPointLabels, shaftNotchFactors, shaftDesign, shaftDesignFixedCoefficients })', ctx);
+  const Mt02 = 14000 / (115 * 2 * Math.PI / 60);
+  const b02 = P.shaftBeam({ xA: 10, xB: 260, L: 270, Mt: Mt02, theta: 20, elements: [
+    { type: 'gear', x: 40, d: 170, FtDir: '+H', FrDir: '-V', torque: 'in' },
+    { type: 'gear', x: 160, d: 90, FtDir: '-H', FrDir: '-V', torque: 'out' }] });
+  rel('2002-12-09  trave: momento torcente [N·m]', Mt02, 1162, 0.001);
+  rel('2002-12-09  trave: forza tangenziale ruota Ø170 [kN]', b02.loads[0].Ft / 1000, 13.68, 0.001);
+  rel('2002-12-09  trave: forza radiale pignone Ø90 [kN]', b02.loads[1].Fr / 1000, 9.4, 0.001);
+  rel('2002-12-09  trave: momento in E, piano verticale [N·m]', b02.at(160).Mv, 624, 0.001);
+  rel('2002-12-09  trave: momento in E, risultante [N·m]', b02.at(160).Mf, 1520, 0.001);
+  rel('2002-12-09  trave: sezione critica = pignone (x = 160 mm)', b02.critical.x, 160, 1e-9);
+  const lb02 = b02.labels;
+  abs('2002-12-09  nomi: A, B estremità; C, D, E, F da sx a dx', [lb02.bearing1, lb02.elements[0], lb02.elements[1], lb02.bearing2].join('') === 'CDEF'
+    && lb02.points.map(p => p.name).join('') === 'ACDEFB' ? 1 : 0, 1, 0);
+  // intaglio combinato spallamento (D/d = 1.2, r = 2) × cava linguetta (ke = 1.4 dal testo)
+  const nf02 = P.shaftNotchFactors({ type: 'combined', Dd: 1.2, r: 2, key: 'given', keyKe: 1.4 }, 50, 880);
+  rel('2002-12-09  Ke combinato / Ke spallamento = ke linguetta', nf02.ke / nf02.shoulderKe, 1.4, 1e-12);
+  rel('2002-12-09  Ke combinato a d = 50 (soluzione: 1.9 × 1.4 = 2.66)', nf02.ke, 2.66, 0.02, 'Kt 2.09 e q 0.85 dai diagrammi invece di 2 e 0.9');
+  // formula chiusa con i coefficienti della soluzione a mano (b1 0.77, b2 0.78, σR → 720 nel termine medio)
+  const h02 = P.shaftDesignFixedCoefficients({ Mf: 1520, Mt: Mt02, ke: 2.66, b1: 0.77, b2: 0.78, sigmaN: 390, sigmaR: 720, X: 1.25 });
+  rel('2002-12-09  d con i coefficienti della soluzione a mano [mm]', h02.d, 61, 0.01, 'b2 = 0.78 e σs al posto di σR come nel quaderno');
+  const d02 = P.shaftDesign({ loads: { Mf: 1520, bendingCycle: 'rotating', Mt: Mt02, torsionCycle: 'static', N: 0 },
+    sigmaR: 880, sigmaS: 720, sigmaLF: 390, cycles: 0, finish: 'd', notch: { type: 'combined', Dd: 1.2, r: 2, key: 'given', keyKe: 1.4 } }, 1.25);
+  rel('2002-12-09  progetto con intaglio combinato, coefficienti dai diagrammi [mm]', d02.dMin, 61, 0.01,
+    'Kt 2.09, q 0.85, b2 0.876 dai diagrammi: 60.8 mm');
+
   // Wöhler: estremi della retta
   rel('Wöhler: σN a 10³ cicli = σR', S.shaftFatigueStrength(1080, 520, 1e3).sigmaN, 1080, 1e-9);
   rel('Wöhler: σN a 10⁶ cicli = σLF', S.shaftFatigueStrength(1080, 520, 1e6 - 1).sigmaN, 520, 1e-4);

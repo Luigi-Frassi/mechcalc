@@ -256,6 +256,28 @@ with sync_playwright() as p:
         set_val(pg, 'shaftBendCycle', 'static'); set_val(pg, 'shaftAxial', 5000); set_val(pg, 'shaftDd', 1.3); set_val(pg, 'shaftR', 0.8)
     roundtrip('alberi: progetto con Mt diretto e sforzo assiale', a_sh2)
 
+    # esame 9/12/2002: trave con estremità A, B e punti C..F, poi intaglio spallamento + linguetta (ke dato)
+    def a_sh3(pg):
+        pg.click('#navBtnShafts'); set_val(pg, 'shaftPower', 14); set_val(pg, 'shaftSpeed', 115)
+        for k, v in [('shaftLength', 270), ('shaftXA', 10), ('shaftXB', 260), ('shaftEl1X', 40), ('shaftEl1D', 170), ('shaftEl1FtDir', '+H'),
+                     ('shaftEl1FrDir', '-V'), ('shaftEl2X', 160), ('shaftEl2D', 90), ('shaftEl2FtDir', '-H'), ('shaftEl2FrDir', '-V')]:
+            set_val(pg, k, v)
+    pg, _, u = roundtrip('alberi: esame 2002, trave con nomi A..F', a_sh3)
+    txt = pg.evaluate("['shaftBeamRATitle','shaftBeamRBTitle','shaftBeamCrit','shaftBeamCritSub','shaftEl1Name','shaftEl2Name'].map(i=>document.getElementById(i).innerText).join(' | ')")
+    check('  nomi: cuscinetti C, F; ruote D, E; sezione critica E con 1520 N·m',
+          'C (' in txt and 'F (' in txt and '(E)' in txt and '1520' in txt and '→ D' in txt and '→ E' in txt, txt)
+    svg = pg.evaluate("document.getElementById('shaftBeamChart').innerHTML")
+    check('  diagrammi separati: piano verticale, orizzontale, risultante', all(k in svg for k in ['Mv [N·m]', 'Mh [N·m]', 'Mf [N·m]', 'E 624', 'E 1520']))
+    pg.click('#shaftSecCritical'); pg.click('#shaftUseSection'); settle(pg)
+    set_val(pg, 'shaftSigmaR', 880); set_val(pg, 'shaftSigmaS', 720); set_val(pg, 'shaftSigmaLF', 390); set_val(pg, 'shaftX', 1.25)
+    set_val(pg, 'shaftFinish', 'd'); set_val(pg, 'shaftNotchType', 'combined'); set_val(pg, 'shaftDd', 1.2); set_val(pg, 'shaftR', 2)
+    set_val(pg, 'shaftKeyType', 'given'); set_val(pg, 'shaftKeyKe', 1.4); settle(pg)
+    r1 = pg.evaluate("document.getElementById('shaftRes1').innerText + ' | ' + document.getElementById('shaftBkKe').innerText")
+    check('  intaglio combinato: d ≥ 60.8 mm, Ke = spallamento × 1.40', '60.8' in r1 and '× 1.40' in r1, r1)
+    pg2 = new_page(); pg2.goto(pg.url); settle(pg2)
+    r2 = pg2.evaluate("document.getElementById('shaftRes1').innerText + ' | ' + document.getElementById('shaftBkKe').innerText")
+    check('  intaglio combinato: il link riapre lo stesso risultato', r1 == r2, r1 + ' vs ' + r2)
+
     check('nessun errore JS in tutto il test', not errors, '; '.join(errors[:3]))
     browser.close()
 srv.shutdown()

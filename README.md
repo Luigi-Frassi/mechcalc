@@ -60,13 +60,13 @@ Solves the full gear pair synthesis problem with strict mounting constraints:
 
 ### 4. Shaft Design: beam model → critical section → fatigue design
 The three steps of the classic method, in three tabs:
-* **1 · Beam & loads**: the shaft on two bearings with up to four elements (spur/helical gears, couplings, generic forces). Gear forces from the torque ($F_t = 2M_t/d$, $F_r = F_t\tan\theta/\cos\alpha$, $F_a = F_t\tan\alpha$, with the couple $F_a\,r$), direction of each force chosen in two perpendicular planes. Output: reactions, required dynamic load rating of the bearings ($C = R\,L^{1/p}$), bending moments in both planes, resultant $M_f$, torque diagram, and the **most stressed section**, which is sent to the design step with one click.
+* **1 · Beam & loads**: the shaft of length $L$ on two bearings with up to four elements (spur/helical gears, couplings, generic forces). Points are named as in the course: **A and B are the shaft ends**, bearings and elements become C, D, E, … from left to right. Gear forces from the torque ($F_t = 2M_t/d$, $F_r = F_t\tan\theta/\cos\alpha$, $F_a = F_t\tan\alpha$, with the couple $F_a\,r$); the direction of each force on the shaft is chosen in the vertical (V) and horizontal (H) plane and shown in a small end view of the gear. Output: reactions, required dynamic load rating of the bearings ($C = R\,L^{1/p}$), separate diagrams for the **vertical plane** (forces and $M_v$), the **horizontal plane** (forces and $M_h$), the **resultant** $M_f = \sqrt{M_v^2 + M_h^2}$ and the torque, with the values at every named point, and the **most stressed section**, which is sent to the design step with one click.
 * **2 · Design section**: finds the minimum diameter $d$ of the critical section from the Goodman line, with every coefficient re-evaluated at the diameter being tried (the "first attempt" iteration done automatically), then rounds it up to the next standard bearing bore and re-checks the section.
 * **3 · Check section**: safety factors against fatigue and yield for a known $d$, $D$, $r$.
 * **Loads**: rotating (alternating) or constant bending, torque from power and speed or direct, constant / pulsating / fully reversed torsion, constant axial force.
 * **Method of the machine design course**:
   $$\sigma_{a,eq} = \sqrt{(K_e\,\sigma_{a})^2 + 3\,(K_e'\,\tau_{a})^2},\qquad \sigma_{m,eq} = \tfrac{\sigma_m}{2} + \sqrt{\left(\tfrac{\sigma_m}{2}\right)^2 + \tau_m^2},\qquad \frac{\sigma_{a,eq}}{b_1 b_2 \sigma_N} + \frac{\sigma_{m,eq}}{\sigma_R} = \frac{1}{X}$$
-* **Coefficients from the course charts**: $K_t$ of shouldered shafts ($B\,(r/d)^a$, bending / torsion / axial), notch sensitivity $q$ (the charts follow Neuber's formula exactly), size factor $b_1$, surface factor $b_2$ (9 finishes), effective factors for keyways; finite life through the Wöhler line between $10^3$ and $10^6$ cycles.
+* **Coefficients from the course charts**: $K_t$ of shouldered shafts ($B\,(r/d)^a$, bending / torsion / axial), notch sensitivity $q$ (the charts follow Neuber's formula exactly), size factor $b_1$, surface factor $b_2$ (9 finishes), effective factors for keyways (from the table or given by the problem), and **shoulder + keyway in the same section** (factors multiplied); finite life through the Wöhler line between $10^3$ and $10^6$ cycles.
 * **Output**: the dimensions for CAD ($d$, $D$, $r$), every coefficient and stress, a Goodman diagram with the working point.
 
 ---
@@ -139,6 +139,7 @@ The gear module is checked against worked exam problems of the course *Costruzio
 | Shafts: design diameter and safety factors vs. the official solution (exam of 11 April 2003) | 5 | 1.2 % |
 | Shafts, beam model: gear forces, reactions, bending moments, bearing $C$ vs. the official and the hand solution | 17 | 0.7 % (1.3 % on a hand-rounded value) |
 | Shafts: $K_t$, $q$, $b_1$, $b_2$ vs. values read by eye from the charts | 7 | 0.09 on $K_t$, 0.015 otherwise |
+| Shafts, exam of 9 December 2002 (hand solution): beam moments, critical section, shoulder + keyway design ($d$ = 61 mm) | 11 | 1.4 % |
 
 The factor deviations are reading errors of the hand solutions (e.g. $y$ = 0.32 read for $z$ = 18, where the chart gives 0.341; $K_t$ = 2.5 read where the course formula gives 2.41). The official shaft solution writes $X$ = 1.91 for the fatigue check, but that value leaves out the torsion term of the Goodman line: with it, the same coefficients give $X$ = 1.82 (still above the required 1.75). Run the suite (no dependencies) with:
 

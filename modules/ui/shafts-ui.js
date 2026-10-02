@@ -54,10 +54,17 @@ function readShaftInputs() {
   const notchType = document.getElementById('shaftNotchType')?.value || 'shoulder';
   const mode = currentShaftMode;
   let notch;
+  const key = {
+    key: document.getElementById('shaftKeyType')?.value, condition: document.getElementById('shaftKeyCond')?.value,
+    keyKe: shaftVal('shaftKeyKe', 1), keyKeT: shaftVal('shaftKeyKeT', 1)
+  };
+  const shoulderGeo = { Dd: Math.max(1, shaftVal('shaftDd', 1.1)), r: Math.max(0.05, shaftVal('shaftR', 1)) };
   if (notchType === 'shoulder') {
-    notch = { type: 'shoulder', Dd: Math.max(1, shaftVal('shaftDd', 1.1)), r: Math.max(0.05, shaftVal('shaftR', 1)) };
+    notch = { type: 'shoulder', ...shoulderGeo };
+  } else if (notchType === 'combined') {
+    notch = { type: 'combined', ...shoulderGeo, ...key };
   } else if (notchType === 'keyway') {
-    notch = { type: 'keyway', key: document.getElementById('shaftKeyType')?.value, condition: document.getElementById('shaftKeyCond')?.value };
+    notch = { type: 'keyway', ...key };
   } else if (notchType === 'manual') {
     notch = { type: 'manual', ke: shaftVal('shaftKe', 1), keT: shaftVal('shaftKeT', 1) };
   } else {
@@ -107,14 +114,18 @@ function calculateShafts() {
   const { inp, Xreq, mode, notchType, Mt } = readShaftInputs();
 
   // ---- visibility of the inputs
-  const shoulder = notchType === 'shoulder';
+  const shoulder = notchType === 'shoulder' || notchType === 'combined';
+  const keyway = notchType === 'keyway' || notchType === 'combined';
+  const keyGiven = keyway && document.getElementById('shaftKeyType')?.value === 'given';
   shaftShow('shaftCycles', document.getElementById('shaftLife')?.value === 'finite');
   shaftShow('colShaftDcheck', mode === 'check');
   shaftShow('colShaftDd', shoulder && mode === 'design');
   shaftShow('colShaftDDcheck', shoulder && mode === 'check');
   shaftShow('colShaftR', shoulder);
-  shaftShow('colShaftKeyType', notchType === 'keyway');
-  shaftShow('colShaftKeyCond', notchType === 'keyway');
+  shaftShow('colShaftKeyType', keyway);
+  shaftShow('colShaftKeyCond', keyway && !keyGiven);
+  shaftShow('colShaftKeyKe', keyGiven);
+  shaftShow('colShaftKeyKeT', keyGiven);
   shaftShow('colShaftKe', notchType === 'manual');
   shaftShow('colShaftKeT', notchType === 'manual');
 
@@ -185,7 +196,10 @@ function calculateShafts() {
   const isShoulder = shoulder && res.KtB !== undefined;
   setTxt('shaftBkKt', isShoulder ? `${shaftFmt(res.KtB, 2)} / ${shaftFmt(res.KtT, 2)}` : '—');
   setTxt('shaftBkQ', isShoulder ? `${shaftFmt(res.qB, 2)} / ${shaftFmt(res.qT, 2)}` : '—');
-  setTxt('shaftBkKe', `${shaftFmt(res.ke, 2)} / ${shaftFmt(res.keT, 2)}`);
+  setTxt('shaftBkKe', notchType === 'combined'
+    ? `${shaftFmt(res.ke, 2)} / ${shaftFmt(res.keT, 2)} = ` + shaftText(t, 'shaftBkKeCombined', {
+      s: `${shaftFmt(res.shoulderKe, 2)}/${shaftFmt(res.shoulderKeT, 2)}`, k: `${shaftFmt(res.keyKe, 2)}/${shaftFmt(res.keyKeT, 2)}` })
+    : `${shaftFmt(res.ke, 2)} / ${shaftFmt(res.keT, 2)}`);
   setTxt('shaftBkB', `${shaftFmt(res.b1, 3)} / ${shaftFmt(res.b2, 3)}`);
   setTxt('shaftBkSigmaN', `${shaftFmt(res.sigmaNf, 0)} MPa`);
   const sigB = res.sigmaBa || res.sigmaBm, tau = res.tauA + res.tauM;
@@ -263,12 +277,15 @@ function drawShaftSketch(d, D, r, notchType, t) {
   const rPx = r ? Math.min(Math.max(r * k, 2), 18) : 0;
   let s = '';
   s += `<line x1="20" y1="${cy}" x2="280" y2="${cy}" stroke="#334155" stroke-dasharray="8 3 2 3" stroke-width="1"/>`;
-  if (notchType === 'shoulder' && D) {
+  if ((notchType === 'shoulder' || notchType === 'combined') && D) {
     // small diameter on the left, shoulder on the right, fillet radius at the corner
     const path = `M 30 ${cy - hd} L ${xs - rPx} ${cy - hd} Q ${xs} ${cy - hd} ${xs} ${cy - hd - rPx} L ${xs} ${cy - hD} L 270 ${cy - hD}
       L 270 ${cy + hD} L ${xs} ${cy + hD} L ${xs} ${cy + hd + rPx} Q ${xs} ${cy + hd} ${xs - rPx} ${cy + hd} L 30 ${cy + hd} Z`;
     s += `<path d="${path}" fill="rgba(56,189,248,0.10)" stroke="#38bdf8" stroke-width="1.6"/>`;
     s += `<text x="${xs - 6}" y="${cy - hd - 6}" fill="#fbbf24" font-size="9" text-anchor="end" font-family="monospace">r ${shaftFmt(r, 1)}</text>`;
+    if (notchType === 'combined') {
+      s += `<rect x="70" y="${cy - hd}" width="${xs - 90}" height="${Math.max(3, hd * 0.25)}" fill="#0f172a" stroke="#fbbf24" stroke-width="1"/>`;
+    }
     // D dimension
     s += `<line x1="250" y1="${cy - hD}" x2="250" y2="${cy + hD}" stroke="#a855f7" stroke-width="1"/>`;
     s += `<text x="246" y="${cy - 5}" fill="#a855f7" font-size="11" font-weight="bold" text-anchor="end" font-family="monospace">Ø${shaftFmt(D, 0)}</text>`;
@@ -309,6 +326,7 @@ function readShaftBeamInputs(Mt) {
     };
   });
   return {
+    L: Math.max(0, shaftVal('shaftLength', 0)),
     xA: shaftVal('shaftXA', 0), xB: shaftVal('shaftXB', 240),
     axialBearing: g('shaftAxialBearing') === 'B' ? 'B' : 'A',
     theta: shaftVal('shaftTheta', 20),
@@ -320,11 +338,52 @@ function readShaftBeamInputs(Mt) {
 
 let lastShaftBeam = null;
 
+// Screen direction of a force in the end view seen from A (V up, +H to the right)
+function shaftEndViewVec(dir) {
+  const [plane, sgn] = shaftDirVec(dir);
+  return plane === 'V' ? [0, -sgn] : [sgn, 0];
+}
+
+const SHAFT_DIR_WORDS = {
+  en: { '+V': '↑ +V', '-V': '↓ −V', '+H': '⊙ +H', '-H': '⊗ −H' },
+  it: { '+V': '↑ +V', '-V': '↓ −V', '+H': '⊙ +H', '-H': '⊗ −H' }
+};
+
+// Small end view of a gear (seen from A): mesh point, Fr towards the axis, Ft tangent
+function shaftGearEndView(el, t) {
+  const c = 36, R = 24;
+  const [fx, fy] = shaftEndViewVec(el.FrDir), [tx, ty] = shaftEndViewVec(el.FtDir);
+  const mx = c - fx * R, my = c - fy * R;                    // mesh point: opposite to Fr
+  const arrow = (x1, y1, x2, y2, col) => {
+    const a = Math.atan2(y2 - y1, x2 - x1), h = 5;
+    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="1.8"/>` +
+      `<polygon points="${x2},${y2} ${x2 - h * Math.cos(a - 0.45)},${y2 - h * Math.sin(a - 0.45)} ${x2 - h * Math.cos(a + 0.45)},${y2 - h * Math.sin(a + 0.45)}" fill="${col}"/>`;
+  };
+  let s = `<svg viewBox="0 0 92 78" width="92" height="78" class="shrink-0">`;
+  s += `<line x1="${c}" y1="4" x2="${c}" y2="68" stroke="#334155" stroke-width="0.8" stroke-dasharray="3 2"/>`;
+  s += `<line x1="4" y1="${c}" x2="68" y2="${c}" stroke="#334155" stroke-width="0.8" stroke-dasharray="3 2"/>`;
+  s += `<text x="${c + 2}" y="9" fill="#38bdf8" font-size="7" font-family="monospace">V</text>`;
+  s += `<text x="66" y="${c - 3}" fill="#fbbf24" font-size="7" font-family="monospace">H</text>`;
+  s += `<circle cx="${c}" cy="${c}" r="${R}" fill="none" stroke="#a855f7" stroke-width="1" stroke-dasharray="3 2"/>`;
+  s += `<circle cx="${c}" cy="${c}" r="5" fill="rgba(203,213,225,0.25)" stroke="#cbd5e1" stroke-width="1"/>`;
+  s += arrow(mx, my, mx + fx * 17, my + fy * 17, '#f43f5e');
+  s += arrow(mx, my, mx + tx * 17, my + ty * 17, '#34d399');
+  s += `<circle cx="${mx}" cy="${my}" r="2" fill="#e2e8f0"/>`;
+  s += `<text x="${mx + fx * 17 + (fx ? 0 : 4)}" y="${my + fy * 17 + (fy ? (fy > 0 ? 8 : -2) : -3)}" fill="#f43f5e" font-size="7" font-family="monospace">Fr</text>`;
+  s += `<text x="${mx + tx * 19 + (tx ? (tx > 0 ? 1 : -9) : 3)}" y="${my + ty * 19 + (ty ? (ty > 0 ? 7 : -1) : -3)}" fill="#34d399" font-size="7" font-family="monospace">Ft</text>`;
+  s += `<text x="46" y="76" fill="#64748b" font-size="6.5" text-anchor="middle" font-family="monospace">${t.shaftEndViewTitle}</text>`;
+  return s + '</svg>';
+}
+
 function calculateShaftBeam(t, Mt) {
   const bi = readShaftBeamInputs(Mt);
   const warnings = [];
+  const words = SHAFT_DIR_WORDS[currentLang] || SHAFT_DIR_WORDS.en;
+  const active = bi.elements.filter(e => e.type !== 'none');
+  const labels = shaftPointLabels(bi.xA, bi.xB, active.map(e => e.x), bi.L);
+  const nameOf = el => labels.elements[active.indexOf(el)] || '';
 
-  // visibility of the element fields
+  // visibility of the element fields, element names and gear info
   for (const el of bi.elements) {
     const p = 'shaftEl' + el.slot, gear = el.type === 'gear', force = el.type === 'force', any = el.type !== 'none';
     shaftShow('col' + p[0].toUpperCase() + p.slice(1) + 'X', any);
@@ -332,20 +391,43 @@ function calculateShaftBeam(t, Mt) {
     shaftShow('colShaftEl' + el.slot + 'FaDir', gear && el.helix > 0);
     shaftShow('colShaftEl' + el.slot + 'Torque', gear || el.type === 'coupling');
     for (const f of ['Fv', 'Fh', 'Fa', 'E']) shaftShow('colShaftEl' + el.slot + f, force);
+    const tag = document.getElementById(p + 'Name');
+    if (tag) tag.innerText = any ? '→ ' + nameOf(el) : '';
     const info = document.getElementById(p + 'Info');
     if (info) {
       if (gear) {
         const L = shaftElementLoads(el, Mt, bi.theta);
-        info.innerText = shaftText(t, L.FaMag > 0 ? 'shaftElGearInfoA' : 'shaftElGearInfo',
-          { ft: shaftFmt(L.Ft, 0), fr: shaftFmt(L.Fr, 0), fa: shaftFmt(L.FaMag, 0) });
-        if (el.FtDir.slice(1) === el.FrDir.slice(1)) warnings.push(`${t.shaftElLabel} ${el.slot}: ${t.shaftElSamePlane}`);
+        const txt = shaftText(t, L.FaMag > 0 ? 'shaftElGearInfoA' : 'shaftElGearInfo',
+          { ft: shaftFmt(L.Ft, 0), fr: shaftFmt(L.Fr, 0), fa: shaftFmt(L.FaMag, 0) }) +
+          ' · ' + shaftText(t, 'shaftElGearDirs', { ft: words[el.FtDir], fr: words[el.FrDir] });
+        const same = el.FtDir.slice(1) === el.FrDir.slice(1);
+        info.innerHTML = '';
+        const wrap = document.createElement('div');
+        wrap.className = 'flex items-center gap-3';
+        if (!same) wrap.innerHTML = shaftGearEndView(el, t);
+        const span = document.createElement('span');
+        span.innerText = txt;
+        wrap.appendChild(span);
+        info.appendChild(wrap);
+        if (same) warnings.push(`${t.shaftElLabel} ${el.slot}: ${t.shaftElSamePlane}`);
       } else info.innerText = '';
     }
   }
 
-  const res = shaftBeam({ xA: bi.xA, xB: bi.xB, elements: bi.elements, Mt, theta: bi.theta, axialBearing: bi.axialBearing });
+  // bearing names in the inputs
+  const n1 = labels.bearing1, n2 = labels.bearing2;
+  const axSel = document.getElementById('shaftAxialBearing');
+  if (axSel && axSel.options.length === 2) {
+    axSel.options[0].text = `${t.optBearingA} · ${n1}`;
+    axSel.options[1].text = `${t.optBearingB} · ${n2}`;
+  }
+
+  const res = shaftBeam({ xA: bi.xA, xB: bi.xB, L: bi.L, elements: bi.elements, Mt, theta: bi.theta, axialBearing: bi.axialBearing });
   lastShaftBeam = res.ok ? res : null;
   const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.innerText = v; };
+  setTxt('shaftBeamRATitle', shaftText(t, 'shaftReactionAt', { p: n1, n: 1 }));
+  setTxt('shaftBeamRBTitle', shaftText(t, 'shaftReactionAt', { p: n2, n: 2 }));
+  setTxt('shaftBeamCTitle', shaftText(t, 'shaftBearingCTitle', { a: n1, b: n2 }));
   if (!res.ok) {
     warnings.push(t.shaftBeamSupportsErr);
     for (const id of ['shaftBeamRA', 'shaftBeamRB', 'shaftBeamC', 'shaftBeamCrit']) setTxt(id, '--');
@@ -353,6 +435,12 @@ function calculateShaftBeam(t, Mt) {
     renderShaftBeamWarnings(warnings);
     const svg = document.getElementById('shaftBeamChart'); if (svg) svg.innerHTML = '';
     return;
+  }
+  // points outside the shaft
+  if (bi.L > 0) {
+    for (const p of [{ x: bi.xA, n: n1 }, { x: bi.xB, n: n2 }, ...active.map(e => ({ x: e.x, n: nameOf(e) }))]) {
+      if (p.x < -1e-9 || p.x > bi.L + 1e-9) warnings.push(shaftText(t, 'shaftOutsideShaft', { p: p.n, x: shaftFmt(p.x, 1) }));
+    }
   }
   // torque balance: beyond the last element the torque must be zero
   const tEnd = res.at(res.xmax + 1).T;
@@ -367,7 +455,8 @@ function calculateShaftBeam(t, Mt) {
   setTxt('shaftBeamC', `${kN(CA)} / ${kN(CB)} kN`);
   setTxt('shaftBeamCSub', `C = R · L^(1/${bi.bearingType === 'roller' ? '3.33' : '3'}), L = ${shaftFmt(bi.life, 1)}·10⁶`);
   const cr = res.critical;
-  setTxt('shaftBeamCrit', shaftText(t, 'shaftBeamCritFmt', { x: shaftFmt(cr.x, 1) }));
+  const crName = (res.labels.points.find(p => Math.abs(p.x - cr.x) < 1e-6) || {}).name;
+  setTxt('shaftBeamCrit', shaftText(t, 'shaftBeamCritFmt', { x: shaftFmt(cr.x, 1) }) + (crName ? ` (${crName})` : ''));
   setTxt('shaftBeamCritSub', shaftText(t, 'shaftBeamCritSub', { mf: shaftFmt(cr.Mf, 0), mt: shaftFmt(Math.abs(cr.T), 0) }));
 
   const xs = shaftVal('shaftSecX', cr.x);
@@ -418,7 +507,8 @@ function shaftUseSection() {
   setShaftMode('design');
 }
 
-// Diagram: shaft with supports and loads, bending moments in V, H and resultant, torque
+// Diagram, as in the course solutions: the shaft with the named points, then for each plane (V, H)
+// the forces in that plane (reactions included) and its bending moment, then the resultant Mf and the torque.
 function drawShaftBeamChart(res, bi, xSel, t) {
   const svg = document.getElementById('shaftBeamChart');
   if (!svg) return;
@@ -426,78 +516,136 @@ function drawShaftBeamChart(res, bi, xSel, t) {
   const span = Math.max(res.xmax - res.xmin, 1);
   const X = x => X0 + (x - res.xmin) / span * (X1 - X0);
   const f0 = v => Math.round(v);
+  const kN = v => shaftFmt(v / 1000, 2);
+  const points = res.labels.points;
+  const title = (y, txt, col = '#cbd5e1') => `<text x="8" y="${y}" fill="${col}" font-size="9" font-weight="bold" font-family="monospace">${txt}</text>`;
   let s = '';
 
-  // ---- lane 1: shaft, supports, loads (y 12..92)
-  const yS = 52;
-  s += `<line x1="${X(res.xmin) - 8}" y1="${yS}" x2="${X(res.xmax) + 8}" y2="${yS}" stroke="#cbd5e1" stroke-width="3"/>`;
-  for (const [x, lab] of [[bi.xA, 'A'], [bi.xB, 'B']]) {
+  // ---- 1. shaft with ends, bearings, elements and names (y 0..100)
+  s += title(14, t.shaftChartShaft);
+  const yS = 50;
+  s += `<line x1="${X(res.xmin)}" y1="${yS}" x2="${X(res.xmax)}" y2="${yS}" stroke="#cbd5e1" stroke-width="4"/>`;
+  for (const x of [bi.xA, bi.xB]) {
     const px = X(x);
     s += `<polygon points="${px},${yS + 3} ${px - 7},${yS + 15} ${px + 7},${yS + 15}" fill="none" stroke="#94a3b8" stroke-width="1.4"/>`;
-    s += `<text x="${px}" y="${yS + 27}" fill="#94a3b8" font-size="10" text-anchor="middle" font-family="monospace">${lab}</text>`;
   }
   for (const l of res.loads) {
     const px = X(l.x), el = l.el;
     if (el.type === 'gear') {
-      const h = Math.max(10, Math.min(36, el.d / 8));
+      const h = Math.max(10, Math.min(30, el.d / 8));
       s += `<rect x="${px - 4}" y="${yS - h}" width="8" height="${2 * h}" fill="rgba(168,85,247,0.25)" stroke="#a855f7" stroke-width="1.2"/>`;
     } else if (el.type === 'coupling') {
-      s += `<rect x="${px - 6}" y="${yS - 7}" width="12" height="14" fill="rgba(148,163,184,0.2)" stroke="#94a3b8" stroke-width="1.2"/>`;
-    }
-    // V force: vertical arrow; H force: ⊙ (+H, out of the page) or ⊗ (−H)
-    if (Math.abs(l.Fv) > 1e-9) {
-      const up = l.Fv > 0, y1 = up ? yS + 32 : yS - 32, y2 = up ? yS + 6 : yS - 6;
-      s += `<line x1="${px + 10}" y1="${y1}" x2="${px + 10}" y2="${y2}" stroke="#38bdf8" stroke-width="1.6"/>`;
-      s += `<polygon points="${px + 10},${y2} ${px + 7},${y2 + (up ? 6 : -6)} ${px + 13},${y2 + (up ? 6 : -6)}" fill="#38bdf8"/>`;
-      const right = px + 60 < X1;
-      s += `<text x="${right ? px + 14 : px + 6}" y="${up ? yS + 30 : yS - 36}" fill="#38bdf8" font-size="8" text-anchor="${right ? 'start' : 'end'}" font-family="monospace">V ${shaftFmt(l.Fv / 1000, 1)}</text>`;
-    }
-    if (Math.abs(l.Fh) > 1e-9) {
-      const cy = yS - 20;
-      s += `<circle cx="${px - 14}" cy="${cy}" r="5" fill="none" stroke="#fbbf24" stroke-width="1.2"/>`;
-      s += l.Fh > 0 ? `<circle cx="${px - 14}" cy="${cy}" r="1.4" fill="#fbbf24"/>`
-        : `<path d="M ${px - 17} ${cy - 3} L ${px - 11} ${cy + 3} M ${px - 11} ${cy - 3} L ${px - 17} ${cy + 3}" stroke="#fbbf24" stroke-width="1.1"/>`;
-      s += `<text x="${px - 21}" y="${cy + 3}" fill="#fbbf24" font-size="8" text-anchor="end" font-family="monospace">H ${shaftFmt(l.Fh / 1000, 1)}</text>`;
+      s += `<rect x="${px - 6}" y="${yS - 8}" width="12" height="16" fill="rgba(148,163,184,0.2)" stroke="#94a3b8" stroke-width="1.2"/>`;
+    } else {
+      s += `<circle cx="${px}" cy="${yS}" r="4" fill="#38bdf8"/>`;
     }
   }
+  for (const p of points) {
+    const px = X(p.x);
+    s += `<text x="${px}" y="${yS + 30}" fill="#e2e8f0" font-size="11" font-weight="bold" text-anchor="middle" font-family="monospace">${p.name}</text>`;
+    s += `<text x="${px}" y="${yS + 41}" fill="#64748b" font-size="7.5" text-anchor="middle" font-family="monospace">${shaftFmt(p.x, p.x % 1 ? 1 : 0)}</text>`;
+  }
 
-  // ---- lane 2: bending moments (y 108..238, zero at 173)
-  const y0 = 175, hM = 56;
+  // common scale for the three bending moment diagrams, so they can be compared
   const smp = res.samples;
-  const mMax = Math.max(1e-9, ...smp.map(p => Math.max(Math.abs(p.Mv), Math.abs(p.Mh), p.Mf)));
-  const Y = m => y0 - m / mMax * hM;
-  const poly = key => smp.map(p => `${X(p.x).toFixed(1)},${Y(p[key]).toFixed(1)}`).join(' ');
-  s += `<line x1="${X0}" y1="${y0}" x2="${X1}" y2="${y0}" stroke="#475569" stroke-width="1"/>`;
-  s += `<polyline points="${poly('Mv')}" fill="none" stroke="#38bdf8" stroke-width="1.2"/>`;
-  s += `<polyline points="${poly('Mh')}" fill="none" stroke="#fbbf24" stroke-width="1.2"/>`;
-  s += `<polyline points="${poly('Mf')}" fill="none" stroke="#f43f5e" stroke-width="2.2"/>`;
-  const cr = res.critical;
-  s += `<circle cx="${X(cr.x)}" cy="${Y(cr.Mf)}" r="3.5" fill="#f43f5e"/>`;
-  s += `<text x="${X(cr.x)}" y="${Y(cr.Mf) - 7}" fill="#f43f5e" font-size="9" text-anchor="middle" font-family="monospace">${f0(cr.Mf)} N·m</text>`;
-  s += `<text x="8" y="${y0 - hM + 4}" fill="#94a3b8" font-size="8" font-family="monospace">N·m</text>`;
-  // legend
-  const leg = [['#38bdf8', t.shaftLegendMV], ['#fbbf24', t.shaftLegendMH], ['#f43f5e', t.shaftLegendMf], ['#a855f7', t.shaftLegendT]];
-  leg.forEach(([c, lab], i) => {
-    const lx = X0 + i * 120;
-    s += `<line x1="${lx}" y1="250" x2="${lx + 14}" y2="250" stroke="${c}" stroke-width="2"/><text x="${lx + 18}" y="253" fill="#94a3b8" font-size="8" font-family="monospace">${lab}</text>`;
-  });
+  const mMax = Math.max(1e-9, ...smp.map(p => p.Mf));
+  // one scale for all diagrams: the tallest one (positive + negative part) fills 84 px
+  const rng = key => ({ hi: Math.max(0, ...smp.map(p => p[key])), lo: Math.min(0, ...smp.map(p => p[key])) });
+  const rV = rng('Mv'), rH = rng('Mh');
+  const kM = 84 / Math.max(1e-9, rV.hi - rV.lo, rH.hi - rH.lo, mMax);
+  // moment at a named point: the side with the larger magnitude (a couple makes a jump)
+  const mAt = (x, key) => { const a = res.at(x, -1)[key], b = res.at(x, 1)[key]; return Math.abs(b) >= Math.abs(a) ? b : a; };
 
-  // ---- lane 3: torque (y 258..318, zero at 300)
-  const yT = 302, hT = 34;
+  // ---- 2./3. one block per plane
+  const planeBlock = (y0, plane) => {
+    const fKey = plane === 'V' ? 'Fv' : 'Fh', cKey = plane === 'V' ? 'Cv' : 'Ch', mKey = plane === 'V' ? 'Mv' : 'Mh';
+    const col = plane === 'V' ? '#38bdf8' : '#fbbf24';
+    let b = title(y0 + 12, plane === 'V' ? t.shaftChartPlaneV : t.shaftChartPlaneH, col);
+    b += `<text x="${X1}" y="${y0 + 12}" fill="#64748b" font-size="7.5" text-anchor="end" font-family="monospace">${plane === 'V' ? t.shaftChartUpV : t.shaftChartUpH}</text>`;
+    // beam with the forces of this plane
+    const yb = y0 + 48;
+    b += `<line x1="${X(res.xmin)}" y1="${yb}" x2="${X(res.xmax)}" y2="${yb}" stroke="#94a3b8" stroke-width="2"/>`;
+    const forces = [
+      { x: bi.xA, F: res.RA[plane], react: true }, { x: bi.xB, F: res.RB[plane], react: true },
+      ...res.loads.map(l => ({ x: l.x, F: l[fKey], C: l[cKey] }))
+    ];
+    for (const f of forces) {
+      const px = X(f.x);
+      if (f.react) b += `<polygon points="${px},${yb + 2} ${px - 5},${yb + 10} ${px + 5},${yb + 10}" fill="none" stroke="#64748b" stroke-width="1"/>`;
+      if (Math.abs(f.F) > 1e-9) {
+        const up = f.F > 0;
+        const ya = up ? yb + 30 : yb - 30, yh = up ? yb + 2 : yb - 2;
+        const c = f.react ? '#94a3b8' : col;
+        b += `<line x1="${px}" y1="${ya}" x2="${px}" y2="${yh}" stroke="${c}" stroke-width="1.8"/>`;
+        b += `<polygon points="${px},${yh} ${px - 4},${yh + (up ? 7 : -7)} ${px + 4},${yh + (up ? 7 : -7)}" fill="${c}"/>`;
+        const right = px + 50 < X1;
+        b += `<text x="${right ? px + 5 : px - 5}" y="${up ? ya - 1 : ya + 7}" fill="${c}" font-size="8" text-anchor="${right ? 'start' : 'end'}" font-family="monospace">${kN(f.F)} kN</text>`;
+      }
+      if (f.C && Math.abs(f.C) > 1e-9) {
+        b += `<path d="M ${px - 8} ${yb - 9} A 9 9 0 1 ${f.C > 0 ? 0 : 1} ${px + 8} ${yb - 9}" fill="none" stroke="${col}" stroke-width="1.1"/>`;
+        b += `<text x="${px}" y="${yb - 20}" fill="${col}" font-size="7.5" text-anchor="middle" font-family="monospace">C ${f0(f.C)} N·m</text>`;
+      }
+    }
+    // bending moment diagram of this plane
+    const r = plane === 'V' ? rV : rH;
+    const ym = y0 + 92 + r.hi * kM + (84 - (r.hi - r.lo) * kM) / 2, hM = r.hi * kM;
+    const Y = m => ym - m * kM;
+    const pts = smp.map(p => `${X(p.x).toFixed(1)},${Y(p[mKey]).toFixed(1)}`).join(' ');
+    b += `<line x1="${X(res.xmin)}" y1="${ym}" x2="${X(res.xmax)}" y2="${ym}" stroke="#475569" stroke-width="1"/>`;
+    b += `<polygon points="${X(res.xmin).toFixed(1)},${ym} ${pts} ${X(res.xmax).toFixed(1)},${ym}" fill="${plane === 'V' ? 'rgba(56,189,248,0.12)' : 'rgba(251,191,36,0.12)'}" stroke="none"/>`;
+    b += `<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.8"/>`;
+    b += `<text x="8" y="${y0 + 96}" fill="${col}" font-size="8" font-family="monospace">${mKey} [N·m]</text>`;
+    for (const p of points) {
+      const m = mAt(p.x, mKey);
+      if (Math.abs(m) < 0.5) continue;
+      b += `<circle cx="${X(p.x)}" cy="${Y(m)}" r="2.2" fill="${col}"/>`;
+      b += `<text x="${X(p.x)}" y="${m >= 0 ? Y(m) - 5 : Y(m) + 11}" fill="${col}" font-size="8" text-anchor="middle" font-family="monospace">${p.name} ${f0(m)}</text>`;
+    }
+    return b;
+  };
+  s += planeBlock(100, 'V');
+  s += planeBlock(290, 'H');
+
+  // ---- 4. resultant bending moment
+  const yR0 = 478, ymR = 590, hR = mMax * kM;
+  s += title(yR0 + 12, t.shaftChartTotal, '#f43f5e');
+  const YR = m => ymR - m * kM;
+  const ptsR = smp.map(p => `${X(p.x).toFixed(1)},${YR(p.Mf).toFixed(1)}`).join(' ');
+  s += `<line x1="${X(res.xmin)}" y1="${ymR}" x2="${X(res.xmax)}" y2="${ymR}" stroke="#475569" stroke-width="1"/>`;
+  s += `<polygon points="${X(res.xmin).toFixed(1)},${ymR} ${ptsR} ${X(res.xmax).toFixed(1)},${ymR}" fill="rgba(244,63,94,0.12)" stroke="none"/>`;
+  s += `<polyline points="${ptsR}" fill="none" stroke="#f43f5e" stroke-width="2.2"/>`;
+  s += `<text x="8" y="${yR0 + 26}" fill="#f43f5e" font-size="8" font-family="monospace">Mf [N·m]</text>`;
+  const cr = res.critical;
+  for (const p of points) {
+    const m = mAt(p.x, 'Mf');
+    if (m < 0.5) continue;
+    const isCrit = Math.abs(p.x - cr.x) < 1e-6;
+    s += `<circle cx="${X(p.x)}" cy="${YR(m)}" r="${isCrit ? 3.8 : 2.2}" fill="#f43f5e"/>`;
+    s += `<text x="${X(p.x)}" y="${YR(m) - 6}" fill="#f43f5e" font-size="${isCrit ? 9 : 8}" font-weight="${isCrit ? 'bold' : 'normal'}" text-anchor="middle" font-family="monospace">${p.name} ${f0(m)}</text>`;
+  }
+  if (!points.some(p => Math.abs(p.x - cr.x) < 1e-6)) {
+    s += `<circle cx="${X(cr.x)}" cy="${YR(cr.Mf)}" r="3.8" fill="#f43f5e"/>`;
+    s += `<text x="${X(cr.x)}" y="${YR(cr.Mf) - 6}" fill="#f43f5e" font-size="9" font-weight="bold" text-anchor="middle" font-family="monospace">${f0(cr.Mf)}</text>`;
+  }
+
+  // ---- 5. torque
+  const yT = 650, hT = 30;
+  s += title(606, t.shaftChartTorque, '#a855f7');
   const tMax = Math.max(1e-9, ...smp.map(p => Math.abs(p.T)));
-  s += `<line x1="${X0}" y1="${yT}" x2="${X1}" y2="${yT}" stroke="#475569" stroke-width="1"/>`;
+  s += `<line x1="${X(res.xmin)}" y1="${yT}" x2="${X(res.xmax)}" y2="${yT}" stroke="#475569" stroke-width="1"/>`;
   const tPts = smp.map(p => `${X(p.x).toFixed(1)},${(yT - Math.abs(p.T) / tMax * hT).toFixed(1)}`);
   s += `<polygon points="${X(res.xmin).toFixed(1)},${yT} ${tPts.join(' ')} ${X(res.xmax).toFixed(1)},${yT}" fill="rgba(168,85,247,0.12)" stroke="none"/>`;
   s += `<polyline points="${tPts.join(' ')}" fill="none" stroke="#a855f7" stroke-width="1.6"/>`;
-  if (tMax > 1e-6) s += `<text x="8" y="${yT - hT + 4}" fill="#a855f7" font-size="8" font-family="monospace">${f0(tMax)}</text>`;
+  if (tMax > 1e-6) s += `<text x="${X1}" y="${yT - hT - 3}" fill="#a855f7" font-size="8" text-anchor="end" font-family="monospace">Mt = ${f0(tMax)} N·m</text>`;
 
-  // positions on the axis + selected section
-  const marks = [...new Set([bi.xA, bi.xB, ...res.loads.map(l => l.x)])].sort((a, b) => a - b);
-  for (const m of marks) s += `<text x="${X(m)}" y="326" fill="#64748b" font-size="8" text-anchor="middle" font-family="monospace">${shaftFmt(m, m % 1 ? 1 : 0)}</text>`;
+  // named points: thin guides through all the diagrams; selected section dashed
+  for (const p of points) {
+    s += `<line x1="${X(p.x)}" y1="${yS + 44}" x2="${X(p.x)}" y2="${yT}" stroke="#334155" stroke-width="0.6" stroke-dasharray="1 3"/>`;
+  }
   if (Number.isFinite(xSel) && xSel >= res.xmin - 1e-9 && xSel <= res.xmax + 1e-9) {
     const px = X(xSel);
-    s += `<line x1="${px}" y1="14" x2="${px}" y2="318" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4 3" opacity="0.7"/>`;
-    s += `<text x="${px + 3}" y="22" fill="#e2e8f0" font-size="8" font-family="monospace">x=${shaftFmt(xSel, 1)}</text>`;
+    s += `<line x1="${px}" y1="22" x2="${px}" y2="${yT}" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4 3" opacity="0.6"/>`;
+    s += `<text x="${px + 3}" y="28" fill="#e2e8f0" font-size="8" font-family="monospace">x=${shaftFmt(xSel, 1)}</text>`;
   }
   svg.innerHTML = s;
 }

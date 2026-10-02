@@ -981,7 +981,15 @@
       <div id="shaftBeamPanel">
       <div class="bg-slate-800/60 p-6 rounded-xl border border-slate-700/60 mb-4 backdrop-blur">
       <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3" data-i18n="shaftSupportsTitle">Bearings (supports) and data</h3>
-      <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
+      <p class="text-[11px] text-slate-500 -mt-1 mb-3" data-i18n="shaftNamingHint">Naming</p>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftLengthLabel">Shaft length L (A → B)</label>
+          <div class="relative">
+            <input type="number" id="shaftLength" value="320" min="0" step="any" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">mm</span>
+          </div>
+        </div>
         <div>
           <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftXALabel">Bearing A at x</label>
           <div class="relative">
@@ -1034,7 +1042,7 @@
         <div class="bg-slate-900/50 rounded-lg border border-slate-700/60 p-3" id="shaftEl1Card">
           <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
           <div class="col-span-2 md:col-span-2">
-            <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1"><span data-i18n="shaftElLabel">Element</span> 1</label>
+            <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1"><span data-i18n="shaftElLabel">Element</span> 1 <span id="shaftEl1Name" class="text-sky-400 normal-case"></span></label>
             <select id="shaftEl1Type" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
               <option value="none" data-i18n="optElNone">—</option>
               <option value="gear" selected data-i18n="optElGear">Gear</option>
@@ -1066,8 +1074,8 @@
             <select id="shaftEl1FtDir" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
               <option value="+V">+V ↑</option>
               <option value="-V">−V ↓</option>
-              <option value="+H">+H</option>
-              <option value="-H" selected>−H</option>
+              <option value="+H">+H ⊙</option>
+              <option value="-H" selected>−H ⊗</option>
             </select>
           </div>
           <div class="" id="colShaftEl1FrDir">
@@ -1075,8 +1083,8 @@
             <select id="shaftEl1FrDir" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
               <option value="+V" selected>+V ↑</option>
               <option value="-V">−V ↓</option>
-              <option value="+H">+H</option>
-              <option value="-H">−H</option>
+              <option value="+H">+H ⊙</option>
+              <option value="-H">−H ⊗</option>
             </select>
           </div>
           <div class="" id="colShaftEl1FaDir">
@@ -1103,12 +1111,12 @@
             <div class="relative"><input type="number" id="shaftEl1E" value="0" step="any" min="-1e9" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"><span class="absolute right-2 top-2.5 text-slate-500 text-[10px]">mm</span></div>
           </div>
           </div>
-          <p class="text-[11px] text-sky-400/90 font-mono mt-2" id="shaftEl1Info"></p>
+          <div class="text-[11px] text-sky-400/90 font-mono mt-2" id="shaftEl1Info"></div>
         </div>
         <div class="bg-slate-900/50 rounded-lg border border-slate-700/60 p-3" id="shaftEl2Card">
           <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
           <div class="col-span-2 md:col-span-2">
-            <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1"><span data-i18n="shaftElLabel">Element</span> 2</label>
+            <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1"><span data-i18n="shaftElLabel">Element</span> 2 <span id="shaftEl2Name" class="text-sky-400 normal-case"></span></label>
             <select id="shaftEl2Type" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
               <option value="none" data-i18n="optElNone">—</option>
               <option value="gear" selected data-i18n="optElGear">Gear</option>
@@ -1140,8 +1148,8 @@
             <select id="shaftEl2FtDir" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
               <option value="+V">+V ↑</option>
               <option value="-V">−V ↓</option>
-              <option value="+H">+H</option>
-              <option value="-H" selected>−H</option>
+              <option value="+H">+H ⊙</option>
+              <option value="-H" selected>−H ⊗</option>
             </select>
           </div>
           <div class="" id="colShaftEl2FrDir">
@@ -1149,8 +1157,8 @@
             <select id="shaftEl2FrDir" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
               <option value="+V">+V ↑</option>
               <option value="-V" selected>−V ↓</option>
-              <option value="+H">+H</option>
-              <option value="-H">−H</option>
+              <option value="+H">+H ⊙</option>
+              <option value="-H">−H ⊗</option>
             </select>
           </div>
           <div class="" id="colShaftEl2FaDir">
@@ -1177,12 +1185,12 @@
             <div class="relative"><input type="number" id="shaftEl2E" value="0" step="any" min="-1e9" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"><span class="absolute right-2 top-2.5 text-slate-500 text-[10px]">mm</span></div>
           </div>
           </div>
-          <p class="text-[11px] text-sky-400/90 font-mono mt-2" id="shaftEl2Info"></p>
+          <div class="text-[11px] text-sky-400/90 font-mono mt-2" id="shaftEl2Info"></div>
         </div>
         <div class="bg-slate-900/50 rounded-lg border border-slate-700/60 p-3" id="shaftEl3Card">
           <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
           <div class="col-span-2 md:col-span-2">
-            <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1"><span data-i18n="shaftElLabel">Element</span> 3</label>
+            <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1"><span data-i18n="shaftElLabel">Element</span> 3 <span id="shaftEl3Name" class="text-sky-400 normal-case"></span></label>
             <select id="shaftEl3Type" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
               <option value="none" selected data-i18n="optElNone">—</option>
               <option value="gear" data-i18n="optElGear">Gear</option>
@@ -1214,8 +1222,8 @@
             <select id="shaftEl3FtDir" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
               <option value="+V" selected>+V ↑</option>
               <option value="-V">−V ↓</option>
-              <option value="+H">+H</option>
-              <option value="-H">−H</option>
+              <option value="+H">+H ⊙</option>
+              <option value="-H">−H ⊗</option>
             </select>
           </div>
           <div class="" id="colShaftEl3FrDir">
@@ -1223,8 +1231,8 @@
             <select id="shaftEl3FrDir" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
               <option value="+V">+V ↑</option>
               <option value="-V">−V ↓</option>
-              <option value="+H" selected>+H</option>
-              <option value="-H">−H</option>
+              <option value="+H" selected>+H ⊙</option>
+              <option value="-H">−H ⊗</option>
             </select>
           </div>
           <div class="" id="colShaftEl3FaDir">
@@ -1251,12 +1259,12 @@
             <div class="relative"><input type="number" id="shaftEl3E" value="0" step="any" min="-1e9" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"><span class="absolute right-2 top-2.5 text-slate-500 text-[10px]">mm</span></div>
           </div>
           </div>
-          <p class="text-[11px] text-sky-400/90 font-mono mt-2" id="shaftEl3Info"></p>
+          <div class="text-[11px] text-sky-400/90 font-mono mt-2" id="shaftEl3Info"></div>
         </div>
         <div class="bg-slate-900/50 rounded-lg border border-slate-700/60 p-3" id="shaftEl4Card">
           <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
           <div class="col-span-2 md:col-span-2">
-            <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1"><span data-i18n="shaftElLabel">Element</span> 4</label>
+            <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1"><span data-i18n="shaftElLabel">Element</span> 4 <span id="shaftEl4Name" class="text-sky-400 normal-case"></span></label>
             <select id="shaftEl4Type" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
               <option value="none" selected data-i18n="optElNone">—</option>
               <option value="gear" data-i18n="optElGear">Gear</option>
@@ -1288,8 +1296,8 @@
             <select id="shaftEl4FtDir" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
               <option value="+V" selected>+V ↑</option>
               <option value="-V">−V ↓</option>
-              <option value="+H">+H</option>
-              <option value="-H">−H</option>
+              <option value="+H">+H ⊙</option>
+              <option value="-H">−H ⊗</option>
             </select>
           </div>
           <div class="" id="colShaftEl4FrDir">
@@ -1297,8 +1305,8 @@
             <select id="shaftEl4FrDir" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
               <option value="+V">+V ↑</option>
               <option value="-V">−V ↓</option>
-              <option value="+H" selected>+H</option>
-              <option value="-H">−H</option>
+              <option value="+H" selected>+H ⊙</option>
+              <option value="-H">−H ⊗</option>
             </select>
           </div>
           <div class="" id="colShaftEl4FaDir">
@@ -1325,24 +1333,24 @@
             <div class="relative"><input type="number" id="shaftEl4E" value="0" step="any" min="-1e9" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"><span class="absolute right-2 top-2.5 text-slate-500 text-[10px]">mm</span></div>
           </div>
           </div>
-          <p class="text-[11px] text-sky-400/90 font-mono mt-2" id="shaftEl4Info"></p>
+          <div class="text-[11px] text-sky-400/90 font-mono mt-2" id="shaftEl4Info"></div>
         </div>
       </div>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
         <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-          <span class="text-xs font-medium text-slate-400" id="shaftBeamRATitle" data-i18n="shaftBeamRATitle">Reaction A</span>
+          <span class="text-xs font-medium text-slate-400" id="shaftBeamRATitle">Reaction A</span>
           <div class="text-xl font-bold text-sky-400 mt-1" id="shaftBeamRA">--</div>
           <div class="text-[11px] text-slate-500 mt-0.5" id="shaftBeamRASub"></div>
         </div>
         <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-          <span class="text-xs font-medium text-slate-400" id="shaftBeamRBTitle" data-i18n="shaftBeamRBTitle">Reaction B</span>
+          <span class="text-xs font-medium text-slate-400" id="shaftBeamRBTitle">Reaction B</span>
           <div class="text-xl font-bold text-sky-400 mt-1" id="shaftBeamRB">--</div>
           <div class="text-[11px] text-slate-500 mt-0.5" id="shaftBeamRBSub"></div>
         </div>
         <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-          <span class="text-xs font-medium text-slate-400" id="shaftBeamCTitle" data-i18n="shaftBeamCTitle">Required bearing C (A / B)</span>
+          <span class="text-xs font-medium text-slate-400" id="shaftBeamCTitle">Required bearing C (A / B)</span>
           <div class="text-xl font-bold text-amber-400 mt-1" id="shaftBeamC">--</div>
           <div class="text-[11px] text-slate-500 mt-0.5" id="shaftBeamCSub"></div>
         </div>
@@ -1356,7 +1364,7 @@
       <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50 mb-4">
         <span class="text-xs font-semibold uppercase tracking-wider text-slate-300" data-i18n="shaftBeamChartTitle">Loads, bending moments and torque</span>
         <div class="w-full bg-slate-950/80 rounded-lg p-2 border border-slate-800 mt-2">
-          <svg id="shaftBeamChart" viewBox="0 0 600 330" class="w-full h-auto"></svg>
+          <svg id="shaftBeamChart" viewBox="0 0 600 660" class="w-full h-auto"></svg>
         </div>
       </div>
 
@@ -1466,6 +1474,7 @@
           <select id="shaftNotchType" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
             <option value="shoulder" selected data-i18n="optNotchShoulder">Shoulder (D/d, fillet r)</option>
             <option value="keyway" data-i18n="optNotchKeyway">Keyway</option>
+            <option value="combined" data-i18n="optNotchCombined">Shoulder + keyway</option>
             <option value="manual" data-i18n="optNotchManual">Known Ke</option>
             <option value="none" data-i18n="optNotchNone">Plain section</option>
           </select>
@@ -1506,6 +1515,7 @@
             <option value="sled" selected data-i18n="optKeySled">Sunk (end-milled)</option>
             <option value="straight" data-i18n="optKeyStraight">Straight (sled-runner)</option>
             <option value="profile" data-i18n="optKeyProfile">Woodruff / American</option>
+            <option value="given" data-i18n="optKeyGiven">ke given in the problem</option>
           </select>
         </div>
         <div id="colShaftKeyCond" class="hidden">
@@ -1514,6 +1524,20 @@
             <option value="annealed" selected data-i18n="optKeyAnnealed">Annealed</option>
             <option value="hardened" data-i18n="optKeyHardened">Hardened</option>
           </select>
+        </div>
+        <div id="colShaftKeyKe" class="hidden">
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftKeyKeLabel">Keyway ke (bending)</label>
+          <div class="relative">
+            <input type="number" id="shaftKeyKe" value="1.4" min="1" step="0.01" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">–</span>
+          </div>
+        </div>
+        <div id="colShaftKeyKeT" class="hidden">
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftKeyKeTLabel">Keyway ke' (torsion)</label>
+          <div class="relative">
+            <input type="number" id="shaftKeyKeT" value="1.4" min="1" step="0.01" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">–</span>
+          </div>
         </div>
         <div id="colShaftKe" class="hidden">
           <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftKeLabel">Bending Ke</label>
@@ -1738,10 +1762,29 @@
         feedbackLink: "Suggest a feature or report a problem",
         shareBtn: "Share",
         shaftSupportsTitle: "Bearings (supports) and data",
-        shaftXALabel: "Bearing A at x",
-        shaftXBLabel: "Bearing B at x",
-        optBearingA: "Bearing A",
-        optBearingB: "Bearing B",
+        shaftXALabel: "Bearing 1 at x",
+        shaftXBLabel: "Bearing 2 at x",
+        optBearingA: "Bearing 1 (left)",
+        optBearingB: "Bearing 2 (right)",
+        shaftLengthLabel: "Shaft length L (A → B)",
+        shaftNamingHint: "A and B are the shaft ends (x = 0 and x = L); bearings and elements are named C, D, E, … from left to right, automatically. x is measured from the left end A.",
+        shaftReactionAt: "Reaction at {p} (bearing {n})",
+        shaftBearingCTitle: "Required bearing C ({a} / {b})",
+        shaftChartPlaneV: "VERTICAL PLANE (V) — forces and bending moment Mv",
+        shaftChartPlaneH: "HORIZONTAL PLANE (H) — forces and bending moment Mh",
+        shaftChartTotal: "RESULTANT BENDING MOMENT Mf = √(Mv² + Mh²)",
+        shaftChartTorque: "TORQUE Mt",
+        shaftChartShaft: "SHAFT — A, B ends · bearings and elements C, D, … left to right",
+        shaftChartUpV: "+V drawn up",
+        shaftChartUpH: "+H drawn up (view from above)",
+        shaftOutsideShaft: "{p} at x = {x} mm is outside the shaft (0 … L).",
+        shaftElGearDirs: "on the shaft: Ft {ft} · Fr {fr} (Fr points from the mesh to the shaft axis)",
+        shaftEndViewTitle: "end view from A",
+        optNotchCombined: "Shoulder + keyway",
+        optKeyGiven: "ke given in the problem",
+        shaftKeyKeLabel: "Keyway ke (bending)",
+        shaftKeyKeTLabel: "Keyway ke' (torsion)",
+        shaftBkKeCombined: "{s} × {k} (shoulder × keyway)",
         shaftAxialBearingLabel: "Axial load on",
         shaftThetaLabel: "Pressure angle θ",
         shaftBearingLifeLabel: "Bearing life L",
@@ -1749,7 +1792,7 @@
         optRoller: "Roller (p = 10/3)",
         shaftBearingTypeLabel: "Bearing type",
         shaftElementsTitle: "Elements on the shaft (x from the left end)",
-        shaftElementsHint: "Gear forces: Ft = 2·Mt/d, Fr = Ft·tanθ/cosα, Fa = Ft·tanα. V and H are two perpendicular planes containing the axis: choose the direction of each force on the shaft.",
+        shaftElementsHint: "Gear forces: Ft = 2·Mt/d, Fr = Ft·tanθ/cosα, Fa = Ft·tanα. Directions are those of the forces acting ON THE SHAFT. Vertical plane V: +V ↑ up. Horizontal plane H: +H ⊙ out of the drawing (towards you), −H ⊗ into the drawing. Fr always points from the mesh point towards the shaft axis; Ft is tangent at the mesh point. The small end view (seen from A) shows the result.",
         optElNone: "—",
         optElGear: "Gear",
         optElCoupling: "Coupling / torque only",
@@ -1772,7 +1815,7 @@
         shaftBeamRBTitle: "Reaction B",
         shaftBeamCTitle: "Required bearing C (A / B)",
         shaftBeamCritTitle: "Most stressed section",
-        shaftBeamChartTitle: "Loads, bending moments and torque",
+        shaftBeamChartTitle: "Loads and moment diagrams: vertical plane, horizontal plane, resultant, torque",
         shaftPickTitle: "Section to design",
         shaftSecXLabel: "Section at x",
         shaftSecCriticalBtn: "Go to the most stressed section",
@@ -1876,7 +1919,7 @@
         shaftSafeLine: "with X",
         shaftWorkPoint: "section",
         demoShaft: "Reducer Shaft (Ø65, exam)",
-        shaftBeamSupportsErr: "Bearing B must be to the right of bearing A.",
+        shaftBeamSupportsErr: "Bearing 2 must be to the right of bearing 1.",
         shaftBeamRes: "R = {r} kN",
         shaftBeamAxial: "axial {a} kN",
         shaftBeamCritFmt: "x = {x} mm",
@@ -2090,10 +2133,29 @@
         feedbackLink: "Suggerisci una funzione o segnala un problema",
         shareBtn: "Condividi",
         shaftSupportsTitle: "Cuscinetti (appoggi) e dati",
-        shaftXALabel: "Cuscinetto A in x",
-        shaftXBLabel: "Cuscinetto B in x",
-        optBearingA: "Cuscinetto A",
-        optBearingB: "Cuscinetto B",
+        shaftXALabel: "Cuscinetto 1 in x",
+        shaftXBLabel: "Cuscinetto 2 in x",
+        optBearingA: "Cuscinetto 1 (sinistro)",
+        optBearingB: "Cuscinetto 2 (destro)",
+        shaftLengthLabel: "Lunghezza albero L (A → B)",
+        shaftNamingHint: "A e B sono le estremità dell'albero (x = 0 e x = L); cuscinetti ed elementi vengono chiamati C, D, E, … da sinistra a destra, in automatico. x si misura dall'estremità sinistra A.",
+        shaftReactionAt: "Reazione in {p} (cuscinetto {n})",
+        shaftBearingCTitle: "C richiesto cuscinetti ({a} / {b})",
+        shaftChartPlaneV: "PIANO VERTICALE (V) — forze e momento flettente Mv",
+        shaftChartPlaneH: "PIANO ORIZZONTALE (H) — forze e momento flettente Mh",
+        shaftChartTotal: "MOMENTO FLETTENTE RISULTANTE Mf = √(Mv² + Mh²)",
+        shaftChartTorque: "MOMENTO TORCENTE Mt",
+        shaftChartShaft: "ALBERO — A, B estremità · cuscinetti ed elementi C, D, … da sx a dx",
+        shaftChartUpV: "+V disegnato in alto",
+        shaftChartUpH: "+H disegnato in alto (vista dall'alto)",
+        shaftOutsideShaft: "{p} in x = {x} mm è fuori dall'albero (0 … L).",
+        shaftElGearDirs: "sull'albero: Ft {ft} · Fr {fr} (Fr va dal punto di contatto verso l'asse)",
+        shaftEndViewTitle: "vista da A",
+        optNotchCombined: "Spallamento + cava linguetta",
+        optKeyGiven: "ke dato dal testo",
+        shaftKeyKeLabel: "ke linguetta (flessione)",
+        shaftKeyKeTLabel: "ke' linguetta (torsione)",
+        shaftBkKeCombined: "{s} × {k} (spallamento × linguetta)",
         shaftAxialBearingLabel: "Carico assiale su",
         shaftThetaLabel: "Angolo di pressione θ",
         shaftBearingLifeLabel: "Durata cuscinetti L",
@@ -2101,7 +2163,7 @@
         optRoller: "A rulli (p = 10/3)",
         shaftBearingTypeLabel: "Tipo di cuscinetto",
         shaftElementsTitle: "Elementi sull'albero (x dall'estremità sinistra)",
-        shaftElementsHint: "Forze delle ruote: Ft = 2·Mt/d, Fr = Ft·tanθ/cosα, Fa = Ft·tanα. V e H sono due piani perpendicolari che contengono l'asse: scegli il verso di ogni forza agente sull'albero.",
+        shaftElementsHint: "Forze delle ruote: Ft = 2·Mt/d, Fr = Ft·tanθ/cosα, Fa = Ft·tanα. I versi sono quelli delle forze che agiscono SULL'ALBERO. Piano verticale V: +V ↑ verso l'alto. Piano orizzontale H: +H ⊙ uscente dal foglio (verso chi guarda), −H ⊗ entrante nel foglio. Fr va sempre dal punto di contatto verso l'asse dell'albero; Ft è tangente nel punto di contatto. La piccola vista di testa (da A) mostra il risultato.",
         optElNone: "—",
         optElGear: "Ruota dentata",
         optElCoupling: "Giunto / solo coppia",
@@ -2124,7 +2186,7 @@
         shaftBeamRBTitle: "Reazione B",
         shaftBeamCTitle: "C richiesto cuscinetti (A / B)",
         shaftBeamCritTitle: "Sezione più sollecitata",
-        shaftBeamChartTitle: "Carichi, momenti flettenti e torcente",
+        shaftBeamChartTitle: "Carichi e diagrammi dei momenti: piano verticale, piano orizzontale, risultante, torcente",
         shaftPickTitle: "Sezione da dimensionare",
         shaftSecXLabel: "Sezione in x",
         shaftSecCriticalBtn: "Vai alla sezione più sollecitata",
@@ -2228,7 +2290,7 @@
         shaftSafeLine: "con X",
         shaftWorkPoint: "sezione",
         demoShaft: "Albero Riduttore (Ø65, esame)",
-        shaftBeamSupportsErr: "Il cuscinetto B deve stare a destra del cuscinetto A.",
+        shaftBeamSupportsErr: "Il cuscinetto 2 deve stare a destra del cuscinetto 1.",
         shaftBeamRes: "R = {r} kN",
         shaftBeamAxial: "assiale {a} kN",
         shaftBeamCritFmt: "x = {x} mm",
@@ -2931,7 +2993,7 @@
         switchModule('shafts');
         const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
         set('shaftTorqueInput', 'power'); set('shaftPower', 30); set('shaftSpeed', 200);
-        set('shaftXA', 0); set('shaftXB', 240); set('shaftAxialBearing', 'A'); set('shaftTheta', 20);
+        set('shaftLength', 320); set('shaftXA', 0); set('shaftXB', 240); set('shaftAxialBearing', 'A'); set('shaftTheta', 20);
         set('shaftBearingLife', 10); set('shaftBearingType', 'ball');
         const els = [
           { type: 'gear', x: 67.5, d: 210, helix: 0, torque: 'in', ft: '-H', fr: '+V' },

@@ -13,8 +13,8 @@ const SHARE_FIELDS = {
     'gwToothType', 'gwModule', 'gwFaceWidth', 'gwZ1', 'gwZ2', 'gwSpeed', 'gwAlpha', 'gwXr1', 'gwKe', 'gwSigmaH', 'gwSigmaL'],
   shafts: ['shaftMf', 'shaftBendCycle', 'shaftTorqueInput', 'shaftPower', 'shaftSpeed', 'shaftMt', 'shaftTorsionCycle', 'shaftAxial',
     'shaftSecTorque', 'shaftSigmaR', 'shaftSigmaS', 'shaftSigmaLF', 'shaftLife', 'shaftCycles', 'shaftNotchType', 'shaftDcheck', 'shaftDd', 'shaftDDcheck',
-    'shaftR', 'shaftKeyType', 'shaftKeyCond', 'shaftKe', 'shaftKeT', 'shaftFinish', 'shaftX',
-    'shaftXA', 'shaftXB', 'shaftAxialBearing', 'shaftTheta', 'shaftBearingLife', 'shaftBearingType', 'shaftSecX',
+    'shaftR', 'shaftKeyType', 'shaftKeyCond', 'shaftKeyKe', 'shaftKeyKeT', 'shaftKe', 'shaftKeT', 'shaftFinish', 'shaftX',
+    'shaftLength', 'shaftXA', 'shaftXB', 'shaftAxialBearing', 'shaftTheta', 'shaftBearingLife', 'shaftBearingType', 'shaftSecX',
     ...[1, 2, 3, 4].flatMap(i => ['Type', 'X', 'D', 'Helix', 'Torque', 'FtDir', 'FrDir', 'FaDir', 'Fv', 'Fh', 'Fa', 'E'].map(f => 'shaftEl' + i + f))]
 };
 // Inputs whose value depends on the unit system: always written when the unit is not metric
