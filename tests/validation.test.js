@@ -787,6 +787,19 @@ for (const [a, z1, z2, phi, g1, g2, psi] of [
     abs('2023-01-18  sezioni reali: la sede del cuscinetto B ha X molto più alto', sc.rows[0].X > 2 * sc.worst.X ? 1 : 0, 1, 0);
   }
 
+  // regola di Manson (doppia lineare, N_II = 14·N^0.6) con le vite della soluzione del 18/1/2023, e von Mises statico del 7/1/2005
+  {
+    const Q = vm.runInContext('({ shaftMansonFromLives, shaftStaticVonMises })', ctx);
+    const m = Q.shaftMansonFromLives([{ n: 135000, N: 376240 }, { n: 120620, N: 376240 }], 607766);
+    rel('2023-01-18  Manson: danno di nucleazione delle prime due fasi', m.DI, 0.74, 0.01, 'Luigi: 0.39 + 0.35');
+    rel('2023-01-18  Manson: vita residua nella terza fase [cicli]', m.remaining, 188611, 0.005, 'Luigi 182946: usa 0.25 invece di 1 − 0.74 = 0.26 (566426·0.26 + 41340)');
+    rel('2023-01-18  Manson: vita residua [h] a 7.5 giri/min', m.remaining / 450, 419.1, 0.005, 'Luigi 406.5 h, stessa svista');
+    abs('Manson: senza fasi precedenti la vita residua è la vita intera', Q.shaftMansonFromLives([], 1e5).remaining, 1e5, 1e-6);
+    // 7/1/2005: albero fermo, sezione C d = 15, Mf = 0.02·P, Mt = 0.04·P, σs = 910, X = 1.5 -> P max con von Mises = 5025 N
+    const vmC = Q.shaftStaticVonMises({ loads: { Mf: 20, bendingCycle: 'static', Mt: 40, torsionCycle: 'static', N: 0 }, sigmaS: 910 }, 15);
+    rel('2005-01-07  von Mises statico: P max [N] (Luigi 5025)', 1000 * vmC.X / 1.5, 5025, 0.002);
+  }
+
   // carico massimo a d assegnato (shaftMaxLoad): stesso risultato del ridimensionamento X ∝ 1/carico usato negli esami
   {
     const M = vm.runInContext('({ shaftMaxLoad, shaftCheck })', ctx);

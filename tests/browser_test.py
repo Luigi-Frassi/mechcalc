@@ -309,6 +309,9 @@ with sync_playwright() as p:
     pg4 = new_page(); pg4.goto(BASE + q06); settle(pg4)
     lt = pg4.evaluate("document.getElementById('shaftLifeRes').innerText + ' | ' + document.getElementById('shaftMinerRes').innerText")
     check('alberi: vita con X richiesto (250 h) e Miner (D 0.310, 172 h) come nel 13/1/2006', '250 h' in lt and 'D = 0.310' in lt and '172 h' in lt, lt)
+    set_val(pg4, 'shaftDamageRule', 'manson'); settle(pg4)
+    mt = pg4.evaluate("document.getElementById('shaftMinerRes').innerText + ' | ' + document.getElementById('shaftRes4Sub').innerText")
+    check('  regola di Manson selezionabile e von Mises statico nella scheda snervamento', 'Manson' in mt and 'nucleazione' in mt and 'von Mises' in mt, mt)
     # 18/1/2023: sezioni reali, la gola Ø40 r=8 è più critica della sede del cuscinetto Ø70; il bottone la porta nella verifica
     q23 = ('?m=shafts&lang=it&shaftTorqueInput=torque&shaftMt=784.7&shaftLength=222&shaftXA=8&shaftXB=120'
            '&shaftEl1X=150&shaftEl1D=120&shaftEl1FtDir=-H&shaftEl1FrDir=-V&shaftEl2X=202&shaftEl2D=52&shaftEl2FtDir=-H&shaftEl2FrDir=%2BV'

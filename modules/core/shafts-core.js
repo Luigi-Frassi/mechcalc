@@ -311,6 +311,51 @@ function shaftMinerDamage(inp, d, Xreq, phases) {
   return { phases: rows, D, Ncurrent, failed: D >= 1, remaining: D >= 1 ? 0 : (1 - D) * Ncurrent };
 }
 
+/**
+ * Manson's double linear damage rule (as in the course): each life N splits into a propagation part
+ * N_II = 14·N^0.6 and a nucleation part N_I = N − N_II. Damage accumulates linearly on N_I first; when the
+ * nucleation is complete, on N_II. Pure arithmetic on the lives of the phases.
+ * phases = [{ n, N }] already worked; Ncur = life at the current loads. Returns { DI, DII, remaining, failed }.
+ */
+function shaftMansonFromLives(phases, Ncur) {
+  const split = N => { if (!Number.isFinite(N)) return { NI: Infinity, NII: Infinity }; const NII = Math.min(N, 14 * Math.pow(N, 0.6)); return { NI: N - NII, NII }; };
+  let DI = 0, DII = 0;
+  for (const p of phases || []) {
+    if (!(p.n > 0)) continue;
+    const { NI, NII } = split(p.N);
+    if (!(p.N > 0)) { DII = Infinity; break; }
+    let n = p.n;
+    if (DI < 1) {
+      const toNucleate = (1 - DI) * NI;
+      if (n <= toNucleate || !Number.isFinite(NI)) { DI += n / NI; n = 0; }
+      else { DI = 1; n -= toNucleate; }
+    }
+    if (n > 0) DII += n / NII;
+  }
+  const cur = split(Ncur);
+  const failed = DII >= 1;
+  const remaining = failed ? 0 : DI < 1 ? (1 - DI) * cur.NI + cur.NII : (1 - DII) * cur.NII;
+  return { DI, DII, remaining, failed };
+}
+
+// Manson's rule on the shaft: lives of the previous phases and of the current loads at the required X
+function shaftMansonDamage(inp, d, Xreq, phases) {
+  const mi = shaftMinerDamage(inp, d, Xreq, phases);
+  const res = shaftMansonFromLives(mi.phases.map(p => ({ n: p.cycles, N: p.N })), mi.Ncurrent);
+  return { ...res, Ncurrent: mi.Ncurrent, phases: mi.phases };
+}
+
+/**
+ * Static check with von Mises on the peak nominal stresses (non-rotating shaft, or a quick check of the peak):
+ * σ = σbending,max + σaxial, τ = τmax, σid = sqrt(σ² + 3τ²), X = σs / σid. No notch factor (ductile material, static load).
+ */
+function shaftStaticVonMises(inp, d) {
+  const s = shaftNominalStresses(inp.loads, d);
+  const sigma = s.sigmaBa + s.sigmaBm + Math.abs(s.sigmaN), tau = s.tauA + s.tauM;
+  const sigmaId = Math.sqrt(sigma * sigma + 3 * tau * tau);
+  return { sigma, tau, sigmaId, X: sigmaId > 0 ? inp.sigmaS / sigmaId : Infinity };
+}
+
 // Section design with fixed coefficients (as in a hand solution): closed form for Wf,
 // valid for rotating bending + torque and no axial load.
 function shaftDesignFixedCoefficients({ Mf, Mt, torsionCycle = 'static', ke, keT = 1, b1, b2, sigmaN, sigmaR, X }) {

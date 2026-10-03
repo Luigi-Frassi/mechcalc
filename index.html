@@ -1743,6 +1743,13 @@
         <span class="text-xs font-semibold uppercase tracking-wider text-sky-400" data-i18n="shaftLifeTitle">Fatigue life at the required X and cumulative damage (Miner)</span>
         <div class="text-lg font-bold text-sky-400 mt-2" id="shaftLifeRes">--</div>
         <p class="text-[11px] text-slate-500 mt-1" id="shaftLifeSub"></p>
+        <div class="flex items-center gap-2 mt-3">
+          <label class="text-[11px] text-slate-400" data-i18n="shaftDamageRuleLabel">Damage rule</label>
+          <select id="shaftDamageRule" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-white text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="miner" selected>Miner</option>
+            <option value="manson" data-i18n="optManson">Manson (double linear)</option>
+          </select>
+        </div>
         <p class="text-[11px] text-slate-400 mt-3 mb-2" data-i18n="shaftPhasesHint">Phases already worked (optional): bending moment, torque and cycles of each. 0 = not used.</p>
         <div class="grid grid-cols-4 gap-2 items-center">
           <div></div>
@@ -1976,6 +1983,12 @@
         shaftKeyKeTLabel: "Keyway ke' (torsion)",
         shaftBkKeCombined: "{s} × {k} (shoulder × keyway)",
         shaftMaxTitle: "Maximum load at this diameter (X = required X)",
+        shaftDamageRuleLabel: "Damage rule",
+        optManson: "Manson (double linear)",
+        shaftMansonFmt: "Manson: nucleation D = {di}, propagation D = {dii} → remaining life {r}",
+        shaftMansonFailed: "Manson: propagation D ≥ 1, the section has already used up its life.",
+        shaftVonMisesSub: "static von Mises on the peaks: X = {x}",
+        shaftWarnQr: "Fillet radius r = {r} mm is beyond the q chart (0–5 mm): q is extrapolated with Neuber's formula ({q}).",
         shaftLifeTitle: "Fatigue life at the required X and cumulative damage (Miner)",
         shaftPhasesHint: "Phases already worked (optional): bending moment, torque and cycles of each. 0 = not used. The remaining life refers to the current loads.",
         shaftPhaseLabel: "Previous phase",
@@ -2396,6 +2409,12 @@
         shaftKeyKeTLabel: "ke' linguetta (torsione)",
         shaftBkKeCombined: "{s} × {k} (spallamento × linguetta)",
         shaftMaxTitle: "Carico massimo con questo diametro (X = X richiesto)",
+        shaftDamageRuleLabel: "Regola di cumulo",
+        optManson: "Manson (doppia lineare)",
+        shaftMansonFmt: "Manson: D nucleazione = {di}, D propagazione = {dii} → vita residua {r}",
+        shaftMansonFailed: "Manson: D di propagazione ≥ 1, la sezione ha già esaurito la sua vita.",
+        shaftVonMisesSub: "von Mises statico sui picchi: X = {x}",
+        shaftWarnQr: "Raggio di raccordo r = {r} mm oltre il diagramma di q (0–5 mm): q estrapolato con la formula di Neuber ({q}).",
         shaftLifeTitle: "Vita a fatica con X richiesto e danno cumulato (Miner)",
         shaftPhasesHint: "Fasi già lavorate (facoltativo): momento flettente, torcente e cicli di ciascuna. 0 = non usata. La vita residua si riferisce ai carichi attuali.",
         shaftPhaseLabel: "Fase precedente",

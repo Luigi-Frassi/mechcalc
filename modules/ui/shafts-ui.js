@@ -162,6 +162,7 @@ function calculateShafts() {
     res = shaftCheck({ ...inp, notch }, d);
   }
 
+  if (shoulder && inp.notch.r > 5) warnings.push(shaftText(t, 'shaftWarnQr', { r: shaftFmt(inp.notch.r, 1), q: shaftFmt(res.qB, 3) }));
   if (shoulder && res.rdOutOfRange) warnings.push(shaftText(t, 'shaftWarnRd', { rd: shaftFmt(res.rd, 3) }));
   if (shoulder && D && (D / d > 2.0 || D / d < 1.09)) warnings.push(shaftText(t, 'shaftWarnDd', { Dd: shaftFmt(D / d, 2) }));
 
@@ -191,7 +192,8 @@ function calculateShafts() {
   setTxt('shaftRes3Sub', `${ok(res.Xfatigue) ? t.shaftOk : t.shaftKo} (${t.shaftRequired} ${shaftFmt(Xreq, 2)})`);
   setTxt('shaftRes4', `X = ${shaftFmt(res.Xyield, 2)}`);
   setCls('shaftRes4', big + (ok(res.Xyield) ? 'text-emerald-400' : 'text-amber-400'));
-  setTxt('shaftRes4Sub', `${ok(res.Xyield) ? t.shaftOk : t.shaftKo} · σs = ${shaftFmt(inp.sigmaS, 0)} MPa`);
+  const vMis = shaftStaticVonMises(inp, d);
+  setTxt('shaftRes4Sub', `${ok(res.Xyield) ? t.shaftOk : t.shaftKo} · σs = ${shaftFmt(inp.sigmaS, 0)} MPa · ` + shaftText(t, 'shaftVonMisesSub', { x: shaftFmt(vMis.X, 2) }));
 
   // ---- check mode: maximum load at this diameter (all loads scaled together, X ∝ 1/load)
   const lambda = Math.min(res.Xfatigue, res.Xyield) / Xreq;
@@ -229,10 +231,15 @@ function calculateShafts() {
     }
     const phases = [1, 2].map(i => ({ Mf: Math.abs(shaftVal('shaftPh' + i + 'Mf', 0)), Mt: Math.abs(shaftVal('shaftPh' + i + 'Mt', 0)), cycles: shaftVal('shaftPh' + i + 'N', 0) }))
       .filter(p => p.cycles > 0 && (p.Mf > 0 || p.Mt > 0));
-    if (phases.length) {
+    const remTxt = n => Number.isFinite(n) ? `${cyc(n)} ${t.shaftPhaseCycles.toLowerCase()}${hours(n)}` : '∞';
+    if (phases.length && document.getElementById('shaftDamageRule')?.value === 'manson') {
+      const ma = shaftMansonDamage(chkInp, d, Xreq, phases);
+      setTxt('shaftMinerRes', ma.failed ? t.shaftMansonFailed
+        : shaftText(t, 'shaftMansonFmt', { di: shaftFmt(Math.min(ma.DI, 1), 3), dii: shaftFmt(ma.DII, 3), r: remTxt(ma.remaining) }));
+    } else if (phases.length) {
       const mi = shaftMinerDamage(chkInp, d, Xreq, phases);
       setTxt('shaftMinerRes', mi.failed ? shaftText(t, 'shaftMinerFailed', { d: shaftFmt(mi.D, 3) })
-        : shaftText(t, 'shaftMinerFmt', { d: shaftFmt(mi.D, 3), r: Number.isFinite(mi.remaining) ? `${cyc(mi.remaining)} ${t.shaftPhaseCycles.toLowerCase()}${hours(mi.remaining)}` : '∞' }));
+        : shaftText(t, 'shaftMinerFmt', { d: shaftFmt(mi.D, 3), r: remTxt(mi.remaining) }));
     } else setTxt('shaftMinerRes', '');
   }
 
