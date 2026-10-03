@@ -1646,6 +1646,28 @@
         <p class="text-[11px] text-slate-500 mt-2" id="shaftMaxSub"></p>
       </div>
 
+      <div id="shaftLifeCard" class="hidden bg-slate-800/40 p-4 rounded-xl border border-sky-500/30 mb-4">
+        <span class="text-xs font-semibold uppercase tracking-wider text-sky-400" data-i18n="shaftLifeTitle">Fatigue life at the required X and cumulative damage (Miner)</span>
+        <div class="text-lg font-bold text-sky-400 mt-2" id="shaftLifeRes">--</div>
+        <p class="text-[11px] text-slate-500 mt-1" id="shaftLifeSub"></p>
+        <p class="text-[11px] text-slate-400 mt-3 mb-2" data-i18n="shaftPhasesHint">Phases already worked (optional): bending moment, torque and cycles of each. 0 = not used.</p>
+        <div class="grid grid-cols-4 gap-2 items-center">
+          <div></div>
+          <div class="text-[10px] uppercase tracking-wider text-slate-500">Mf</div>
+          <div class="text-[10px] uppercase tracking-wider text-slate-500">Mt</div>
+          <div class="text-[10px] uppercase tracking-wider text-slate-500" data-i18n="shaftPhaseCycles">Cycles</div>
+          <div class="text-xs text-slate-400 self-center"><span data-i18n="shaftPhaseLabel">Previous phase</span> 1</div>
+          <div class="relative"><input type="number" id="shaftPh1Mf" value="0" min="0" step="any" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"><span class="absolute right-2 top-2 text-slate-500 text-[10px]">N·m</span></div>
+          <div class="relative"><input type="number" id="shaftPh1Mt" value="0" min="0" step="any" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"><span class="absolute right-2 top-2 text-slate-500 text-[10px]">N·m</span></div>
+          <div class="relative"><input type="number" id="shaftPh1N" value="0" min="0" step="any" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"><span class="absolute right-2 top-2 text-slate-500 text-[10px]">n</span></div>
+          <div class="text-xs text-slate-400 self-center"><span data-i18n="shaftPhaseLabel">Previous phase</span> 2</div>
+          <div class="relative"><input type="number" id="shaftPh2Mf" value="0" min="0" step="any" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"><span class="absolute right-2 top-2 text-slate-500 text-[10px]">N·m</span></div>
+          <div class="relative"><input type="number" id="shaftPh2Mt" value="0" min="0" step="any" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"><span class="absolute right-2 top-2 text-slate-500 text-[10px]">N·m</span></div>
+          <div class="relative"><input type="number" id="shaftPh2N" value="0" min="0" step="any" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"><span class="absolute right-2 top-2 text-slate-500 text-[10px]">n</span></div>
+        </div>
+        <div class="text-sm font-mono text-slate-200 mt-3" id="shaftMinerRes"></div>
+      </div>
+
       <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700/50 mb-4 font-mono text-xs">
         <div class="flex justify-between items-center mb-3 border-b border-slate-800 pb-2">
           <span class="text-xs font-semibold uppercase tracking-wider text-slate-300" data-i18n="shaftBkTitle">Coefficients and stresses at the chosen diameter</span>
@@ -1842,6 +1864,19 @@
         shaftKeyKeTLabel: "Keyway ke' (torsion)",
         shaftBkKeCombined: "{s} × {k} (shoulder × keyway)",
         shaftMaxTitle: "Maximum load at this diameter (X = required X)",
+        shaftLifeTitle: "Fatigue life at the required X and cumulative damage (Miner)",
+        shaftPhasesHint: "Phases already worked (optional): bending moment, torque and cycles of each. 0 = not used. The remaining life refers to the current loads.",
+        shaftPhaseLabel: "Previous phase",
+        shaftPhaseCycles: "Cycles",
+        shaftLifeInf: "Infinite life with X = {x} (required σN = {sn} MPa ≤ σLF)",
+        shaftLifeFin: "N = {n} cycles with X = {x}",
+        shaftLifeHoursAt: " = {h} h at {rpm} rpm",
+        shaftLifeSubFmt: "Required σN = {sn} MPa on the Wöhler line (m = {m}): σN = σa,eq / (b₁ b₂ (1/X − σm,eq/σR)).",
+        shaftLifeNoYield: "X = {x} not reachable: yield already governs at these loads.",
+        shaftLifeNoMean: "X = {x} not reachable: the mean stress alone uses up the Goodman line.",
+        shaftLifeNoStatic: "X = {x} not reachable even at 10³ cycles (required σN above σR).",
+        shaftMinerFmt: "Miner: D = {d} after the previous phases → remaining life {r}",
+        shaftMinerFailed: "Miner: D = {d} ≥ 1, the section has already used up its life.",
         shaftMaxFactorFmt: "× {l} the current loads",
         shaftMaxSub: "All loads come from the same torque or force, so stresses scale with them and X scales as 1/load: max = current × X / X required. Governed by {g}. Life and coefficients stay those of the check.",
         shaftMaxGovF: "fatigue",
@@ -2230,6 +2265,19 @@
         shaftKeyKeTLabel: "ke' linguetta (torsione)",
         shaftBkKeCombined: "{s} × {k} (spallamento × linguetta)",
         shaftMaxTitle: "Carico massimo con questo diametro (X = X richiesto)",
+        shaftLifeTitle: "Vita a fatica con X richiesto e danno cumulato (Miner)",
+        shaftPhasesHint: "Fasi già lavorate (facoltativo): momento flettente, torcente e cicli di ciascuna. 0 = non usata. La vita residua si riferisce ai carichi attuali.",
+        shaftPhaseLabel: "Fase precedente",
+        shaftPhaseCycles: "Cicli",
+        shaftLifeInf: "Vita infinita con X = {x} (σN richiesta = {sn} MPa ≤ σLF)",
+        shaftLifeFin: "N = {n} cicli con X = {x}",
+        shaftLifeHoursAt: " = {h} h a {rpm} giri/min",
+        shaftLifeSubFmt: "σN richiesta = {sn} MPa sulla retta di Wöhler (m = {m}): σN = σa,eq / (b₁ b₂ (1/X − σm,eq/σR)).",
+        shaftLifeNoYield: "X = {x} non raggiungibile: con questi carichi governa già lo snervamento.",
+        shaftLifeNoMean: "X = {x} non raggiungibile: la sola tensione media esaurisce la retta di Goodman.",
+        shaftLifeNoStatic: "X = {x} non raggiungibile nemmeno a 10³ cicli (σN richiesta oltre σR).",
+        shaftMinerFmt: "Miner: D = {d} dopo le fasi precedenti → vita residua {r}",
+        shaftMinerFailed: "Miner: D = {d} ≥ 1, la sezione ha già esaurito la sua vita.",
         shaftMaxFactorFmt: "× {l} i carichi attuali",
         shaftMaxSub: "Tutti i carichi vengono dalla stessa coppia o forza: le tensioni crescono con loro e X scala come 1/carico, quindi massimo = attuale × X / X richiesto. Governa {g}. Vita e coefficienti restano quelli della verifica.",
         shaftMaxGovF: "la fatica",

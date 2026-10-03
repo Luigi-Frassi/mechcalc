@@ -269,6 +269,48 @@ function shaftMaxLoad(inp, d, Xreq) {
     Mf: (L.Mf || 0) * lambda, Mt: (L.Mt || 0) * lambda, N: (L.N || 0) * lambda, check };
 }
 
+/**
+ * Life at a required safety factor (reverse finite-life problem): the σN that gives X = Xreq on the Goodman line,
+ * σN = σa,eq / (b1 b2 (1/X − σm,eq/σR)), then N from the Wöhler line σ^m N = σR^m·10³ (N = ∞ if σN ≤ σLF).
+ * Coefficients (Ke, b1, b2) do not depend on N, so the check at any life gives the same stresses.
+ * Returns { N, sigmaNreq, infinite, feasible, reason?, check }.
+ */
+function shaftLifeAtX(inp, d, Xreq) {
+  const check = shaftCheck({ ...inp, cycles: 0 }, d);
+  const out = { N: 0, sigmaNreq: NaN, infinite: false, feasible: false, check };
+  if (check.Xyield < Xreq) return { ...out, reason: 'yield' };
+  const room = 1 / Xreq - check.sigmaMeq / inp.sigmaR;
+  if (!(room > 0)) return { ...out, reason: 'mean' };
+  if (!(check.sigmaAeq > 0)) return { ...out, N: Infinity, infinite: true, feasible: true, sigmaNreq: 0 };
+  const sN = check.sigmaAeq / (check.b1 * check.b2 * room);
+  const m = 3 / Math.log10(inp.sigmaR / inp.sigmaLF);
+  if (sN <= inp.sigmaLF) return { ...out, N: Infinity, infinite: true, feasible: true, sigmaNreq: sN, m };
+  if (sN >= inp.sigmaR) return { ...out, sigmaNreq: sN, m, reason: 'static' };
+  return { ...out, N: 1e3 * Math.pow(inp.sigmaR / sN, m), feasible: true, sigmaNreq: sN, m };
+}
+
+/**
+ * Cumulative damage (Miner): previous phases with their own loads for n cycles each, every N_i computed at the
+ * required safety factor (as in the course solutions). The remaining life at the current loads is (1 − D)·N_current.
+ * phases = [{ Mf, Mt, cycles }] (N·m; a missing Mf/Mt keeps the current value) or [{ factor, cycles }] (all loads × factor).
+ * Returns { phases: [{ cycles, N, D }], D, Ncurrent, remaining, failed }.
+ */
+function shaftMinerDamage(inp, d, Xreq, phases) {
+  const L = inp.loads;
+  const phaseInp = p => ({ ...inp, loads: p.factor !== undefined
+    ? { ...L, Mf: (L.Mf || 0) * p.factor, Mt: (L.Mt || 0) * p.factor, N: (L.N || 0) * p.factor }
+    : { ...L, Mf: p.Mf !== undefined ? p.Mf : L.Mf, Mt: p.Mt !== undefined ? p.Mt : L.Mt } });
+  const rows = (phases || []).filter(p => p && p.cycles > 0).map(p => {
+    const life = shaftLifeAtX(phaseInp(p), d, Xreq);
+    const N = life.feasible ? life.N : 0;
+    return { ...p, N, D: N > 0 ? (Number.isFinite(N) ? p.cycles / N : 0) : Infinity };
+  });
+  const D = rows.reduce((s, r) => s + r.D, 0);
+  const cur = shaftLifeAtX(inp, d, Xreq);
+  const Ncurrent = cur.feasible ? cur.N : 0;
+  return { phases: rows, D, Ncurrent, failed: D >= 1, remaining: D >= 1 ? 0 : (1 - D) * Ncurrent };
+}
+
 // Section design with fixed coefficients (as in a hand solution): closed form for Wf,
 // valid for rotating bending + torque and no axial load.
 function shaftDesignFixedCoefficients({ Mf, Mt, torsionCycle = 'static', ke, keT = 1, b1, b2, sigmaN, sigmaR, X }) {

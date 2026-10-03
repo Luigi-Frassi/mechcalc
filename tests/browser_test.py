@@ -301,6 +301,14 @@ with sync_playwright() as p:
     set_val(pg3, 'shaftBearingCA', 120); settle(pg3)
     life = pg3.evaluate("document.getElementById('shaftBeamLifeInfo').innerText")
     check('  durata cuscinetti: ore alla velocità data e con il C di catalogo', 'h a 220 giri/min' in life and 'C catalogo' in life, life)
+    # 13/1/2006: vita con X richiesto e Miner nella scheda di verifica (attese 250 h e 172 h)
+    Mt06 = 1.6875 * 250.7
+    q06 = ('?m=shafts&lang=it&smode=check&shaftPower=%s&shaftSpeed=30&shaftMf=%s&shaftSigmaR=1180&shaftSigmaS=940&shaftSigmaLF=450'
+           '&shaftLife=finite&shaftCycles=450000&shaftFinish=d&shaftX=1.75&shaftNotchType=combined&shaftR=2&shaftDcheck=32&shaftDDcheck=40'
+           '&shaftPh1Mf=%s&shaftPh1Mt=%s&shaftPh1N=270000') % (round(Mt06 * 30 * 2 * 3.14159265358979 / 60 / 1000, 6), round(0.82378 * 250.7, 3), round(0.7513 * 250.7, 3), round(Mt06, 3))
+    pg4 = new_page(); pg4.goto(BASE + q06); settle(pg4)
+    lt = pg4.evaluate("document.getElementById('shaftLifeRes').innerText + ' | ' + document.getElementById('shaftMinerRes').innerText")
+    check('alberi: vita con X richiesto (250 h) e Miner (D 0.310, 172 h) come nel 13/1/2006', '250 h' in lt and 'D = 0.310' in lt and '172 h' in lt, lt)
     check('  quota e coppia "nessuna" nel selettore', pg3.evaluate("[...document.getElementById('shaftEl1Torque').options].some(o => o.value === 'none')"))
 
     check('  progetto: scheda carico massimo nascosta', pg.evaluate("document.getElementById('shaftMaxCard').classList.contains('hidden')"))

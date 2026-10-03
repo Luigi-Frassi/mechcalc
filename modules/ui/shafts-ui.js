@@ -208,6 +208,34 @@ function calculateShafts() {
     setTxt('shaftMaxSub', shaftText(t, 'shaftMaxSub', { g: res.Xfatigue <= res.Xyield ? t.shaftMaxGovF : t.shaftMaxGovY }));
   }
 
+  // ---- check mode: life at the required X (reverse finite-life problem) and Miner's cumulative damage
+  shaftShow('shaftLifeCard', mode === 'check');
+  if (mode === 'check') {
+    const chkInp = { ...inp, notch: shoulder ? { ...inp.notch, Dd: D / d } : inp.notch };
+    const life = shaftLifeAtX(chkInp, d, Xreq);
+    const rpm = document.getElementById('shaftTorqueInput')?.value === 'torque' ? 0 : shaftVal('shaftSpeed', 0);
+    const hours = n => rpm > 0 && Number.isFinite(n) ? shaftText(t, 'shaftLifeHoursAt', { h: shaftFmt(n / (60 * rpm), 0), rpm: shaftFmt(rpm, 0) }) : '';
+    const cyc = n => Number.isFinite(n) ? Math.round(n).toLocaleString(currentLang === 'it' ? 'it-IT' : 'en-US') : '∞';
+    const xs = shaftFmt(Xreq, 2);
+    if (!life.feasible) {
+      setTxt('shaftLifeRes', shaftText(t, life.reason === 'yield' ? 'shaftLifeNoYield' : life.reason === 'mean' ? 'shaftLifeNoMean' : 'shaftLifeNoStatic', { x: xs }));
+      setTxt('shaftLifeSub', '');
+    } else if (life.infinite) {
+      setTxt('shaftLifeRes', shaftText(t, 'shaftLifeInf', { x: xs, sn: shaftFmt(life.sigmaNreq, 0) }));
+      setTxt('shaftLifeSub', '');
+    } else {
+      setTxt('shaftLifeRes', shaftText(t, 'shaftLifeFin', { n: cyc(life.N), x: xs }) + hours(life.N));
+      setTxt('shaftLifeSub', shaftText(t, 'shaftLifeSubFmt', { sn: shaftFmt(life.sigmaNreq, 1), m: shaftFmt(life.m, 2) }));
+    }
+    const phases = [1, 2].map(i => ({ Mf: Math.abs(shaftVal('shaftPh' + i + 'Mf', 0)), Mt: Math.abs(shaftVal('shaftPh' + i + 'Mt', 0)), cycles: shaftVal('shaftPh' + i + 'N', 0) }))
+      .filter(p => p.cycles > 0 && (p.Mf > 0 || p.Mt > 0));
+    if (phases.length) {
+      const mi = shaftMinerDamage(chkInp, d, Xreq, phases);
+      setTxt('shaftMinerRes', mi.failed ? shaftText(t, 'shaftMinerFailed', { d: shaftFmt(mi.D, 3) })
+        : shaftText(t, 'shaftMinerFmt', { d: shaftFmt(mi.D, 3), r: Number.isFinite(mi.remaining) ? `${cyc(mi.remaining)} ${t.shaftPhaseCycles.toLowerCase()}${hours(mi.remaining)}` : '∞' }));
+    } else setTxt('shaftMinerRes', '');
+  }
+
   // ---- breakdown
   const isShoulder = shoulder && res.KtB !== undefined;
   setTxt('shaftBkKt', isShoulder ? `${shaftFmt(res.KtB, 2)} / ${shaftFmt(res.KtT, 2)}` : '—');
@@ -248,6 +276,7 @@ function renderShaftEmpty(t, warnings) {
   }
   renderShaftWarnings(warnings);
   shaftShow('shaftMaxCard', false);
+  shaftShow('shaftLifeCard', false);
   const g = document.getElementById('shaftGoodmanChart'); if (g) g.innerHTML = '';
   const s = document.getElementById('shaftSketch'); if (s) s.innerHTML = '';
 }

@@ -725,6 +725,32 @@ for (const [a, z1, z2, phi, g1, g2, psi] of [
     rel('2010-01-11  shaftBearingLife: rulli D [h]', lD.hours, 33900, 0.02, 'Luigi scrive 33 000 h: 427·10⁶/(60·210) = 33 900');
   }
 
+  // vita a fatica con X richiesto (shaftLifeAtX) e danno cumulato di Miner (shaftMinerDamage): 13/1/2006, parte (b)
+  // l'albero lavora 150 h (270 000 cicli), poi viene girato: la sezione C passa dal carico minore (MC) a quello maggiore (MB)
+  {
+    const S = vm.runInContext('({ shaftBeam, shaftCheck, shaftLifeAtX, shaftMinerDamage })', ctx);
+    const b = S.shaftBeam({ xA: 0, xB: 208, Mt: 135 / 80, theta: 20, elements: [
+      { type: 'gear', x: 47, d: 135, FtDir: '-V', FrDir: '-H', torque: 'in' },
+      { type: 'gear', x: 161, d: 145, FtDir: '+H', FrDir: '+V', torque: 'out' }] });
+    const MB = b.at(47, 1), MC = b.at(161, -1);
+    const notch = { type: 'combined', Dd: 1.25, r: 2, key: 'sled', condition: 'annealed' };
+    const mk = (Mf, Mt) => ({ loads: { Mf, bendingCycle: 'rotating', Mt, torsionCycle: 'static', N: 0 },
+      sigmaR: 1180, sigmaS: 940, sigmaLF: 450, cycles: 450000, finish: 'd', notch });
+    const Mm = S.shaftCheck(mk(MB.Mf, MB.T), 32).Xfatigue / 1.75;                 // coppia motrice massima (parte a)
+    const full = mk(MB.Mf * Mm, MB.T * Mm);
+    rel('2006-01-13  shaftLifeAtX: sezione più sollecitata alla coppia massima [cicli]', S.shaftLifeAtX(full, 32, 1.75).N, 450000, 1e-6);
+    const lo = S.shaftLifeAtX(mk(MC.Mf * Mm, MC.T * Mm), 32, 1.75);
+    rel('2006-01-13  shaftLifeAtX: σN richiesta sezione meno sollecitata [MPa]', lo.sigmaNreq, 458.8, 0.003);
+    rel('2006-01-13  shaftLifeAtX: vita sezione meno sollecitata [cicli]', lo.N, 870350, 0.005);
+    const mi = S.shaftMinerDamage(full, 32, 1.75, [{ Mf: MC.Mf * Mm, Mt: MC.T * Mm, cycles: 270000 }]);
+    const mp = S.shaftMinerDamage(full, 32, 1.75, [{ factor: 0.5, cycles: 1e5 }]);
+    abs('Miner: una fase sotto il limite di fatica non fa danno', mp.D, 0, 0);
+    rel('2006-01-13  Miner: danno della prima fase sulla sezione C', mi.D, 0.31, 0.005);
+    rel('2006-01-13  Miner: durata residua dopo l\'inversione [h]', mi.remaining / 1800, 172.5, 0.005);
+    const inf = S.shaftLifeAtX(mk(MB.Mf * Mm * 0.5, MB.T * Mm * 0.5), 32, 1.75);
+    abs('vita con X richiesto: a metà carico la vita è infinita', inf.infinite ? 1 : 0, 1, 0);
+  }
+
   // carico massimo a d assegnato (shaftMaxLoad): stesso risultato del ridimensionamento X ∝ 1/carico usato negli esami
   {
     const M = vm.runInContext('({ shaftMaxLoad, shaftCheck })', ctx);

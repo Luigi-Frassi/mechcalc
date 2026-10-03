@@ -13,7 +13,7 @@ const SHARE_FIELDS = {
     'gwToothType', 'gwModule', 'gwFaceWidth', 'gwZ1', 'gwZ2', 'gwSpeed', 'gwAlpha', 'gwXr1', 'gwKe', 'gwSigmaH', 'gwSigmaL'],
   shafts: ['shaftMf', 'shaftBendCycle', 'shaftTorqueInput', 'shaftPower', 'shaftSpeed', 'shaftMt', 'shaftTorsionCycle', 'shaftAxial',
     'shaftSecTorque', 'shaftSigmaR', 'shaftSigmaS', 'shaftSigmaLF', 'shaftLife', 'shaftCycles', 'shaftNotchType', 'shaftDcheck', 'shaftDd', 'shaftDDcheck',
-    'shaftR', 'shaftKeyType', 'shaftKeyCond', 'shaftKeyKe', 'shaftKeyKeT', 'shaftKe', 'shaftKeT', 'shaftFinish', 'shaftX',
+    'shaftR', 'shaftKeyType', 'shaftKeyCond', 'shaftKeyKe', 'shaftKeyKeT', 'shaftKe', 'shaftKeT', 'shaftFinish', 'shaftX', 'shaftPh1Mf', 'shaftPh1Mt', 'shaftPh1N', 'shaftPh2Mf', 'shaftPh2Mt', 'shaftPh2N',
     'shaftLength', 'shaftXA', 'shaftXB', 'shaftAxialBearing', 'shaftTheta', 'shaftBearingLife', 'shaftBearingType', 'shaftBearingCA', 'shaftBearingCB', 'shaftSecX',
     ...[1, 2, 3, 4].flatMap(i => ['Type', 'X', 'D', 'Helix', 'Torque', 'Share', 'FtDir', 'FrDir', 'FaDir', 'Fv', 'Fh', 'Fa', 'E'].map(f => 'shaftEl' + i + f))]
 };
