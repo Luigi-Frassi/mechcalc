@@ -254,6 +254,21 @@ function shaftDesign(inp, Xreq) {
   return { ok: true, dMin, atMin, d: dR, D, final, governing: atMin.Xfatigue <= atMin.Xyield ? 'fatigue' : 'yield' };
 }
 
+/**
+ * Maximum load at a given diameter (reverse problem of many exams: "find the max torque / power / load").
+ * With all loads scaled by the same factor λ (they all come from the same torque or force), σa,eq and σm,eq
+ * are proportional to λ, so both safety factors scale as 1/λ:  λmax = X(current loads) / Xreq.
+ * Returns { lambda, lambdaFatigue, lambdaYield, governing, Mf, Mt, N, check } (Mf, Mt, N at the limit).
+ */
+function shaftMaxLoad(inp, d, Xreq) {
+  const check = shaftCheck(inp, d);
+  const lf = check.Xfatigue / Xreq, ly = check.Xyield / Xreq;
+  const lambda = Math.min(lf, ly);
+  const L = inp.loads;
+  return { lambda, lambdaFatigue: lf, lambdaYield: ly, governing: lf <= ly ? 'fatigue' : 'yield',
+    Mf: (L.Mf || 0) * lambda, Mt: (L.Mt || 0) * lambda, N: (L.N || 0) * lambda, check };
+}
+
 // Section design with fixed coefficients (as in a hand solution): closed form for Wf,
 // valid for rotating bending + torque and no axial load.
 function shaftDesignFixedCoefficients({ Mf, Mt, torsionCycle = 'static', ke, keT = 1, b1, b2, sigmaN, sigmaR, X }) {

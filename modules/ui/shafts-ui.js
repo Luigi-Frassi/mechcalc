@@ -193,6 +193,21 @@ function calculateShafts() {
   setCls('shaftRes4', big + (ok(res.Xyield) ? 'text-emerald-400' : 'text-amber-400'));
   setTxt('shaftRes4Sub', `${ok(res.Xyield) ? t.shaftOk : t.shaftKo} · σs = ${shaftFmt(inp.sigmaS, 0)} MPa`);
 
+  // ---- check mode: maximum load at this diameter (all loads scaled together, X ∝ 1/load)
+  const lambda = Math.min(res.Xfatigue, res.Xyield) / Xreq;
+  const showMax = mode === 'check' && Number.isFinite(lambda);
+  shaftShow('shaftMaxCard', showMax);
+  if (showMax) {
+    const L = inp.loads, vals = [];
+    if (L.Mf) vals.push(`Mf max = ${shaftFmt(L.Mf * lambda, 1)} N·m`);
+    if (L.Mt) vals.push(`Mt max = ${shaftFmt(L.Mt * lambda, 1)} N·m`);
+    if (L.N) vals.push(`N max = ${shaftFmt(L.N * lambda, 0)} N`);
+    if (torqueInput === 'power') vals.push(shaftText(t, 'shaftMaxPower', { p: shaftFmt(shaftVal('shaftPower', 0) * lambda, 2), n: shaftFmt(shaftVal('shaftSpeed', 0), 0) }));
+    setTxt('shaftMaxFactor', shaftText(t, 'shaftMaxFactorFmt', { l: shaftFmt(lambda, 3) }));
+    setTxt('shaftMaxValues', vals.join(' · '));
+    setTxt('shaftMaxSub', shaftText(t, 'shaftMaxSub', { g: res.Xfatigue <= res.Xyield ? t.shaftMaxGovF : t.shaftMaxGovY }));
+  }
+
   // ---- breakdown
   const isShoulder = shoulder && res.KtB !== undefined;
   setTxt('shaftBkKt', isShoulder ? `${shaftFmt(res.KtB, 2)} / ${shaftFmt(res.KtT, 2)}` : '—');
@@ -232,6 +247,7 @@ function renderShaftEmpty(t, warnings) {
     const el = document.getElementById(id); if (el) el.innerText = '';
   }
   renderShaftWarnings(warnings);
+  shaftShow('shaftMaxCard', false);
   const g = document.getElementById('shaftGoodmanChart'); if (g) g.innerHTML = '';
   const s = document.getElementById('shaftSketch'); if (s) s.innerHTML = '';
 }
@@ -340,10 +356,11 @@ function readShaftBeamInputs(Mt) {
 let lastShaftBeam = null;
 let shaftSeatAuto = false;   // notch set to shoulder + keyway because the section is on a gear seat
 
-// Screen direction of a force in the end view seen from A (V up, +H to the right)
+// Screen direction of a force in the end view seen from B, looking towards A (V up, +H to the left:
+// +H comes out of the side view towards the viewer, which from B is on the left)
 function shaftEndViewVec(dir) {
   const [plane, sgn] = shaftDirVec(dir);
-  return plane === 'V' ? [0, -sgn] : [sgn, 0];
+  return plane === 'V' ? [0, -sgn] : [-sgn, 0];
 }
 
 const SHAFT_DIR_WORDS = {
@@ -351,7 +368,81 @@ const SHAFT_DIR_WORDS = {
   it: { '+V': '↑ +V', '-V': '↓ −V', '+H': '⊙ +H', '-H': '⊗ −H' }
 };
 
-// Small end view of a gear (seen from A): mesh point, Fr towards the axis, Ft tangent
+// Oblique (cavalier) view of the whole shaft, horizontal, as in the hand solutions: x to the right, +V up,
+// +H towards the viewer (drawn down-left). The selected gear shows its mesh point and the forces Ft, Fr (and Fa)
+// it applies to the shaft; the other elements are drawn faded for context.
+function shaftGearIsoView(el, bi, labels, active, Mt, t) {
+  const W = 400, H = 220, ax = 104;                       // axis height on screen
+  const xs = [bi.xA, bi.xB, ...active.map(e => e.x)];
+  if (bi.L > 0) xs.push(0, bi.L);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), span = Math.max(x1 - x0, 1);
+  const X = x => 100 + (x - x0) / span * (W - 130);
+  const hx = -0.62, hy = 0.42;                            // screen vector of a unit +H (towards the viewer)
+  const P = (x, v, h) => [X(x) + hx * h, ax - v + hy * h];
+  const pt = p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`;
+  const vecOf = dir => { const [pl, sg] = shaftDirVec(dir); return pl === 'V' ? [sg, 0] : [0, sg]; };  // [v, h]
+  const arrow = (a, b, col, w = 2.6) => {
+    const ang = Math.atan2(b[1] - a[1], b[0] - a[0]), hd = 9;
+    return `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${col}" stroke-width="${w}"/>` +
+      `<polygon points="${b[0]},${b[1]} ${b[0] - hd * Math.cos(ang - 0.42)},${b[1] - hd * Math.sin(ang - 0.42)} ${b[0] - hd * Math.cos(ang + 0.42)},${b[1] - hd * Math.sin(ang + 0.42)}" fill="${col}"/>`;
+  };
+  const disc = (x, R, stroke, fill, sw) => {
+    const pts = [];
+    for (let i = 0; i <= 48; i++) { const a = i / 48 * 2 * Math.PI; pts.push(pt(P(x, R * Math.cos(a), R * Math.sin(a)))); }
+    return `<polygon points="${pts.join(' ')}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
+  };
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" class="shrink-0 max-w-full h-auto bg-slate-950/60 rounded-lg border border-slate-800">`;
+  // reference triad (bottom left)
+  const o = [34, H - 30];
+  s += arrow(o, [o[0] + 26, o[1]], '#64748b', 1.4) + arrow(o, [o[0], o[1] - 26], '#38bdf8', 1.4) + arrow(o, [o[0] + hx * 30, o[1] + hy * 30], '#fbbf24', 1.4);
+  s += `<text x="${o[0] + 29}" y="${o[1] + 4}" fill="#64748b" font-size="9" font-family="monospace">x</text>`;
+  s += `<text x="${o[0] + 4}" y="${o[1] - 22}" fill="#38bdf8" font-size="9" font-family="monospace">+V</text>`;
+  s += `<text x="${o[0] + hx * 30 + 14}" y="${o[1] + hy * 30 + 6}" fill="#fbbf24" font-size="9" font-family="monospace">+H ⊙</text>`;
+  // faded context: other gears and couplings
+  for (const e of active) {
+    if (e === el) continue;
+    if (e.type === 'gear') s += disc(e.x, Math.max(14, Math.min(40, e.d / 6)), 'rgba(168,85,247,0.35)', 'rgba(168,85,247,0.05)', 1);
+    else s += `<rect x="${X(e.x) - 6}" y="${ax - 8}" width="12" height="16" fill="none" stroke="rgba(148,163,184,0.4)"/>`;
+  }
+  // shaft and bearings
+  const xa = x0, xb = x1;
+  s += `<line x1="${X(xa)}" y1="${ax}" x2="${X(xb)}" y2="${ax}" stroke="#cbd5e1" stroke-width="6" stroke-linecap="round"/>`;
+  for (const xbng of [bi.xA, bi.xB]) {
+    const px = X(xbng);
+    s += `<polygon points="${px},${ax + 4} ${px - 7},${ax + 16} ${px + 7},${ax + 16}" fill="none" stroke="#94a3b8" stroke-width="1.4"/>`;
+  }
+  for (const p of labels.points) s += `<text x="${X(p.x)}" y="${ax + 46}" fill="#64748b" font-size="10" text-anchor="middle" font-family="monospace">${p.name}</text>`;
+  // the selected gear and its forces on the shaft
+  const R = Math.max(26, Math.min(46, el.d / 5));
+  s += disc(el.x, R, '#a855f7', 'rgba(168,85,247,0.10)', 1.6);
+  const [fv, fh] = vecOf(el.FrDir), [tv, th] = vecOf(el.FtDir);
+  const m3 = [-fv * R, -fh * R];                          // mesh point (v, h): opposite to Fr
+  const M = P(el.x, m3[0], m3[1]);
+  const len = 38, lenH = 52;                              // H looks shorter in the oblique view: longer arrow
+  const tip = (v, h) => P(el.x, m3[0] + v * len, m3[1] + h * lenH);
+  const loads = shaftElementLoads(el, Mt, bi.theta);
+  s += arrow(M, tip(fv, fh), '#f43f5e');
+  s += arrow(M, tip(tv, th), '#34d399');
+  // label just beyond the arrow tip, on the side the arrow points to
+  const lab = (b, txt, col) => {
+    const dx = b[0] - M[0], dy = b[1] - M[1], n = Math.hypot(dx, dy) || 1, ux = dx / n, uy = dy / n;
+    const anchor = ux > 0.3 ? 'start' : ux < -0.3 ? 'end' : 'middle';
+    const tx = b[0] + ux * 6, ty = b[1] + uy * 6 + (uy > 0.3 ? 10 : uy < -0.3 ? -2 : 4);
+    return `<text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" fill="${col}" font-size="10.5" font-weight="bold" text-anchor="${anchor}" font-family="monospace">${txt}</text>`;
+  };
+  s += lab(tip(fv, fh), `Fr ${shaftFmt(loads.Fr, 0)} N`, '#f43f5e');
+  s += lab(tip(tv, th), `Ft ${shaftFmt(loads.Ft, 0)} N`, '#34d399');
+  if (loads.FaMag > 0) {
+    const sa = el.FaDir === '-x' ? -1 : 1, aEnd = [M[0] + sa * 40, M[1]];
+    s += arrow(M, aEnd, '#fbbf24');
+    s += `<text x="${aEnd[0] + (sa > 0 ? 4 : -4)}" y="${aEnd[1] - 5}" fill="#fbbf24" font-size="10.5" font-weight="bold" text-anchor="${sa > 0 ? 'start' : 'end'}" font-family="monospace">Fa</text>`;
+  }
+  s += `<circle cx="${M[0]}" cy="${M[1]}" r="3.5" fill="#e2e8f0"/>`;
+  s += `<text x="${W - 8}" y="16" fill="#94a3b8" font-size="9.5" text-anchor="end" font-family="monospace">${t.shaftIsoTitle}</text>`;
+  return s + '</svg>';
+}
+
+// Small end view of a gear (seen from B): mesh point, Fr towards the axis, Ft tangent
 function shaftGearEndView(el, t, L) {
   // viewBox 200 × 170, drawn at 260 px: big enough to read the directions at a glance
   const c = 100, cy = 96, R = 52, len = 40;
@@ -379,7 +470,7 @@ function shaftGearEndView(el, t, L) {
   s += `<line x1="${c}" y1="22" x2="${c}" y2="170" stroke="#334155" stroke-width="1" stroke-dasharray="4 3"/>`;
   s += `<line x1="30" y1="${cy}" x2="170" y2="${cy}" stroke="#334155" stroke-width="1" stroke-dasharray="4 3"/>`;
   s += `<text x="${c - 5}" y="24" text-anchor="end" fill="#38bdf8" font-size="10" font-family="monospace">+V</text>`;
-  s += `<text x="174" y="${cy + 4}" fill="#fbbf24" font-size="10" font-family="monospace">+H</text>`;
+  s += `<text x="26" y="${cy + 4}" fill="#fbbf24" font-size="10" text-anchor="end" font-family="monospace">+H</text>`;
   s += `<circle cx="${c}" cy="${cy}" r="${R}" fill="rgba(168,85,247,0.06)" stroke="#a855f7" stroke-width="1.4" stroke-dasharray="5 3"/>`;
   s += `<circle cx="${c}" cy="${cy}" r="11" fill="rgba(203,213,225,0.25)" stroke="#cbd5e1" stroke-width="1.5"/>`;
   s += arrow(mx, my, mx + fx * len, my + fy * len, '#f43f5e');
@@ -420,7 +511,7 @@ function calculateShaftBeam(t, Mt) {
         info.innerHTML = '';
         const wrap = document.createElement('div');
         wrap.className = 'flex flex-wrap items-center gap-4';
-        if (!same) wrap.innerHTML = shaftGearEndView(el, t, nameOf(el));
+        if (!same) wrap.innerHTML = shaftGearIsoView(el, bi, labels, active, Mt, t) + shaftGearEndView(el, t, nameOf(el));
         const span = document.createElement('span');
         span.innerText = txt;
         wrap.appendChild(span);

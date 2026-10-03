@@ -278,6 +278,18 @@ with sync_playwright() as p:
     r2 = pg2.evaluate("document.getElementById('shaftRes1').innerText + ' | ' + document.getElementById('shaftBkKe').innerText")
     check('  intaglio combinato: il link riapre lo stesso risultato', r1 == r2, r1 + ' vs ' + r2)
 
+    # verifica a d = 65: carico massimo; riportando la potenza al massimo X deve valere esattamente quello richiesto
+    pg.click('#shaftModeCheck'); set_val(pg, 'shaftDcheck', 65); set_val(pg, 'shaftDDcheck', 78); settle(pg)
+    vis = pg.evaluate("!document.getElementById('shaftMaxCard').classList.contains('hidden')")
+    lam = pg.evaluate("parseFloat(document.getElementById('shaftMaxFactor').innerText.replace('×',''))")
+    pmax = pg.evaluate("document.getElementById('shaftMaxValues').innerText")
+    check('  verifica: scheda carico massimo visibile con il fattore', vis and lam > 1, f'{vis} {lam} {pmax}')
+    set_val(pg, 'shaftMf', round(1519.9 * lam, 3)); set_val(pg, 'shaftPower', round(14 * lam, 4)); settle(pg)
+    x3 = pg.evaluate("document.getElementById('shaftRes3').innerText + ' ' + document.getElementById('shaftRes4').innerText")
+    check('  carichi × fattore -> X = 1.25 (fatica o snervamento)', '1.25' in x3, x3)
+    pg.click('#shaftModeDesign'); settle(pg)
+    check('  progetto: scheda carico massimo nascosta', pg.evaluate("document.getElementById('shaftMaxCard').classList.contains('hidden')"))
+
     check('nessun errore JS in tutto il test', not errors, '; '.join(errors[:3]))
     browser.close()
 srv.shutdown()

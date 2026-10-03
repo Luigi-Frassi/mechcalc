@@ -687,6 +687,20 @@ for (const [a, z1, z2, phi, g1, g2, psi] of [
     rel('2023-01-18  X a N3=607766 cicli, carico −5%', chk(1.2 * 0.95 * Mt1, 0.95 * Mt1, keL, 607766, lu).Xfatigue, 1.8, 0.005, 'N3 esatto 628000: arrotondamenti amplificati da m=8.85');
   }
 
+  // carico massimo a d assegnato (shaftMaxLoad): stesso risultato del ridimensionamento X ∝ 1/carico usato negli esami
+  {
+    const M = vm.runInContext('({ shaftMaxLoad, shaftCheck })', ctx);
+    const inp = { loads: { Mf: 1.72, bendingCycle: 'rotating', Mt: 0, torsionCycle: 'static', N: 0 }, sigmaR: 1180, sigmaS: 940, sigmaLF: 450,
+      cycles: 0, finish: 'd', notch: { type: 'manual', ke: 1.72, keT: 1 }, b1Override: 0.82, b2Override: 0.86 };
+    const ml = M.shaftMaxLoad(inp, 35, 2.5);
+    rel('2006-09-21  shaftMaxLoad: Mt massimo della ruota di rinvio [N·m]', ml.lambda, 180.6, 0.002);
+    const back = M.shaftCheck({ ...inp, loads: { ...inp.loads, Mf: ml.Mf } }, 35);
+    rel('carico massimo: con i carichi scalati X = X richiesto', back.Xfatigue, 2.5, 1e-9);
+    const inp10 = { loads: { Mf: 0.68 * 1000, bendingCycle: 'rotating', Mt: 1000, torsionCycle: 'static', N: 0 }, sigmaR: 1250, sigmaS: 850, sigmaLF: 650,
+      cycles: 0, finish: 'd', notch: { type: 'manual', ke: 2.26 * 1.6, keT: 1 }, b1Override: 0.77, b2Override: 0.86 };
+    rel('2010-01-11  shaftMaxLoad: Mt massimo partendo da 1000 N·m [N·m]', M.shaftMaxLoad(inp10, 50, 1.5).Mt, 1338, 0.002);
+  }
+
   // Wöhler: estremi della retta
   rel('Wöhler: σN a 10³ cicli = σR', S.shaftFatigueStrength(1080, 520, 1e3).sigmaN, 1080, 1e-9);
   rel('Wöhler: σN a 10⁶ cicli = σLF', S.shaftFatigueStrength(1080, 520, 1e6 - 1).sigmaN, 520, 1e-4);

@@ -1600,6 +1600,15 @@
         </div>
       </div>
 
+      <div id="shaftMaxCard" class="hidden bg-slate-800/40 p-4 rounded-xl border border-amber-500/30 mb-4">
+        <span class="text-xs font-semibold uppercase tracking-wider text-amber-400" data-i18n="shaftMaxTitle">Maximum load at this diameter</span>
+        <div class="flex flex-wrap items-baseline gap-x-6 gap-y-1 mt-2">
+          <div class="text-2xl font-bold text-amber-400" id="shaftMaxFactor">--</div>
+          <div class="text-sm font-mono text-slate-200" id="shaftMaxValues"></div>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-2" id="shaftMaxSub"></p>
+      </div>
+
       <div class="bg-slate-800/40 p-6 rounded-xl border border-slate-700/50 mb-4 font-mono text-xs">
         <div class="flex justify-between items-center mb-3 border-b border-slate-800 pb-2">
           <span class="text-xs font-semibold uppercase tracking-wider text-slate-300" data-i18n="shaftBkTitle">Coefficients and stresses at the chosen diameter</span>
@@ -1779,12 +1788,19 @@
         shaftChartUpH: "+H drawn up (view from above)",
         shaftOutsideShaft: "{p} at x = {x} mm is outside the shaft (0 … L).",
         shaftElGearDirs: "on the shaft: Ft {ft} · Fr {fr} (Fr points from the mesh to the shaft axis)",
-        shaftEndViewTitle: "end view from A",
+        shaftEndViewTitle: "end view from B",
+        shaftIsoTitle: "forces on the shaft · +H towards you",
         optNotchCombined: "Shoulder + keyway",
         optKeyGiven: "ke given in the problem",
         shaftKeyKeLabel: "Keyway ke (bending)",
         shaftKeyKeTLabel: "Keyway ke' (torsion)",
         shaftBkKeCombined: "{s} × {k} (shoulder × keyway)",
+        shaftMaxTitle: "Maximum load at this diameter (X = required X)",
+        shaftMaxFactorFmt: "× {l} the current loads",
+        shaftMaxSub: "All loads come from the same torque or force, so stresses scale with them and X scales as 1/load: max = current × X / X required. Governed by {g}. Life and coefficients stay those of the check.",
+        shaftMaxGovF: "fatigue",
+        shaftMaxGovY: "yield",
+        shaftMaxPower: "P max = {p} kW at {n} rpm",
         shaftSeatAuto: "The section is on the seat of a gear/coupling: notch set to shoulder + keyway. Change it if there is no keyway.",
         shaftAxialBearingLabel: "Axial load on",
         shaftThetaLabel: "Pressure angle θ",
@@ -1793,7 +1809,7 @@
         optRoller: "Roller (p = 10/3)",
         shaftBearingTypeLabel: "Bearing type",
         shaftElementsTitle: "Elements on the shaft (x from the left end)",
-        shaftElementsHint: "Gear forces: Ft = 2·Mt/d, Fr = Ft·tanθ/cosα, Fa = Ft·tanα. Directions are those of the forces acting ON THE SHAFT. Vertical plane V: +V ↑ up. Horizontal plane H: +H ⊙ out of the drawing (towards you), −H ⊗ into the drawing. Fr always points from the mesh point towards the shaft axis; Ft is tangent at the mesh point. The small end view (seen from A) shows the result.",
+        shaftElementsHint: "Gear forces: Ft = 2·Mt/d, Fr = Ft·tanθ/cosα, Fa = Ft·tanα. Directions are those of the forces acting ON THE SHAFT. Vertical plane V: +V ↑ up. Horizontal plane H: +H ⊙ out of the drawing (towards you), −H ⊗ into the drawing. Fr always points from the mesh point towards the shaft axis; Ft is tangent at the mesh point. The oblique view of the shaft and the end view (seen from B) show the result.",
         optElNone: "—",
         optElGear: "Gear",
         optElCoupling: "Coupling / torque only",
@@ -2151,12 +2167,19 @@
         shaftChartUpH: "+H disegnato in alto (vista dall'alto)",
         shaftOutsideShaft: "{p} in x = {x} mm è fuori dall'albero (0 … L).",
         shaftElGearDirs: "sull'albero: Ft {ft} · Fr {fr} (Fr va dal punto di contatto verso l'asse)",
-        shaftEndViewTitle: "vista da A",
+        shaftEndViewTitle: "vista da B",
+        shaftIsoTitle: "forze sull'albero · +H verso di te",
         optNotchCombined: "Spallamento + cava linguetta",
         optKeyGiven: "ke dato dal testo",
         shaftKeyKeLabel: "ke linguetta (flessione)",
         shaftKeyKeTLabel: "ke' linguetta (torsione)",
         shaftBkKeCombined: "{s} × {k} (spallamento × linguetta)",
+        shaftMaxTitle: "Carico massimo con questo diametro (X = X richiesto)",
+        shaftMaxFactorFmt: "× {l} i carichi attuali",
+        shaftMaxSub: "Tutti i carichi vengono dalla stessa coppia o forza: le tensioni crescono con loro e X scala come 1/carico, quindi massimo = attuale × X / X richiesto. Governa {g}. Vita e coefficienti restano quelli della verifica.",
+        shaftMaxGovF: "la fatica",
+        shaftMaxGovY: "lo snervamento",
+        shaftMaxPower: "P max = {p} kW a {n} giri/min",
         shaftSeatAuto: "La sezione è sulla sede di una ruota/giunto: intaglio impostato su spallamento + cava linguetta. Cambialo se la linguetta non c'è.",
         shaftAxialBearingLabel: "Carico assiale su",
         shaftThetaLabel: "Angolo di pressione θ",
@@ -2165,7 +2188,7 @@
         optRoller: "A rulli (p = 10/3)",
         shaftBearingTypeLabel: "Tipo di cuscinetto",
         shaftElementsTitle: "Elementi sull'albero (x dall'estremità sinistra)",
-        shaftElementsHint: "Forze delle ruote: Ft = 2·Mt/d, Fr = Ft·tanθ/cosα, Fa = Ft·tanα. I versi sono quelli delle forze che agiscono SULL'ALBERO. Piano verticale V: +V ↑ verso l'alto. Piano orizzontale H: +H ⊙ uscente dal foglio (verso chi guarda), −H ⊗ entrante nel foglio. Fr va sempre dal punto di contatto verso l'asse dell'albero; Ft è tangente nel punto di contatto. La piccola vista di testa (da A) mostra il risultato.",
+        shaftElementsHint: "Forze delle ruote: Ft = 2·Mt/d, Fr = Ft·tanθ/cosα, Fa = Ft·tanα. I versi sono quelli delle forze che agiscono SULL'ALBERO. Piano verticale V: +V ↑ verso l'alto. Piano orizzontale H: +H ⊙ uscente dal foglio (verso chi guarda), −H ⊗ entrante nel foglio. Fr va sempre dal punto di contatto verso l'asse dell'albero; Ft è tangente nel punto di contatto. La vista in prospettiva dell'albero e la vista di testa (da B) mostrano il risultato.",
         optElNone: "—",
         optElGear: "Ruota dentata",
         optElCoupling: "Giunto / solo coppia",
