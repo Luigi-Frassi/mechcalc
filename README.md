@@ -140,8 +140,9 @@ The gear module is checked against worked exam problems of the course *Costruzio
 | Shafts, beam model: gear forces, reactions, bending moments, bearing $C$ vs. the official and the hand solution | 17 | 0.7 % (1.3 % on a hand-rounded value) |
 | Shafts: $K_t$, $q$, $b_1$, $b_2$ vs. values read by eye from the charts | 7 | 0.09 on $K_t$, 0.015 otherwise |
 | Shafts, exam of 9 December 2002 (hand solution): beam moments, critical section, shoulder + keyway design ($d$ = 61 mm) | 11 | 1.4 % |
+| Shafts, 11 more exams 2004–2023 (hand solutions): beams with overhangs, idler gears and levers, design, maximum torque / power / load, bearings | 198 | 0.5 % with the same coefficients as the hand solution |
 
-The factor deviations are reading errors of the hand solutions (e.g. $y$ = 0.32 read for $z$ = 18, where the chart gives 0.341; $K_t$ = 2.5 read where the course formula gives 2.41). The official shaft solution writes $X$ = 1.91 for the fatigue check, but that value leaves out the torsion term of the Goodman line: with it, the same coefficients give $X$ = 1.82 (still above the required 1.75). Run the suite (no dependencies) with:
+The factor deviations are reading errors of the hand solutions (e.g. $y$ = 0.32 read for $z$ = 18, where the chart gives 0.341; $K_t$ = 2.5 read where the course formula gives 2.41). For the shoulder $K_t$ the tool uses the course formula $B\,(r/d)^a$; checked against the digitized course chart it stays within ±3 %, while values read by eye in the hand solutions differ by up to +14 %. Every other gap in the shaft exams is a hand slip (documented in the test notes). The official shaft solution writes $X$ = 1.91 for the fatigue check, but that value leaves out the torsion term of the Goodman line: with it, the same coefficients give $X$ = 1.82 (still above the required 1.75). Run the suite (no dependencies) with:
 
 ```bash
 node tests/validation.test.js
