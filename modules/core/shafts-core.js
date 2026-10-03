@@ -300,16 +300,22 @@ function shaftDirVec(dir) {
 
 /**
  * Forces of one element on the shaft.
- * el = { type: 'gear'|'coupling'|'force'|'none', x, d, helix, FtDir, FrDir, FaDir, torque: 'in'|'out',
+ * el = { type: 'gear'|'coupling'|'force'|'none', x, d, helix, FtDir, FrDir, FaDir, torque: 'in'|'out'|'none', share,
  *        Fv, Fh, Fa, e }   (force: direct components; e = radial offset of Fa in the H plane [mm])
  * Mt = torque transmitted by the shaft [N·m], theta = normal pressure angle [deg].
+ * share = fraction of Mt carried by this element (default 1): e.g. 0.5 when two users split the power.
+ * torque 'none' = idler gear: the mesh forces come from share·Mt but no torque enters or leaves the shaft.
  */
 function shaftElementLoads(el, Mt, theta = 20) {
   const out = { x: el.x || 0, Fv: 0, Fh: 0, Fa: 0, Cv: 0, Ch: 0, T: 0, Ft: 0, Fr: 0, FaMag: 0 };
+  const share = Number.isFinite(el.share) && el.share >= 0 ? el.share : 1;
+  const MtEl = Math.abs(Mt) * share;
+  const tSign = el.torque === 'out' ? -1 : el.torque === 'none' ? 0 : 1;
+  out.MtEl = MtEl;
   if (el.type === 'gear') {
     const r = (el.d || 0) / 2;                                   // mm
     const alpha = (el.helix || 0) * Math.PI / 180;
-    const Ft = r > 0 ? Math.abs(Mt) * 1000 / r : 0;             // N
+    const Ft = r > 0 ? MtEl * 1000 / r : 0;                     // N
     const Fr = Ft * Math.tan(theta * Math.PI / 180) / Math.cos(alpha);
     const Fa = Ft * Math.tan(alpha);
     out.Ft = Ft; out.Fr = Fr; out.FaMag = Fa;
@@ -324,9 +330,9 @@ function shaftElementLoads(el, Mt, theta = 20) {
       const C = out.Fa * (-sr * r) / 1000;                       // N·m
       if (pr === 'V') out.Cv += C; else out.Ch += C;
     }
-    out.T = (el.torque === 'out' ? -1 : 1) * Math.abs(Mt);
+    out.T = tSign * MtEl;
   } else if (el.type === 'coupling') {
-    out.T = (el.torque === 'out' ? -1 : 1) * Math.abs(Mt);
+    out.T = tSign * MtEl;
   } else if (el.type === 'force') {
     out.Fv = el.Fv || 0; out.Fh = el.Fh || 0; out.Fa = el.Fa || 0;
     out.Ch = out.Fa * (el.e || 0) / 1000;
@@ -424,6 +430,13 @@ function shaftPointLabels(xA, xB, elementXs, L = null) {
     elements: elementXs.map(nameAt),
     points: named.slice().sort((a, b) => a.x - b.x)
   };
+}
+
+// Bearing life with a catalog rating: L = (C/P)^p million revolutions; hours at n rpm = L·10⁶ / (60 n)
+function shaftBearingLife(C, P, type = 'ball', n = 0) {
+  const p = type === 'roller' ? 10 / 3 : 3;
+  const L = P > 0 ? Math.pow(C / P, p) : Infinity;
+  return { L, hours: n > 0 ? L * 1e6 / (60 * n) : null };
 }
 
 // Required dynamic load rating C = P · L^(1/p), L in millions of revolutions (p = 3 ball, 10/3 roller).

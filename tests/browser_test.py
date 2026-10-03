@@ -288,6 +288,21 @@ with sync_playwright() as p:
     x3 = pg.evaluate("document.getElementById('shaftRes3').innerText + ' ' + document.getElementById('shaftRes4').innerText")
     check('  carichi × fattore -> X = 1.25 (fatica o snervamento)', '1.25' in x3, x3)
     pg.click('#shaftModeDesign'); settle(pg)
+
+    # variante 4/2/2019: due utenze al 50 % (quota di Mt), coppia bilanciata e Mf come nella soluzione
+    q19 = ('?m=shafts&lang=it&shaftPower=50&shaftSpeed=220&shaftLength=215&shaftXA=70&shaftXB=163.75'
+           '&shaftEl1X=20&shaftEl1D=60&shaftEl1FtDir=%2BV&shaftEl1FrDir=%2BH&shaftEl1Torque=out&shaftEl1Share=50'
+           '&shaftEl2X=132.5&shaftEl2D=150&shaftEl2FtDir=-H&shaftEl2FrDir=-V&shaftEl2Torque=in'
+           '&shaftEl3Type=gear&shaftEl3X=195&shaftEl3D=60&shaftEl3FtDir=%2BV&shaftEl3FrDir=%2BH&shaftEl3Torque=out&shaftEl3Share=50')
+    pg3 = new_page(); pg3.goto(BASE + q19); settle(pg3)
+    info = pg3.evaluate("document.getElementById('shaftBeamCritSub').innerText + ' | ' + (document.querySelector('.shaft-beam-warn')?.innerText || '') + ' | ' + document.getElementById('shaftEl1Info').innerText")
+    check('alberi: quota di Mt al 50 % (2019): Mf 1925, coppia bilanciata, coppia elemento indicata',
+          '1925' in info and 'bilanciano' not in info and '1085' in info, info)
+    set_val(pg3, 'shaftBearingCA', 120); settle(pg3)
+    life = pg3.evaluate("document.getElementById('shaftBeamLifeInfo').innerText")
+    check('  durata cuscinetti: ore alla velocità data e con il C di catalogo', 'h a 220 giri/min' in life and 'C catalogo' in life, life)
+    check('  quota e coppia "nessuna" nel selettore', pg3.evaluate("[...document.getElementById('shaftEl1Torque').options].some(o => o.value === 'none')"))
+
     check('  progetto: scheda carico massimo nascosta', pg.evaluate("document.getElementById('shaftMaxCard').classList.contains('hidden')"))
 
     check('nessun errore JS in tutto il test', not errors, '; '.join(errors[:3]))

@@ -336,6 +336,7 @@ function readShaftBeamInputs(Mt) {
       d: Math.max(0, shaftVal(p + 'D', 0)),
       helix: Math.max(0, Math.min(45, shaftVal(p + 'Helix', 0))),
       torque: g(p + 'Torque') || 'in',
+      share: Math.max(0, shaftVal(p + 'Share', 100)) / 100,
       FtDir: g(p + 'FtDir') || '+V',
       FrDir: g(p + 'FrDir') || '+H',
       FaDir: g(p + 'FaDir') || '+x',
@@ -497,6 +498,7 @@ function calculateShaftBeam(t, Mt) {
     for (const f of ['D', 'Helix', 'FtDir', 'FrDir']) shaftShow('colShaftEl' + el.slot + f, gear);
     shaftShow('colShaftEl' + el.slot + 'FaDir', gear && el.helix > 0);
     shaftShow('colShaftEl' + el.slot + 'Torque', gear || el.type === 'coupling');
+    shaftShow('colShaftEl' + el.slot + 'Share', gear || el.type === 'coupling');
     for (const f of ['Fv', 'Fh', 'Fa', 'E']) shaftShow('colShaftEl' + el.slot + f, force);
     const tag = document.getElementById(p + 'Name');
     if (tag) tag.innerText = any ? '→ ' + nameOf(el) : '';
@@ -506,7 +508,9 @@ function calculateShaftBeam(t, Mt) {
         const L = shaftElementLoads(el, Mt, bi.theta);
         const txt = shaftText(t, L.FaMag > 0 ? 'shaftElGearInfoA' : 'shaftElGearInfo',
           { ft: shaftFmt(L.Ft, 0), fr: shaftFmt(L.Fr, 0), fa: shaftFmt(L.FaMag, 0) }) +
-          ' · ' + shaftText(t, 'shaftElGearDirs', { ft: words[el.FtDir], fr: words[el.FrDir] });
+          ' · ' + shaftText(t, 'shaftElGearDirs', { ft: words[el.FtDir], fr: words[el.FrDir] }) +
+          (el.torque === 'none' ? ' · ' + shaftText(t, 'shaftElIdlerInfo', { mt: shaftFmt(L.MtEl, 1) })
+            : Math.abs(el.share - 1) > 1e-9 ? ' · ' + shaftText(t, 'shaftElMtInfo', { mt: shaftFmt(L.MtEl, 1) }) : '');
         const same = el.FtDir.slice(1) === el.FrDir.slice(1);
         info.innerHTML = '';
         const wrap = document.createElement('div');
@@ -538,7 +542,7 @@ function calculateShaftBeam(t, Mt) {
   if (!res.ok) {
     warnings.push(t.shaftBeamSupportsErr);
     for (const id of ['shaftBeamRA', 'shaftBeamRB', 'shaftBeamC', 'shaftBeamCrit']) setTxt(id, '--');
-    for (const id of ['shaftBeamRASub', 'shaftBeamRBSub', 'shaftBeamCSub', 'shaftBeamCritSub', 'shaftSecInfo']) setTxt(id, '');
+    for (const id of ['shaftBeamRASub', 'shaftBeamRBSub', 'shaftBeamCSub', 'shaftBeamCritSub', 'shaftSecInfo', 'shaftBeamLifeInfo']) setTxt(id, '');
     renderShaftBeamWarnings(warnings);
     const svg = document.getElementById('shaftBeamChart'); if (svg) svg.innerHTML = '';
     return;
@@ -561,6 +565,17 @@ function calculateShaftBeam(t, Mt) {
   const CA = shaftBearingC(res.RA.R, bi.life, bi.bearingType), CB = shaftBearingC(res.RB.R, bi.life, bi.bearingType);
   setTxt('shaftBeamC', `${kN(CA)} / ${kN(CB)} kN`);
   setTxt('shaftBeamCSub', `C = R · L^(1/${bi.bearingType === 'roller' ? '3.33' : '3'}), L = ${shaftFmt(bi.life, 1)}·10⁶`);
+  // life in hours (speed known when the torque comes from power and speed) and life with catalog ratings
+  const nRpm = document.getElementById('shaftTorqueInput')?.value === 'torque' ? 0 : shaftVal('shaftSpeed', 0);
+  const lifeLines = [];
+  if (nRpm > 0) lifeLines.push(shaftText(t, 'shaftLifeHours', { l: shaftFmt(bi.life, 1), h: shaftFmt(bi.life * 1e6 / (60 * nRpm), 0), n: shaftFmt(nRpm, 0) }));
+  for (const [cId, R, name] of [['shaftBearingCA', res.RA.R, n1], ['shaftBearingCB', res.RB.R, n2]]) {
+    const Ccat = shaftVal(cId, 0) * 1000;
+    if (!(Ccat > 0)) continue;
+    const lf = shaftBearingLife(Ccat, R, bi.bearingType, nRpm);
+    lifeLines.push(shaftText(t, 'shaftLifeCatalog', { p: name, lp: shaftFmt(lf.L, 1), hp: lf.hours === null ? '—' : shaftFmt(lf.hours, 0) }));
+  }
+  setTxt('shaftBeamLifeInfo', lifeLines.join('\n'));
   const cr = res.critical;
   const crName = (res.labels.points.find(p => Math.abs(p.x - cr.x) < 1e-6) || {}).name;
   setTxt('shaftBeamCrit', shaftText(t, 'shaftBeamCritFmt', { x: shaftFmt(cr.x, 1) }) + (crName ? ` (${crName})` : ''));

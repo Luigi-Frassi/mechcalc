@@ -687,6 +687,44 @@ for (const [a, z1, z2, phi, g1, g2, psi] of [
     rel('2023-01-18  X a N3=607766 cicli, carico −5%', chk(1.2 * 0.95 * Mt1, 0.95 * Mt1, keL, 607766, lu).Xfatigue, 1.8, 0.005, 'N3 esatto 628000: arrotondamenti amplificati da m=8.85');
   }
 
+  // quota di coppia per elemento (share) e ruote folli: gli stessi esami senza ricorrere alle forze generiche
+  {
+    const Q = vm.runInContext('({ shaftBeam })', ctx);
+    const Mt19 = 50000 / omega(220);
+    const b19 = Q.shaftBeam({ xA: 70, xB: 163.75, Mt: Mt19, theta: 20, elements: [
+      { type: 'gear', x: 20, d: 60, FtDir: '+V', FrDir: '+H', torque: 'out', share: 0.5 },
+      { type: 'gear', x: 132.5, d: 150, FtDir: '-H', FrDir: '-V', torque: 'in' },
+      { type: 'gear', x: 195, d: 60, FtDir: '+V', FrDir: '+H', torque: 'out', share: 0.5 }] });
+    rel('2019-02-04v  ruote con quota 50 %: Ft ruota A [N]', b19.loads[0].Ft, 36167, 0.001);
+    rel('2019-02-04v  ruote con quota 50 %: Mf in B [N·m]', b19.at(70).Mf, 1924, 0.002);
+    rel('2019-02-04v  ruote con quota 50 %: Mf in C [N·m]', b19.at(132.5).Mf, 1920, 0.002);
+    rel('2019-02-04v  ruote con quota 50 %: Mf in D [N·m]', b19.at(163.75).Mf, 1202, 0.002);
+    rel('2019-02-04v  torcente tra A e C = −Mt/2 [N·m]', b19.at(100).T, -Mt19 / 2, 1e-9);
+    rel('2019-02-04v  torcente tra C ed E = +Mt/2 [N·m]', b19.at(150).T, Mt19 / 2, 1e-9);
+    abs('2019-02-04v  torcente oltre E = 0 [N·m]', b19.at(200).T, 0, 1e-9);
+    const b04 = Q.shaftBeam({ xA: 90, xB: 340, L: 430, Mt: 800, elements: [
+      { type: 'gear', x: 15, d: 120, FtDir: '+V', FrDir: '+H', torque: 'out' },
+      { type: 'gear', x: 180, d: 300, FtDir: '+V', FrDir: '-H', torque: 'in', share: 2 },
+      { type: 'gear', x: 415, d: 120, FtDir: '-V', FrDir: '-H', torque: 'out' }] });
+    rel('2004-09-20  caso III con quota 200 % sulla ruota C: Mf in C [N·m]', b04.at(180).Mf, 466.7, 0.002);
+    rel('2004-09-20  caso III: torcente tra C ed E = +800 N·m', b04.at(300).T, 800, 1e-9);
+    const idl = Q.shaftBeam({ xA: 0, xB: 100, Mt: 100, elements: [{ type: 'gear', x: 50, d: 100, FtDir: '+V', FrDir: '+H', torque: 'none' }] });
+    rel('ruota folle: Ft dalla coppia della ruota [N]', idl.loads[0].Ft, 2000, 1e-9);
+    abs('ruota folle: nessuna torsione nell\'albero [N·m]', idl.at(50, 1).T, 0, 1e-12);
+  }
+
+  // durata dei cuscinetti con il C di catalogo (11/1/2010: sfere 108 kN in B, rulli 112 kN in D, Mt = 1338 N·m, 210 giri/min)
+  {
+    const Q = vm.runInContext('({ shaftBeam, shaftBearingLife })', ctx);
+    const b = Q.shaftBeam({ xA: 117.5, xB: 342.5, Mt: 1338, elements: [
+      { type: 'gear', x: 20, d: 240, FtDir: '+H', FrDir: '-V', torque: 'in' },
+      { type: 'gear', x: 290, d: 150, FtDir: '+V', FrDir: '-H', torque: 'out' }] });
+    const lB = Q.shaftBearingLife(108000, b.RA.R, 'ball', 210), lD = Q.shaftBearingLife(112000, b.RB.R, 'roller', 210);
+    rel('2010-01-11  shaftBearingLife: sfere B [10⁶ giri]', lB.L, 417, 0.03, 'Luigi usa R arrotondata 10.8·Mt');
+    rel('2010-01-11  shaftBearingLife: rulli D [10⁶ giri]', lD.L, 427, 0.02);
+    rel('2010-01-11  shaftBearingLife: rulli D [h]', lD.hours, 33900, 0.02, 'Luigi scrive 33 000 h: 427·10⁶/(60·210) = 33 900');
+  }
+
   // carico massimo a d assegnato (shaftMaxLoad): stesso risultato del ridimensionamento X ∝ 1/carico usato negli esami
   {
     const M = vm.runInContext('({ shaftMaxLoad, shaftCheck })', ctx);

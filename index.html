@@ -1032,6 +1032,22 @@
             <option value="roller" data-i18n="optRoller">Roller (p = 10/3)</option>
           </select>
         </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftBearingCALabel">Catalog C, bearing 1</label>
+          <div class="relative">
+            <input type="number" id="shaftBearingCA" value="0" min="0" step="any" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">kN</span>
+          </div>
+          <p class="text-xs text-slate-500 mt-1" data-i18n="shaftCatalogSub">0 = not chosen yet</p>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftBearingCBLabel">Catalog C, bearing 2</label>
+          <div class="relative">
+            <input type="number" id="shaftBearingCB" value="0" min="0" step="any" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <span class="absolute right-3 top-2.5 text-slate-400 font-medium text-xs">kN</span>
+          </div>
+          <p class="text-xs text-slate-500 mt-1" data-i18n="shaftCatalogSub">0 = not chosen yet</p>
+        </div>
       </div>
       </div>
 
@@ -1067,7 +1083,12 @@
             <select id="shaftEl1Torque" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
               <option value="in" selected data-i18n="optTorqueIn">Torque in (driven by)</option>
               <option value="out" data-i18n="optTorqueOut">Torque out (drives)</option>
+              <option value="none" data-i18n="optTorqueNone">None (idler gear)</option>
             </select>
+          </div>
+          <div class="" id="colShaftEl1Share">
+            <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1" data-i18n="shaftElShareLabel">Share of Mt</label>
+            <div class="relative"><input type="number" id="shaftEl1Share" value="100" step="any" min="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"><span class="absolute right-2 top-2.5 text-slate-500 text-[10px]">%</span></div>
           </div>
           <div class="" id="colShaftEl1FtDir">
             <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1" data-i18n="shaftElFtLabel">Ft direction</label>
@@ -1141,7 +1162,12 @@
             <select id="shaftEl2Torque" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
               <option value="in" data-i18n="optTorqueIn">Torque in (driven by)</option>
               <option value="out" selected data-i18n="optTorqueOut">Torque out (drives)</option>
+              <option value="none" data-i18n="optTorqueNone">None (idler gear)</option>
             </select>
+          </div>
+          <div class="" id="colShaftEl2Share">
+            <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1" data-i18n="shaftElShareLabel">Share of Mt</label>
+            <div class="relative"><input type="number" id="shaftEl2Share" value="100" step="any" min="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"><span class="absolute right-2 top-2.5 text-slate-500 text-[10px]">%</span></div>
           </div>
           <div class="" id="colShaftEl2FtDir">
             <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1" data-i18n="shaftElFtLabel">Ft direction</label>
@@ -1215,7 +1241,12 @@
             <select id="shaftEl3Torque" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
               <option value="in" selected data-i18n="optTorqueIn">Torque in (driven by)</option>
               <option value="out" data-i18n="optTorqueOut">Torque out (drives)</option>
+              <option value="none" data-i18n="optTorqueNone">None (idler gear)</option>
             </select>
+          </div>
+          <div class="" id="colShaftEl3Share">
+            <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1" data-i18n="shaftElShareLabel">Share of Mt</label>
+            <div class="relative"><input type="number" id="shaftEl3Share" value="100" step="any" min="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"><span class="absolute right-2 top-2.5 text-slate-500 text-[10px]">%</span></div>
           </div>
           <div class="" id="colShaftEl3FtDir">
             <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1" data-i18n="shaftElFtLabel">Ft direction</label>
@@ -1289,7 +1320,12 @@
             <select id="shaftEl4Torque" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
               <option value="in" data-i18n="optTorqueIn">Torque in (driven by)</option>
               <option value="out" selected data-i18n="optTorqueOut">Torque out (drives)</option>
+              <option value="none" data-i18n="optTorqueNone">None (idler gear)</option>
             </select>
+          </div>
+          <div class="" id="colShaftEl4Share">
+            <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1" data-i18n="shaftElShareLabel">Share of Mt</label>
+            <div class="relative"><input type="number" id="shaftEl4Share" value="100" step="any" min="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"><span class="absolute right-2 top-2.5 text-slate-500 text-[10px]">%</span></div>
           </div>
           <div class="" id="colShaftEl4FtDir">
             <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1" data-i18n="shaftElFtLabel">Ft direction</label>
@@ -1353,6 +1389,7 @@
           <span class="text-xs font-medium text-slate-400" id="shaftBeamCTitle">Required bearing C (A / B)</span>
           <div class="text-xl font-bold text-amber-400 mt-1" id="shaftBeamC">--</div>
           <div class="text-[11px] text-slate-500 mt-0.5" id="shaftBeamCSub"></div>
+          <div class="text-[11px] text-emerald-400/90 mt-1 font-mono" id="shaftBeamLifeInfo"></div>
         </div>
         <div class="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
           <span class="text-xs font-medium text-slate-400" id="shaftBeamCritTitle" data-i18n="shaftBeamCritTitle">Most stressed section</span>
@@ -1790,6 +1827,15 @@
         shaftElGearDirs: "on the shaft: Ft {ft} · Fr {fr} (Fr points from the mesh to the shaft axis)",
         shaftEndViewTitle: "end view from B",
         shaftIsoTitle: "forces on the shaft · +H towards you",
+        optTorqueNone: "None (idler gear)",
+        shaftBearingCALabel: "Catalog C, bearing 1",
+        shaftBearingCBLabel: "Catalog C, bearing 2",
+        shaftCatalogSub: "0 = not chosen yet",
+        shaftLifeHours: "L = {l}·10⁶ rev = {h} h at {n} rpm",
+        shaftLifeCatalog: "with catalog C: {p} {lp}·10⁶ rev ({hp} h)",
+        shaftElShareLabel: "Share of Mt",
+        shaftElMtInfo: "element torque {mt} N·m",
+        shaftElIdlerInfo: "idler: forces from {mt} N·m, no torque in the shaft",
         optNotchCombined: "Shoulder + keyway",
         optKeyGiven: "ke given in the problem",
         shaftKeyKeLabel: "Keyway ke (bending)",
@@ -1809,7 +1855,7 @@
         optRoller: "Roller (p = 10/3)",
         shaftBearingTypeLabel: "Bearing type",
         shaftElementsTitle: "Elements on the shaft (x from the left end)",
-        shaftElementsHint: "Gear forces: Ft = 2·Mt/d, Fr = Ft·tanθ/cosα, Fa = Ft·tanα. Directions are those of the forces acting ON THE SHAFT. Vertical plane V: +V ↑ up. Horizontal plane H: +H ⊙ out of the drawing (towards you), −H ⊗ into the drawing. Fr always points from the mesh point towards the shaft axis; Ft is tangent at the mesh point. The oblique view of the shaft and the end view (seen from B) show the result.",
+        shaftElementsHint: "Gear forces: Ft = 2·Mt/d, Fr = Ft·tanθ/cosα, Fa = Ft·tanα, with the element torque = share × Mt (e.g. 50 % when two users split the power; for an idler gear choose torque \"None\"). Directions are those of the forces acting ON THE SHAFT. Vertical plane V: +V ↑ up. Horizontal plane H: +H ⊙ out of the drawing (towards you), −H ⊗ into the drawing. Fr always points from the mesh point towards the shaft axis; Ft is tangent at the mesh point. The oblique view of the shaft and the end view (seen from B) show the result.",
         optElNone: "—",
         optElGear: "Gear",
         optElCoupling: "Coupling / torque only",
@@ -2169,6 +2215,15 @@
         shaftElGearDirs: "sull'albero: Ft {ft} · Fr {fr} (Fr va dal punto di contatto verso l'asse)",
         shaftEndViewTitle: "vista da B",
         shaftIsoTitle: "forze sull'albero · +H verso di te",
+        optTorqueNone: "Nessuna (ruota folle)",
+        shaftBearingCALabel: "C catalogo, cuscinetto 1",
+        shaftBearingCBLabel: "C catalogo, cuscinetto 2",
+        shaftCatalogSub: "0 = non ancora scelto",
+        shaftLifeHours: "L = {l}·10⁶ giri = {h} h a {n} giri/min",
+        shaftLifeCatalog: "con C catalogo: {p} {lp}·10⁶ giri ({hp} h)",
+        shaftElShareLabel: "Quota di Mt",
+        shaftElMtInfo: "coppia dell'elemento {mt} N·m",
+        shaftElIdlerInfo: "ruota folle: forze da {mt} N·m, nessuna torsione nell'albero",
         optNotchCombined: "Spallamento + cava linguetta",
         optKeyGiven: "ke dato dal testo",
         shaftKeyKeLabel: "ke linguetta (flessione)",
@@ -2188,7 +2243,7 @@
         optRoller: "A rulli (p = 10/3)",
         shaftBearingTypeLabel: "Tipo di cuscinetto",
         shaftElementsTitle: "Elementi sull'albero (x dall'estremità sinistra)",
-        shaftElementsHint: "Forze delle ruote: Ft = 2·Mt/d, Fr = Ft·tanθ/cosα, Fa = Ft·tanα. I versi sono quelli delle forze che agiscono SULL'ALBERO. Piano verticale V: +V ↑ verso l'alto. Piano orizzontale H: +H ⊙ uscente dal foglio (verso chi guarda), −H ⊗ entrante nel foglio. Fr va sempre dal punto di contatto verso l'asse dell'albero; Ft è tangente nel punto di contatto. La vista in prospettiva dell'albero e la vista di testa (da B) mostrano il risultato.",
+        shaftElementsHint: "Forze delle ruote: Ft = 2·Mt/d, Fr = Ft·tanθ/cosα, Fa = Ft·tanα, con la coppia dell'elemento = quota × Mt (per esempio 50 % se due utenze si dividono la potenza; per una ruota folle scegli \"Nessuna\"). I versi sono quelli delle forze che agiscono SULL'ALBERO. Piano verticale V: +V ↑ verso l'alto. Piano orizzontale H: +H ⊙ uscente dal foglio (verso chi guarda), −H ⊗ entrante nel foglio. Fr va sempre dal punto di contatto verso l'asse dell'albero; Ft è tangente nel punto di contatto. La vista in prospettiva dell'albero e la vista di testa (da B) mostrano il risultato.",
         optElNone: "—",
         optElGear: "Ruota dentata",
         optElCoupling: "Giunto / solo coppia",
@@ -3019,14 +3074,14 @@
         const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
         set('shaftTorqueInput', 'power'); set('shaftPower', 30); set('shaftSpeed', 200);
         set('shaftLength', 320); set('shaftXA', 0); set('shaftXB', 240); set('shaftAxialBearing', 'A'); set('shaftTheta', 20);
-        set('shaftBearingLife', 10); set('shaftBearingType', 'ball');
+        set('shaftBearingLife', 10); set('shaftBearingType', 'ball'); set('shaftBearingCA', 0); set('shaftBearingCB', 0);
         const els = [
           { type: 'gear', x: 67.5, d: 210, helix: 0, torque: 'in', ft: '-H', fr: '+V' },
           { type: 'gear', x: 305, d: 105, helix: 0, torque: 'out', ft: '-H', fr: '-V' },
           { type: 'none' }, { type: 'none' }];
         els.forEach((e, i) => {
           const p = 'shaftEl' + (i + 1);
-          set(p + 'Type', e.type);
+          set(p + 'Type', e.type); set(p + 'Share', 100);
           if (e.type === 'gear') { set(p + 'X', e.x); set(p + 'D', e.d); set(p + 'Helix', e.helix); set(p + 'Torque', e.torque); set(p + 'FtDir', e.ft); set(p + 'FrDir', e.fr); }
         });
         set('shaftSecX', 240);
