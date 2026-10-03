@@ -772,6 +772,21 @@ for (const [a, z1, z2, phi, g1, g2, psi] of [
     abs('2006-09-21  rinvio con gli angoli: nessuna torsione nell\'albero', idler('ccw').at(40).T, 0, 1e-12);
   }
 
+  // sezione critica sulle sezioni reali (shaftSectionsCheck): 18/1/2023, la gola di scarico D (Ø40, r=8) è più critica
+  // della sede del cuscinetto B (Ø70), anche se in B il momento flettente è più alto
+  {
+    const Q = vm.runInContext('({ shaftBeam, shaftSectionsCheck })', ctx);
+    const b = Q.shaftBeam({ xA: 8, xB: 120, L: 222, Mt: 784.7, theta: 20, elements: [
+      { type: 'gear', x: 150, d: 120, FtDir: '-H', FrDir: '-V', torque: 'in' },
+      { type: 'gear', x: 202, d: 52, FtDir: '-H', FrDir: '+V', torque: 'out' }] });
+    const mat = { sigmaR: 1200, sigmaS: 900, sigmaLF: 550, cycles: 135000, finish: 'd' };
+    const sc = Q.shaftSectionsCheck(b, [{ x: 120, d: 70 }, { x: 173, d: 40, D: 120, r: 8 }], mat);
+    abs('2023-01-18  trave: Mf massimo sul cuscinetto B', b.critical.x, 120, 1e-9);
+    abs('2023-01-18  sezioni reali: la più critica è la gola D (x = 173)', sc.worst.x, 173, 1e-9);
+    rel('2023-01-18  sezioni reali: X nella gola alla coppia massima della soluzione', sc.worst.check.Xfatigue, 2.0, 0.02, 'Ke dai diagrammi 1.44 invece di 1.40');
+    abs('2023-01-18  sezioni reali: la sede del cuscinetto B ha X molto più alto', sc.rows[0].X > 2 * sc.worst.X ? 1 : 0, 1, 0);
+  }
+
   // carico massimo a d assegnato (shaftMaxLoad): stesso risultato del ridimensionamento X ∝ 1/carico usato negli esami
   {
     const M = vm.runInContext('({ shaftMaxLoad, shaftCheck })', ctx);

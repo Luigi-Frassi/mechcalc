@@ -309,6 +309,17 @@ with sync_playwright() as p:
     pg4 = new_page(); pg4.goto(BASE + q06); settle(pg4)
     lt = pg4.evaluate("document.getElementById('shaftLifeRes').innerText + ' | ' + document.getElementById('shaftMinerRes').innerText")
     check('alberi: vita con X richiesto (250 h) e Miner (D 0.310, 172 h) come nel 13/1/2006', '250 h' in lt and 'D = 0.310' in lt and '172 h' in lt, lt)
+    # 18/1/2023: sezioni reali, la gola Ø40 r=8 è più critica della sede del cuscinetto Ø70; il bottone la porta nella verifica
+    q23 = ('?m=shafts&lang=it&shaftTorqueInput=torque&shaftMt=784.7&shaftLength=222&shaftXA=8&shaftXB=120'
+           '&shaftEl1X=150&shaftEl1D=120&shaftEl1FtDir=-H&shaftEl1FrDir=-V&shaftEl2X=202&shaftEl2D=52&shaftEl2FtDir=-H&shaftEl2FrDir=%2BV'
+           '&shaftSigmaR=1200&shaftSigmaS=900&shaftSigmaLF=550&shaftLife=finite&shaftCycles=135000&shaftFinish=d&shaftX=2'
+           '&shaftRs1X=120&shaftRs1D=70&shaftRs2X=173&shaftRs2D=40&shaftRs2DD=120&shaftRs2R=8')
+    pg5 = new_page(); pg5.goto(BASE + q23); settle(pg5)
+    w = pg5.evaluate("document.getElementById('shaftRealSecWorst').innerText + ' | ' + document.getElementById('shaftBeamCrit').innerText")
+    check('alberi: sezioni reali (2023): più critica la gola x = 173, non il massimo di Mf', 'x = 173.0 mm (Ø40)' in w and 'x = 120.0' in w, w)
+    pg5.click('#shaftCheckWorst'); settle(pg5)
+    x5 = pg5.evaluate("document.getElementById('shaftNotchType').value + ' ' + document.getElementById('shaftDcheck').value + ' ' + document.getElementById('shaftRes3').innerText")
+    check('  "Verifica questa sezione" porta d, D, r e intaglio nella verifica (X ≈ 1.97)', x5.startswith('shoulder 40') and '1.97' in x5, x5)
     check('  quota e coppia "nessuna" nel selettore', pg3.evaluate("[...document.getElementById('shaftEl1Torque').options].some(o => o.value === 'none')"))
 
     check('  progetto: scheda carico massimo nascosta', pg.evaluate("document.getElementById('shaftMaxCard').classList.contains('hidden')"))

@@ -472,6 +472,33 @@ function shaftBeam({ xA, xB, elements, Mt, theta = 20, axialBearing = 'A', L = n
 }
 
 /**
+ * Check of several real sections along the shaft (diameter, shoulder, fillet, keyway), with the loads of the beam.
+ * The most stressed section is the one with the lowest safety factor, not the one with the largest Mf
+ * (a small groove can be worse than a bearing seat with a higher moment).
+ * beam = result of shaftBeam; sections = [{ x, d, D, r, keyway }]; mat = { sigmaR, sigmaS, sigmaLF, cycles, finish,
+ * bendingCycle, torsionCycle, key: { key, condition, keyKe, keyKeT } }.
+ * Returns { rows: [{ x, d, D, r, keyway, Mf, Mt, N, check, X }], worst } (worst = row with the lowest X).
+ */
+function shaftSectionsCheck(beam, sections, mat) {
+  const rows = (sections || []).filter(s => s && s.d > 0 && Number.isFinite(s.x)).map(sec => {
+    const l = beam.at(sec.x, -1), r = beam.at(sec.x, 1);
+    const side = r.Mf >= l.Mf ? r : l;
+    const T = Math.abs(l.T) > Math.abs(r.T) ? l.T : r.T;
+    const shoulder = sec.D > sec.d && sec.r > 0;
+    const key = mat.key || { key: 'sled', condition: 'annealed' };
+    const notch = shoulder
+      ? (sec.keyway ? { type: 'combined', Dd: sec.D / sec.d, r: sec.r, ...key } : { type: 'shoulder', Dd: sec.D / sec.d, r: sec.r })
+      : (sec.keyway ? { type: 'keyway', ...key } : { type: 'none' });
+    const check = shaftCheck({ loads: { Mf: side.Mf, bendingCycle: mat.bendingCycle || 'rotating', Mt: Math.abs(T),
+      torsionCycle: mat.torsionCycle || 'static', N: side.N }, sigmaR: mat.sigmaR, sigmaS: mat.sigmaS, sigmaLF: mat.sigmaLF,
+      cycles: mat.cycles || 0, finish: mat.finish, notch }, sec.d);
+    return { ...sec, Mf: side.Mf, Mt: Math.abs(T), N: side.N, notch, check, X: Math.min(check.Xfatigue, check.Xyield) };
+  });
+  const worst = rows.reduce((w, r) => (!w || r.X < w.X ? r : w), null);
+  return { rows, worst };
+}
+
+/**
  * Point names as in the course solutions: A and B are the shaft ends (x = 0 and x = L),
  * then C, D, E, ... are the bearings and the elements from left to right.
  * A bearing or element exactly at an end takes the name of that end; points at the same x share a name.

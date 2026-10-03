@@ -636,6 +636,59 @@ function calculateShaftBeam(t, Mt) {
 
   renderShaftBeamWarnings(warnings);
   drawShaftBeamChart(res, bi, xs, t);
+  renderShaftRealSections(res, t);
+}
+
+// ---- real sections: check each one with the section-panel material and pick the lowest X
+let lastShaftRealSections = null;
+
+function renderShaftRealSections(res, t) {
+  const table = document.getElementById('shaftRealSecTable');
+  if (!table) return;
+  const sections = [1, 2, 3, 4].map(i => ({
+    x: shaftVal('shaftRs' + i + 'X', 0), d: shaftVal('shaftRs' + i + 'D', 0), D: shaftVal('shaftRs' + i + 'DD', 0),
+    r: shaftVal('shaftRs' + i + 'R', 0), keyway: document.getElementById('shaftRs' + i + 'Key')?.value === '1'
+  })).filter(sec => sec.d > 0);
+  const { inp, Xreq } = readShaftInputs();
+  const n = inp.notch || {};
+  const key = { key: document.getElementById('shaftKeyType')?.value || 'sled', condition: document.getElementById('shaftKeyCond')?.value || 'annealed',
+    keyKe: shaftVal('shaftKeyKe', 1), keyKeT: shaftVal('shaftKeyKeT', 1) };
+  const out = sections.length ? shaftSectionsCheck(res, sections, { sigmaR: inp.sigmaR, sigmaS: inp.sigmaS, sigmaLF: inp.sigmaLF, cycles: inp.cycles,
+    finish: inp.finish, bendingCycle: inp.loads.bendingCycle, torsionCycle: inp.loads.torsionCycle, key }) : { rows: [], worst: null };
+  lastShaftRealSections = out;
+  const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.innerText = v; };
+  shaftShow('shaftCheckWorst', !!out.worst);
+  if (!out.rows.length) { table.innerHTML = ''; setTxt('shaftRealSecWorst', ''); return; }
+  const head = t.shaftRealSecHead.split('|');
+  const col = x => x >= Xreq - 1e-9 ? 'text-emerald-400' : 'text-amber-400';
+  let h = '<tr class="text-slate-500 text-[10px] uppercase">' + head.map(c => `<th class="text-left font-semibold py-1 pr-3">${c}</th>`).join('') + '</tr>';
+  for (const r of out.rows) {
+    const worst = r === out.worst;
+    const geo = r.D > r.d && r.r > 0 ? `Ø${shaftFmt(r.d, 0)} / Ø${shaftFmt(r.D, 0)}, r ${shaftFmt(r.r, 1)}` : `Ø${shaftFmt(r.d, 0)}`;
+    h += `<tr class="${worst ? 'bg-rose-500/10' : ''} border-t border-slate-800">` +
+      `<td class="py-1 pr-3">${shaftFmt(r.x, 1)}</td><td class="pr-3">${geo}${r.keyway ? ' + ⌐' : ''}</td>` +
+      `<td class="pr-3">${shaftFmt(r.Mf, 0)}</td><td class="pr-3">${shaftFmt(r.Mt, 0)}</td><td class="pr-3">${shaftFmt(r.check.ke, 2)}</td>` +
+      `<td class="pr-3 ${col(r.check.Xfatigue)}">${shaftFmt(r.check.Xfatigue, 2)}</td><td class="${col(r.check.Xyield)}">${shaftFmt(r.check.Xyield, 2)}</td></tr>`;
+  }
+  table.innerHTML = h;
+  setTxt('shaftRealSecWorst', shaftText(t, 'shaftRealSecWorstFmt', { x: shaftFmt(out.worst.x, 1), d: shaftFmt(out.worst.d, 0), X: shaftFmt(out.worst.X, 2) }));
+}
+
+// Sends the most critical real section to the Check tab (loads, diameters and notch)
+function shaftCheckWorstSection() {
+  const w = lastShaftRealSections && lastShaftRealSections.worst;
+  if (!w) return;
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+  set('shaftMf', Math.round(w.Mf * 10) / 10);
+  set('shaftAxial', Math.round(w.N));
+  const tq = document.getElementById('shaftSecTorque');
+  if (tq) tq.checked = w.Mt > 1e-6;
+  set('shaftDcheck', w.d);
+  const shoulder = w.D > w.d && w.r > 0;
+  if (shoulder) { set('shaftDDcheck', w.D); set('shaftR', w.r); }
+  set('shaftNotchType', shoulder ? (w.keyway ? 'combined' : 'shoulder') : (w.keyway ? 'keyway' : 'none'));
+  shaftSeatAuto = false;
+  setShaftMode('check');
 }
 
 // Internal actions at a section: the side (just left / just right of a load) with the larger bending moment
