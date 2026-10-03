@@ -125,6 +125,10 @@ Each `ui/*.js` file depends on the matching `core/*.js` file, so `index.html` lo
 
 ---
 
+## 📄 Calculation Reports
+
+The **Report** button (shafts module, more modules coming) opens a printable A4 calculation report, saved as PDF from the browser's print dialog: design data, shaft layout and gear forces with the force previews, reactions and bearings, V / H / resultant / torque diagrams, critical and real sections, the section design or check with every formula and substituted value, Goodman diagram and sketch, life and maximum load, the dimensions to take into CAD, assumptions, and a link that reopens the same calculation. It is generated entirely in the browser.
+
 ## ✅ Validation
 
 The gear module is checked against worked exam problems of the course *Costruzione di Macchine* (exam papers 2018–2022, solved by hand): spur and helical $W_{\max}$, Hertz face-width factor $\phi$ in design mode, Lewis stresses and the helical correction factors read from the chart.

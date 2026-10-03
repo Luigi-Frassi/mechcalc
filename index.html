@@ -90,6 +90,9 @@
         <p class="text-sm text-slate-400 leading-snug" id="moduleSubtitle">H7 Hole-Basis System. Interactive matrix, reverse lookup, and unit conversion.</p>
       </div>
       <div class="flex items-center gap-2 md:gap-3 shrink-0 pt-0.5">
+        <button type="button" id="reportBtn" onclick="openReport()" class="hidden flex items-center gap-1.5 bg-blue-600/90 hover:bg-blue-500 px-2.5 py-1.5 rounded-lg border border-blue-500 text-xs font-semibold text-white transition-colors" data-i18n-title="reportTitle" title="Calculation report (PDF)">
+          <span aria-hidden="true">📄</span><span class="hidden sm:inline" data-i18n="reportBtn">Report</span>
+        </button>
         <button type="button" class="js-share-btn flex items-center gap-1.5 bg-slate-800/80 hover:bg-slate-700 px-2.5 py-1.5 rounded-lg border border-slate-700 text-xs font-semibold text-slate-300 hover:text-white transition-colors" data-i18n-title="shareTitle" title="Copy a link to this calculation">
           <span aria-hidden="true">🔗</span><span class="hidden sm:inline" data-i18n="shareBtn">Share</span>
         </button>
@@ -1950,6 +1953,8 @@
         shaftEndViewTitle: "end view from B",
         shaftIsoTitle: "forces on the shaft · +H towards you",
         optTorqueNone: "None (idler gear)",
+        reportBtn: "Report",
+        reportTitle: "Calculation report: opens a printable page, save it as PDF",
         shaftRealSecTitle: "Real sections: which one is really critical? (optional)",
         shaftRealSecHint: "The largest bending moment is not always the critical section: a small diameter or a sharp notch can be worse. Enter the real sections (x, diameter d, shoulder diameter D and fillet r, keyway): each is checked with material, finish, life and X of the Design/Check tabs, and the one with the lowest X is the critical one. A groove is a shoulder with D = the adjacent diameter.",
         shaftRealSecLabel: "Section",
@@ -2376,6 +2381,8 @@
         shaftEndViewTitle: "vista da B",
         shaftIsoTitle: "forze sull'albero · +H verso di te",
         optTorqueNone: "Nessuna (ruota folle)",
+        reportBtn: "Relazione",
+        reportTitle: "Relazione di calcolo: apre una pagina stampabile, salvala come PDF",
         shaftRealSecTitle: "Sezioni reali: qual è davvero la più critica? (facoltativo)",
         shaftRealSecHint: "Il momento flettente massimo non è sempre la sezione critica: un diametro piccolo o un intaglio stretto possono essere peggio. Inserisci le sezioni reali (x, diametro d, diametro dello spallamento D e raccordo r, linguetta): ognuna viene verificata con materiale, finitura, vita e X delle schede Progetto/Verifica, e la più critica è quella con X minore. Una gola di scarico è uno spallamento con D = diametro adiacente.",
         shaftRealSecLabel: "Sezione",
@@ -2721,6 +2728,8 @@
 
     function switchModule(mod) {
       activeModule = mod;
+      const repBtn = document.getElementById('reportBtn');
+      if (repBtn) repBtn.classList.toggle('hidden', mod !== 'shafts');
       const bFits = document.getElementById('navBtnFits');
       const bBelts = document.getElementById('navBtnBelts');
       const bGears = document.getElementById('navBtnGears');
@@ -3304,6 +3313,7 @@
   <script src="modules/ui/gears-ui.js"></script>
   <script src="modules/core/shafts-core.js"></script>
   <script src="modules/ui/shafts-ui.js"></script>
+  <script src="modules/ui/report.js"></script>
   <script src="modules/ui/share.js"></script>
 
   <script>

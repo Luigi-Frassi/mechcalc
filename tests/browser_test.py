@@ -323,6 +323,16 @@ with sync_playwright() as p:
     pg5.click('#shaftCheckWorst'); settle(pg5)
     x5 = pg5.evaluate("document.getElementById('shaftNotchType').value + ' ' + document.getElementById('shaftDcheck').value + ' ' + document.getElementById('shaftRes3').innerText")
     check('  "Verifica questa sezione" porta d, D, r e intaglio nella verifica (X ≈ 1.97)', x5.startswith('shoulder 40') and '1.97' in x5, x5)
+    # relazione di calcolo: il bottone apre una pagina con i capitoli, i numeri del progetto e i diagrammi
+    pg6 = new_page(); pg6.goto(BASE + '?m=shafts&lang=it'); settle(pg6)
+    pg6.evaluate("loadDemoPreset('shaftExam')"); settle(pg6)
+    with ctx.expect_page() as rp:
+        pg6.click('#reportBtn')
+    rep = rp.value; rep.wait_for_load_state()
+    body = rep.evaluate("document.body.textContent")
+    svgs = rep.evaluate("document.querySelectorAll('svg').length")
+    check('relazione di calcolo (alberi): capitoli, Mf 1887, d = 65 e diagrammi', all(k in body for k in ['Relazione di calcolo', 'Reazioni vincolari', 'Retta di Goodman', 'Quote per il CAD', '1.887', 'd = 65 mm']) and svgs >= 5, f'svg={svgs} missing=' + str([k for k in ['Relazione di calcolo', 'Reazioni vincolari', 'Retta di Goodman', 'Quote per il CAD', '1.887', 'd = 65 mm'] if k not in body]))
+    check('  bottone Relazione nascosto fuori dal modulo alberi', pg6.evaluate("switchModule('gears'); document.getElementById('reportBtn').classList.contains('hidden')"))
     check('  quota e coppia "nessuna" nel selettore', pg3.evaluate("[...document.getElementById('shaftEl1Torque').options].some(o => o.value === 'none')"))
 
     check('  progetto: scheda carico massimo nascosta', pg.evaluate("document.getElementById('shaftMaxCard').classList.contains('hidden')"))
