@@ -751,6 +751,27 @@ for (const [a, z1, z2, phi, g1, g2, psi] of [
     abs('vita con X richiesto: a metà carico la vita è infinita', inf.infinite ? 1 : 0, 1, 0);
   }
 
+  // versi delle forze dalla posizione della ruota coniugata e dal senso di rotazione (dirMode 'mesh')
+  {
+    const Q = vm.runInContext('({ shaftBeam })', ctx);
+    const Mt03 = 30000 / omega(200);
+    const man = Q.shaftBeam({ xA: 0, xB: 240, Mt: Mt03, theta: 20, elements: [
+      { type: 'gear', x: 67.5, d: 210, FtDir: '-H', FrDir: '+V', torque: 'in' },
+      { type: 'gear', x: 305, d: 105, FtDir: '-H', FrDir: '-V', torque: 'out' }] });
+    const mesh = Q.shaftBeam({ xA: 0, xB: 240, Mt: Mt03, theta: 20, rotation: 'ccw', elements: [
+      { type: 'gear', x: 67.5, d: 210, dirMode: 'mesh', meshAngle: 180, torque: 'in' },     // ruota coniugata sotto
+      { type: 'gear', x: 305, d: 105, dirMode: 'mesh', meshAngle: 0, torque: 'out' }] });   // ruota coniugata sopra
+    rel('2003-04-11  versi da ingranamento (antiorario visto da B): Mf in C come i versi manuali', mesh.at(240).Mf, man.at(240).Mf, 1e-12);
+    rel('2003-04-11  versi da ingranamento: reazione in A come i versi manuali', mesh.RA.R, man.RA.R, 1e-12);
+    // ruota di rinvio del 21/9/2006: due ingranamenti sulla stessa ruota a ±45°, motrice (coppia entrante) e condotta (uscente)
+    const idler = rot => Q.shaftBeam({ xA: 70, xB: 180, L: 200, Mt: 1, theta: 20, rotation: rot, elements: [
+      { type: 'gear', x: 12, d: 130, dirMode: 'mesh', meshAngle: 45, torque: 'in' },
+      { type: 'gear', x: 12, d: 130, dirMode: 'mesh', meshAngle: -45, torque: 'out' }] });
+    rel('2006-09-21  rinvio a ±45° con gli angoli: Mf sul cuscinetto, verso sfavorevole [·Mt]', idler('ccw').at(70).Mf, 1.72, 0.002);
+    rel('2006-09-21  rinvio a ±45° con gli angoli: Mf sul cuscinetto, verso favorevole [·Mt]', idler('cw').at(70).Mf, 0.8, 0.01);
+    abs('2006-09-21  rinvio con gli angoli: nessuna torsione nell\'albero', idler('ccw').at(40).T, 0, 1e-12);
+  }
+
   // carico massimo a d assegnato (shaftMaxLoad): stesso risultato del ridimensionamento X ∝ 1/carico usato negli esami
   {
     const M = vm.runInContext('({ shaftMaxLoad, shaftCheck })', ctx);

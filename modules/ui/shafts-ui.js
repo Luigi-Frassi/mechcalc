@@ -366,6 +366,8 @@ function readShaftBeamInputs(Mt) {
       helix: Math.max(0, Math.min(45, shaftVal(p + 'Helix', 0))),
       torque: g(p + 'Torque') || 'in',
       share: Math.max(0, shaftVal(p + 'Share', 100)) / 100,
+      dirMode: g(p + 'DirMode') === 'mesh' ? 'mesh' : 'manual',
+      meshAngle: shaftVal(p + 'Angle', 0),
       FtDir: g(p + 'FtDir') || '+V',
       FrDir: g(p + 'FrDir') || '+H',
       FaDir: g(p + 'FaDir') || '+x',
@@ -379,6 +381,7 @@ function readShaftBeamInputs(Mt) {
     theta: shaftVal('shaftTheta', 20),
     life: Math.max(0, shaftVal('shaftBearingLife', 10)),
     bearingType: g('shaftBearingType') === 'roller' ? 'roller' : 'ball',
+    rotation: g('shaftRotation') === 'cw' ? 'cw' : 'ccw',
     elements, Mt
   };
 }
@@ -388,15 +391,18 @@ let shaftSeatAuto = false;   // notch set to shoulder + keyway because the secti
 
 // Screen direction of a force in the end view seen from B, looking towards A (V up, +H to the left:
 // +H comes out of the side view towards the viewer, which from B is on the left)
-function shaftEndViewVec(dir) {
-  const [plane, sgn] = shaftDirVec(dir);
-  return plane === 'V' ? [0, -sgn] : [-sgn, 0];
+function shaftEndViewVec(vh) {
+  return [-vh[1], -vh[0]];
 }
 
-const SHAFT_DIR_WORDS = {
-  en: { '+V': '↑ +V', '-V': '↓ −V', '+H': '⊙ +H', '-H': '⊗ −H' },
-  it: { '+V': '↑ +V', '-V': '↓ −V', '+H': '⊙ +H', '-H': '⊗ −H' }
-};
+// Label of a force direction [v, h]: the axis name when it lies on V or H, otherwise its angle from +V towards +H
+function shaftDirWord(vh) {
+  const [v, h] = vh;
+  if (Math.abs(Math.abs(v) - 1) < 1e-6) return v > 0 ? '+V' : '−V';
+  if (Math.abs(Math.abs(h) - 1) < 1e-6) return h > 0 ? '+H ⊙' : '−H ⊗';
+  return `${shaftFmt(((Math.atan2(h, v) * 180 / Math.PI) + 360) % 360, 0)}°`;
+}
+
 
 // Oblique (cavalier) view of the whole shaft, horizontal, as in the hand solutions: x to the right, +V up,
 // +H towards the viewer (drawn down-left). The selected gear shows its mesh point and the forces Ft, Fr (and Fa)
@@ -410,15 +416,14 @@ function shaftGearIsoView(el, bi, labels, active, Mt, t) {
   const hx = -0.62, hy = 0.42;                            // screen vector of a unit +H (towards the viewer)
   const P = (x, v, h) => [X(x) + hx * h, ax - v + hy * h];
   const pt = p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`;
-  const vecOf = dir => { const [pl, sg] = shaftDirVec(dir); return pl === 'V' ? [sg, 0] : [0, sg]; };  // [v, h]
   const arrow = (a, b, col, w = 2.6) => {
     const ang = Math.atan2(b[1] - a[1], b[0] - a[0]), hd = 9;
     return `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${col}" stroke-width="${w}"/>` +
       `<polygon points="${b[0]},${b[1]} ${b[0] - hd * Math.cos(ang - 0.42)},${b[1] - hd * Math.sin(ang - 0.42)} ${b[0] - hd * Math.cos(ang + 0.42)},${b[1] - hd * Math.sin(ang + 0.42)}" fill="${col}"/>`;
   };
-  const disc = (x, R, stroke, fill, sw) => {
+  const disc = (x, R, stroke, fill, sw, v0 = 0, h0 = 0) => {
     const pts = [];
-    for (let i = 0; i <= 48; i++) { const a = i / 48 * 2 * Math.PI; pts.push(pt(P(x, R * Math.cos(a), R * Math.sin(a)))); }
+    for (let i = 0; i <= 48; i++) { const a = i / 48 * 2 * Math.PI; pts.push(pt(P(x, v0 + R * Math.cos(a), h0 + R * Math.sin(a)))); }
     return `<polygon points="${pts.join(' ')}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
   };
   let s = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" class="shrink-0 max-w-full h-auto bg-slate-950/60 rounded-lg border border-slate-800">`;
@@ -445,12 +450,14 @@ function shaftGearIsoView(el, bi, labels, active, Mt, t) {
   // the selected gear and its forces on the shaft
   const R = Math.max(26, Math.min(46, el.d / 5));
   s += disc(el.x, R, '#a855f7', 'rgba(168,85,247,0.10)', 1.6);
-  const [fv, fh] = vecOf(el.FrDir), [tv, th] = vecOf(el.FtDir);
-  const m3 = [-fv * R, -fh * R];                          // mesh point (v, h): opposite to Fr
+  const loads = shaftElementLoads(el, Mt, bi.theta, bi.rotation);
+  const [fv, fh] = loads.dirs.rU, [tv, th] = loads.dirs.tU, mu = loads.dirs.meshU;
+  const m3 = [mu[0] * R, mu[1] * R];                      // mesh point (v, h)
+  // mating gear (mesh mode), tangent at the mesh point
+  if (el.dirMode === 'mesh') s += disc(el.x, R * 0.55, 'rgba(148,163,184,0.55)', 'rgba(148,163,184,0.06)', 1, mu[0] * R * 1.55, mu[1] * R * 1.55);
   const M = P(el.x, m3[0], m3[1]);
   const len = 38, lenH = 52;                              // H looks shorter in the oblique view: longer arrow
   const tip = (v, h) => P(el.x, m3[0] + v * len, m3[1] + h * lenH);
-  const loads = shaftElementLoads(el, Mt, bi.theta);
   s += arrow(M, tip(fv, fh), '#f43f5e');
   s += arrow(M, tip(tv, th), '#34d399');
   // label just beyond the arrow tip, on the side the arrow points to
@@ -473,11 +480,11 @@ function shaftGearIsoView(el, bi, labels, active, Mt, t) {
 }
 
 // Small end view of a gear (seen from B): mesh point, Fr towards the axis, Ft tangent
-function shaftGearEndView(el, t, L) {
-  // viewBox 200 × 170, drawn at 260 px: big enough to read the directions at a glance
-  const c = 100, cy = 96, R = 52, len = 40;
-  const [fx, fy] = shaftEndViewVec(el.FrDir), [tx, ty] = shaftEndViewVec(el.FtDir);
-  const mx = c - fx * R, my = cy - fy * R;                   // mesh point: opposite to Fr
+function shaftGearEndView(el, dirs, rotation, t, L) {
+  // viewBox 200 × 196, drawn at 260 px: big enough to read the directions at a glance
+  const c = 120, cy = 112, R = 52, len = 40;
+  const [fx, fy] = shaftEndViewVec(dirs.rU), [tx, ty] = shaftEndViewVec(dirs.tU), [ux, uy] = shaftEndViewVec(dirs.meshU);
+  const mx = c + ux * R, my = cy + uy * R;                   // mesh point
   const arrow = (x1, y1, x2, y2, col) => {
     const a = Math.atan2(y2 - y1, x2 - x1), h = 9;
     return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="3"/>` +
@@ -494,28 +501,37 @@ function shaftGearEndView(el, t, L) {
     const anchor = nx > 0 ? 'start' : nx < 0 ? 'end' : 'middle';
     return `<text x="${lx}" y="${ly}" fill="${col}" font-size="11" font-weight="bold" text-anchor="${anchor}" font-family="monospace">${txt}</text>`;
   };
-  const words = { '+V': '+V', '-V': '−V', '+H': '+H ⊙', '-H': '−H ⊗' };
-  let s = `<svg viewBox="0 0 200 196" width="260" height="255" class="shrink-0 bg-slate-950/60 rounded-lg border border-slate-800">`;
+  let s = `<svg viewBox="0 0 240 228" width="290" height="276" class="shrink-0 bg-slate-950/60 rounded-lg border border-slate-800">`;
+  if (el.dirMode === 'mesh') {
+    // mating gear, tangent at the mesh point, and the rotation of the shaft as seen from B
+    const r2 = 18, gx = c + ux * (R + r2), gy = cy + uy * (R + r2);
+    s += `<circle cx="${gx}" cy="${gy}" r="${r2}" fill="rgba(148,163,184,0.08)" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3 2"/>`;
+    const ccw = rotation !== 'cw', rr = 20, a0 = -30 * Math.PI / 180, a1 = 210 * Math.PI / 180;
+    const Pa = a => [c + rr * Math.cos(a), cy - rr * Math.sin(a)];
+    const [sa, ea] = ccw ? [a0, a1] : [a1, a0], p0 = Pa(sa), p1 = Pa(ea);
+    s += `<path d="M ${p0[0]} ${p0[1]} A ${rr} ${rr} 0 1 ${ccw ? 0 : 1} ${p1[0]} ${p1[1]}" fill="none" stroke="#e2e8f0" stroke-width="1.6"/>`;
+    const tdx = (ccw ? -1 : 1) * -Math.sin(ea), tdy = (ccw ? -1 : 1) * -Math.cos(ea), hh = 7, an = Math.atan2(tdy, tdx);
+    s += `<polygon points="${p1[0] + tdx * 3},${p1[1] + tdy * 3} ${p1[0] - hh * Math.cos(an - 0.5)},${p1[1] - hh * Math.sin(an - 0.5)} ${p1[0] - hh * Math.cos(an + 0.5)},${p1[1] - hh * Math.sin(an + 0.5)}" fill="#e2e8f0"/>`;
+  }
   // axes of the end view: V up, H to the right (seen from A, +H out of the side view = to the right here)
-  s += `<line x1="${c}" y1="22" x2="${c}" y2="170" stroke="#334155" stroke-width="1" stroke-dasharray="4 3"/>`;
-  s += `<line x1="30" y1="${cy}" x2="170" y2="${cy}" stroke="#334155" stroke-width="1" stroke-dasharray="4 3"/>`;
-  s += `<text x="${c - 5}" y="24" text-anchor="end" fill="#38bdf8" font-size="10" font-family="monospace">+V</text>`;
-  s += `<text x="26" y="${cy + 4}" fill="#fbbf24" font-size="10" text-anchor="end" font-family="monospace">+H</text>`;
+  s += `<line x1="${c}" y1="${cy - 82}" x2="${c}" y2="${cy + 82}" stroke="#334155" stroke-width="1" stroke-dasharray="4 3"/>`;
+  s += `<line x1="${c - 82}" y1="${cy}" x2="${c + 82}" y2="${cy}" stroke="#334155" stroke-width="1" stroke-dasharray="4 3"/>`;
+  s += `<text x="${c - 5}" y="${cy - 76}" text-anchor="end" fill="#38bdf8" font-size="10" font-family="monospace">+V</text>`;
+  s += `<text x="${c - 86}" y="${cy + 4}" fill="#fbbf24" font-size="10" text-anchor="end" font-family="monospace">+H</text>`;
   s += `<circle cx="${c}" cy="${cy}" r="${R}" fill="rgba(168,85,247,0.06)" stroke="#a855f7" stroke-width="1.4" stroke-dasharray="5 3"/>`;
   s += `<circle cx="${c}" cy="${cy}" r="11" fill="rgba(203,213,225,0.25)" stroke="#cbd5e1" stroke-width="1.5"/>`;
   s += arrow(mx, my, mx + fx * len, my + fy * len, '#f43f5e');
   s += arrow(mx, my, mx + tx * len, my + ty * len, '#34d399');
   s += `<circle cx="${mx}" cy="${my}" r="4" fill="#e2e8f0"/>`;
-  s += lab(mx, my, fx, fy, `Fr ${words[el.FrDir]}`, '#f43f5e', [-tx, -ty]);
-  s += lab(mx, my, tx, ty, `Ft ${words[el.FtDir]}`, '#34d399');
-  s += `<text x="100" y="190" fill="#94a3b8" font-size="9.5" text-anchor="middle" font-family="monospace">${t.shaftEndViewTitle}${L ? ' · ' + L : ''}</text>`;
+  s += lab(mx, my, fx, fy, `Fr ${shaftDirWord(dirs.rU)}`, '#f43f5e', [-tx, -ty]);
+  s += lab(mx, my, tx, ty, `Ft ${shaftDirWord(dirs.tU)}`, '#34d399');
+  s += `<text x="${c}" y="222" fill="#94a3b8" font-size="9.5" text-anchor="middle" font-family="monospace">${t.shaftEndViewTitle}${L ? ' · ' + L : ''}</text>`;
   return s + '</svg>';
 }
 
 function calculateShaftBeam(t, Mt) {
   const bi = readShaftBeamInputs(Mt);
   const warnings = [];
-  const words = SHAFT_DIR_WORDS[currentLang] || SHAFT_DIR_WORDS.en;
   const active = bi.elements.filter(e => e.type !== 'none');
   const labels = shaftPointLabels(bi.xA, bi.xB, active.map(e => e.x), bi.L);
   const nameOf = el => labels.elements[active.indexOf(el)] || '';
@@ -524,7 +540,9 @@ function calculateShaftBeam(t, Mt) {
   for (const el of bi.elements) {
     const p = 'shaftEl' + el.slot, gear = el.type === 'gear', force = el.type === 'force', any = el.type !== 'none';
     shaftShow('col' + p[0].toUpperCase() + p.slice(1) + 'X', any);
-    for (const f of ['D', 'Helix', 'FtDir', 'FrDir']) shaftShow('colShaftEl' + el.slot + f, gear);
+    for (const f of ['D', 'Helix', 'DirMode']) shaftShow('colShaftEl' + el.slot + f, gear);
+    for (const f of ['FtDir', 'FrDir']) shaftShow('colShaftEl' + el.slot + f, gear && el.dirMode !== 'mesh');
+    shaftShow('colShaftEl' + el.slot + 'Angle', gear && el.dirMode === 'mesh');
     shaftShow('colShaftEl' + el.slot + 'FaDir', gear && el.helix > 0);
     shaftShow('colShaftEl' + el.slot + 'Torque', gear || el.type === 'coupling');
     shaftShow('colShaftEl' + el.slot + 'Share', gear || el.type === 'coupling');
@@ -534,17 +552,19 @@ function calculateShaftBeam(t, Mt) {
     const info = document.getElementById(p + 'Info');
     if (info) {
       if (gear) {
-        const L = shaftElementLoads(el, Mt, bi.theta);
+        const L = shaftElementLoads(el, Mt, bi.theta, bi.rotation);
+        const comp = `V ${shaftFmt(L.Fv, 0)} N · H ${shaftFmt(L.Fh, 0)} N`;
         const txt = shaftText(t, L.FaMag > 0 ? 'shaftElGearInfoA' : 'shaftElGearInfo',
           { ft: shaftFmt(L.Ft, 0), fr: shaftFmt(L.Fr, 0), fa: shaftFmt(L.FaMag, 0) }) +
-          ' · ' + shaftText(t, 'shaftElGearDirs', { ft: words[el.FtDir], fr: words[el.FrDir] }) +
+          ' · ' + shaftText(t, 'shaftElGearDirs', { ft: shaftDirWord(L.dirs.tU), fr: shaftDirWord(L.dirs.rU) }) +
+          (el.dirMode === 'mesh' ? ' · ' + shaftText(t, 'shaftElMeshInfo', { a: shaftFmt(el.meshAngle, 0), rot: bi.rotation === 'cw' ? t.optRotCw : t.optRotCcw, c: comp }) : '') +
           (el.torque === 'none' ? ' · ' + shaftText(t, 'shaftElIdlerInfo', { mt: shaftFmt(L.MtEl, 1) })
             : Math.abs(el.share - 1) > 1e-9 ? ' · ' + shaftText(t, 'shaftElMtInfo', { mt: shaftFmt(L.MtEl, 1) }) : '');
-        const same = el.FtDir.slice(1) === el.FrDir.slice(1);
+        const same = el.dirMode !== 'mesh' && el.FtDir.slice(1) === el.FrDir.slice(1);
         info.innerHTML = '';
         const wrap = document.createElement('div');
         wrap.className = 'flex flex-wrap items-center gap-4';
-        if (!same) wrap.innerHTML = shaftGearIsoView(el, bi, labels, active, Mt, t) + shaftGearEndView(el, t, nameOf(el));
+        if (!same) wrap.innerHTML = shaftGearIsoView(el, bi, labels, active, Mt, t) + shaftGearEndView(el, L.dirs, bi.rotation, t, nameOf(el));
         const span = document.createElement('span');
         span.innerText = txt;
         wrap.appendChild(span);
@@ -562,7 +582,7 @@ function calculateShaftBeam(t, Mt) {
     axSel.options[1].text = `${t.optBearingB} · ${n2}`;
   }
 
-  const res = shaftBeam({ xA: bi.xA, xB: bi.xB, L: bi.L, elements: bi.elements, Mt, theta: bi.theta, axialBearing: bi.axialBearing });
+  const res = shaftBeam({ xA: bi.xA, xB: bi.xB, L: bi.L, elements: bi.elements, Mt, theta: bi.theta, axialBearing: bi.axialBearing, rotation: bi.rotation });
   lastShaftBeam = res.ok ? res : null;
   const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.innerText = v; };
   setTxt('shaftBeamRATitle', shaftText(t, 'shaftReactionAt', { p: n1, n: 1 }));

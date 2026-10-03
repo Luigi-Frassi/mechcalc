@@ -348,7 +348,29 @@ function shaftDirVec(dir) {
  * share = fraction of Mt carried by this element (default 1): e.g. 0.5 when two users split the power.
  * torque 'none' = idler gear: the mesh forces come from share·Mt but no torque enters or leaves the shaft.
  */
-function shaftElementLoads(el, Mt, theta = 20) {
+/**
+ * Unit directions (components [V, H]) of the gear forces on the shaft.
+ * Manual: FtDir / FrDir ('±V', '±H'). Mesh mode (el.dirMode === 'mesh'): the mating gear centre is at angle
+ * el.meshAngle [deg] from +V towards +H (counter-clockwise in the end view from B); Fr points from the mesh to the
+ * axis (−u); Ft follows the rotation of the mesh point for a driven gear (torque 'in' or 'none') and opposes it for
+ * a driving gear ('out'). rotation = 'ccw' | 'cw' as seen from B (ccw: ω along +x, x × V = H).
+ * Returns { rU, tU, meshU } (meshU = direction from the axis to the mesh point).
+ */
+function shaftGearDirections(el, rotation = 'ccw') {
+  const vec = dir => { const [pl, sg] = shaftDirVec(dir); return pl === 'V' ? [sg, 0] : [0, sg]; };
+  if (el.dirMode === 'mesh') {
+    const phi = (el.meshAngle || 0) * Math.PI / 180;
+    const u = [Math.cos(phi), Math.sin(phi)];
+    const w = rotation === 'cw' ? -1 : 1;
+    const v = [-w * u[1], w * u[0]];                       // velocity direction of the mesh point
+    const role = el.torque === 'out' ? -1 : 1;
+    return { rU: [-u[0], -u[1]], tU: [role * v[0], role * v[1]], meshU: u };
+  }
+  const rU = vec(el.FrDir);
+  return { rU, tU: vec(el.FtDir), meshU: [-rU[0], -rU[1]] };
+}
+
+function shaftElementLoads(el, Mt, theta = 20, rotation = 'ccw') {
   const out = { x: el.x || 0, Fv: 0, Fh: 0, Fa: 0, Cv: 0, Ch: 0, T: 0, Ft: 0, Fr: 0, FaMag: 0 };
   const share = Number.isFinite(el.share) && el.share >= 0 ? el.share : 1;
   const MtEl = Math.abs(Mt) * share;
@@ -361,16 +383,16 @@ function shaftElementLoads(el, Mt, theta = 20) {
     const Fr = Ft * Math.tan(theta * Math.PI / 180) / Math.cos(alpha);
     const Fa = Ft * Math.tan(alpha);
     out.Ft = Ft; out.Fr = Fr; out.FaMag = Fa;
-    const [pt, st] = shaftDirVec(el.FtDir), [pr, sr] = shaftDirVec(el.FrDir);
-    if (pt === 'V') out.Fv += st * Ft; else out.Fh += st * Ft;
-    if (pr === 'V') out.Fv += sr * Fr; else out.Fh += sr * Fr;
+    const dirs = shaftGearDirections(el, rotation);
+    out.dirs = dirs;
+    out.Fv = Ft * dirs.tU[0] + Fr * dirs.rU[0];
+    out.Fh = Ft * dirs.tU[1] + Fr * dirs.rU[1];
     if (Fa > 0) {
       const sa = el.FaDir === '-x' ? -1 : 1;
       out.Fa = sa * Fa;
-      // the mesh point is on the side opposite to the radial force (Fr points towards the axis):
-      // offset e = −sign(Fr)·r in the plane of Fr -> couple C = Fa·e in that plane
-      const C = out.Fa * (-sr * r) / 1000;                       // N·m
-      if (pr === 'V') out.Cv += C; else out.Ch += C;
+      // Fa acts at the mesh point, offset r·meshU from the axis -> concentrated couples Fa·offset in each plane
+      out.Cv = out.Fa * r * dirs.meshU[0] / 1000;               // N·m
+      out.Ch = out.Fa * r * dirs.meshU[1] / 1000;
     }
     out.T = tSign * MtEl;
   } else if (el.type === 'coupling') {
@@ -386,8 +408,8 @@ function shaftElementLoads(el, Mt, theta = 20) {
  * Beam solution.
  * inp = { xA, xB, elements: [...], Mt, theta, axialBearing: 'A'|'B' }
  */
-function shaftBeam({ xA, xB, elements, Mt, theta = 20, axialBearing = 'A', L = null }) {
-  const loads = (elements || []).filter(e => e && e.type && e.type !== 'none').map(e => ({ ...shaftElementLoads(e, Mt, theta), el: e }));
+function shaftBeam({ xA, xB, elements, Mt, theta = 20, axialBearing = 'A', L = null, rotation = 'ccw' }) {
+  const loads = (elements || []).filter(e => e && e.type && e.type !== 'none').map(e => ({ ...shaftElementLoads(e, Mt, theta, rotation), el: e }));
   const span = xB - xA;
   if (!(span > 0)) return { ok: false, reason: 'supports' };
   const shaftLen = L > 0 ? L : null;     // shaft ends at x = 0 and x = L (optional)

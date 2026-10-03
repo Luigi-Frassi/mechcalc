@@ -1033,6 +1033,14 @@
           </select>
         </div>
         <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftRotationLabel">Rotation seen from B</label>
+          <select id="shaftRotation" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="ccw" selected data-i18n="optRotCcw">counter-clockwise</option>
+            <option value="cw" data-i18n="optRotCw">clockwise</option>
+          </select>
+          <p class="text-xs text-slate-500 mt-1" data-i18n="shaftRotationSub">Used by the gears set "from the mating gear"</p>
+        </div>
+        <div>
           <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftBearingCALabel">Catalog C, bearing 1</label>
           <div class="relative">
             <input type="number" id="shaftBearingCA" value="0" min="0" step="any" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
@@ -1089,6 +1097,17 @@
           <div class="" id="colShaftEl1Share">
             <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1" data-i18n="shaftElShareLabel">Share of Mt</label>
             <div class="relative"><input type="number" id="shaftEl1Share" value="100" step="any" min="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"><span class="absolute right-2 top-2.5 text-slate-500 text-[10px]">%</span></div>
+          </div>
+          <div class="" id="colShaftEl1DirMode">
+            <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1" data-i18n="shaftElDirModeLabel">Force directions</label>
+            <select id="shaftEl1DirMode" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <option value="manual" selected data-i18n="optDirManual">Chosen by hand</option>
+              <option value="mesh" data-i18n="optDirMesh">From the mating gear</option>
+            </select>
+          </div>
+          <div class="hidden" id="colShaftEl1Angle">
+            <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1" data-i18n="shaftElAngleLabel">Mating gear at</label>
+            <div class="relative"><input type="number" id="shaftEl1Angle" value="0" step="15" min="-360" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"><span class="absolute right-2 top-2.5 text-slate-500 text-[10px]">°</span></div>
           </div>
           <div class="" id="colShaftEl1FtDir">
             <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1" data-i18n="shaftElFtLabel">Ft direction</label>
@@ -1169,6 +1188,17 @@
             <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1" data-i18n="shaftElShareLabel">Share of Mt</label>
             <div class="relative"><input type="number" id="shaftEl2Share" value="100" step="any" min="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"><span class="absolute right-2 top-2.5 text-slate-500 text-[10px]">%</span></div>
           </div>
+          <div class="" id="colShaftEl2DirMode">
+            <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1" data-i18n="shaftElDirModeLabel">Force directions</label>
+            <select id="shaftEl2DirMode" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <option value="manual" selected data-i18n="optDirManual">Chosen by hand</option>
+              <option value="mesh" data-i18n="optDirMesh">From the mating gear</option>
+            </select>
+          </div>
+          <div class="hidden" id="colShaftEl2Angle">
+            <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1" data-i18n="shaftElAngleLabel">Mating gear at</label>
+            <div class="relative"><input type="number" id="shaftEl2Angle" value="0" step="15" min="-360" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"><span class="absolute right-2 top-2.5 text-slate-500 text-[10px]">°</span></div>
+          </div>
           <div class="" id="colShaftEl2FtDir">
             <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1" data-i18n="shaftElFtLabel">Ft direction</label>
             <select id="shaftEl2FtDir" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
@@ -1248,6 +1278,17 @@
             <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1" data-i18n="shaftElShareLabel">Share of Mt</label>
             <div class="relative"><input type="number" id="shaftEl3Share" value="100" step="any" min="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"><span class="absolute right-2 top-2.5 text-slate-500 text-[10px]">%</span></div>
           </div>
+          <div class="" id="colShaftEl3DirMode">
+            <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1" data-i18n="shaftElDirModeLabel">Force directions</label>
+            <select id="shaftEl3DirMode" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <option value="manual" selected data-i18n="optDirManual">Chosen by hand</option>
+              <option value="mesh" data-i18n="optDirMesh">From the mating gear</option>
+            </select>
+          </div>
+          <div class="hidden" id="colShaftEl3Angle">
+            <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1" data-i18n="shaftElAngleLabel">Mating gear at</label>
+            <div class="relative"><input type="number" id="shaftEl3Angle" value="0" step="15" min="-360" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"><span class="absolute right-2 top-2.5 text-slate-500 text-[10px]">°</span></div>
+          </div>
           <div class="" id="colShaftEl3FtDir">
             <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1" data-i18n="shaftElFtLabel">Ft direction</label>
             <select id="shaftEl3FtDir" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
@@ -1326,6 +1367,17 @@
           <div class="" id="colShaftEl4Share">
             <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1" data-i18n="shaftElShareLabel">Share of Mt</label>
             <div class="relative"><input type="number" id="shaftEl4Share" value="100" step="any" min="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"><span class="absolute right-2 top-2.5 text-slate-500 text-[10px]">%</span></div>
+          </div>
+          <div class="" id="colShaftEl4DirMode">
+            <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1" data-i18n="shaftElDirModeLabel">Force directions</label>
+            <select id="shaftEl4DirMode" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <option value="manual" selected data-i18n="optDirManual">Chosen by hand</option>
+              <option value="mesh" data-i18n="optDirMesh">From the mating gear</option>
+            </select>
+          </div>
+          <div class="hidden" id="colShaftEl4Angle">
+            <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1" data-i18n="shaftElAngleLabel">Mating gear at</label>
+            <div class="relative"><input type="number" id="shaftEl4Angle" value="0" step="15" min="-360" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"><span class="absolute right-2 top-2.5 text-slate-500 text-[10px]">°</span></div>
           </div>
           <div class="" id="colShaftEl4FtDir">
             <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1" data-i18n="shaftElFtLabel">Ft direction</label>
@@ -1850,6 +1902,15 @@
         shaftEndViewTitle: "end view from B",
         shaftIsoTitle: "forces on the shaft · +H towards you",
         optTorqueNone: "None (idler gear)",
+        shaftElDirModeLabel: "Force directions",
+        optDirManual: "Chosen by hand",
+        optDirMesh: "From the mating gear",
+        shaftElAngleLabel: "Mating gear at",
+        shaftRotationLabel: "Rotation seen from B",
+        shaftRotationSub: "Used by the gears set \"from the mating gear\"",
+        optRotCcw: "counter-clockwise",
+        optRotCw: "clockwise",
+        shaftElMeshInfo: "mating gear at {a}° from +V towards +H, rotation {rot} seen from B → components {c}",
         shaftBearingCALabel: "Catalog C, bearing 1",
         shaftBearingCBLabel: "Catalog C, bearing 2",
         shaftCatalogSub: "0 = not chosen yet",
@@ -1890,7 +1951,7 @@
         optRoller: "Roller (p = 10/3)",
         shaftBearingTypeLabel: "Bearing type",
         shaftElementsTitle: "Elements on the shaft (x from the left end)",
-        shaftElementsHint: "Gear forces: Ft = 2·Mt/d, Fr = Ft·tanθ/cosα, Fa = Ft·tanα, with the element torque = share × Mt (e.g. 50 % when two users split the power; for an idler gear choose torque \"None\"). Directions are those of the forces acting ON THE SHAFT. Vertical plane V: +V ↑ up. Horizontal plane H: +H ⊙ out of the drawing (towards you), −H ⊗ into the drawing. Fr always points from the mesh point towards the shaft axis; Ft is tangent at the mesh point. The oblique view of the shaft and the end view (seen from B) show the result.",
+        shaftElementsHint: "Gear forces: Ft = 2·Mt/d, Fr = Ft·tanθ/cosα, Fa = Ft·tanα, with the element torque = share × Mt (e.g. 50 % when two users split the power; for an idler gear choose torque \"None\"). Directions are those of the forces acting ON THE SHAFT. Vertical plane V: +V ↑ up. Horizontal plane H: +H ⊙ out of the drawing (towards you), −H ⊗ into the drawing. Fr always points from the mesh point towards the shaft axis; Ft is tangent at the mesh point. With \"From the mating gear\" you give where the mating gear is (angle from +V towards +H, 90° = +H) and the rotation of the shaft seen from B: the tool finds both directions (Ft follows the rotation on a driven gear, opposes it on a driving one). An idler gear is two elements at the same x: one with torque in (from the driver), one with torque out (to the driven gear). The oblique view of the shaft and the end view (seen from B) show the result.",
         optElNone: "—",
         optElGear: "Gear",
         optElCoupling: "Coupling / torque only",
@@ -2251,6 +2312,15 @@
         shaftEndViewTitle: "vista da B",
         shaftIsoTitle: "forze sull'albero · +H verso di te",
         optTorqueNone: "Nessuna (ruota folle)",
+        shaftElDirModeLabel: "Versi delle forze",
+        optDirManual: "Scelti a mano",
+        optDirMesh: "Dalla ruota coniugata",
+        shaftElAngleLabel: "Ruota coniugata a",
+        shaftRotationLabel: "Rotazione vista da B",
+        shaftRotationSub: "Usata dalle ruote impostate \"dalla ruota coniugata\"",
+        optRotCcw: "antioraria",
+        optRotCw: "oraria",
+        shaftElMeshInfo: "ruota coniugata a {a}° da +V verso +H, rotazione {rot} vista da B → componenti {c}",
         shaftBearingCALabel: "C catalogo, cuscinetto 1",
         shaftBearingCBLabel: "C catalogo, cuscinetto 2",
         shaftCatalogSub: "0 = non ancora scelto",
@@ -2291,7 +2361,7 @@
         optRoller: "A rulli (p = 10/3)",
         shaftBearingTypeLabel: "Tipo di cuscinetto",
         shaftElementsTitle: "Elementi sull'albero (x dall'estremità sinistra)",
-        shaftElementsHint: "Forze delle ruote: Ft = 2·Mt/d, Fr = Ft·tanθ/cosα, Fa = Ft·tanα, con la coppia dell'elemento = quota × Mt (per esempio 50 % se due utenze si dividono la potenza; per una ruota folle scegli \"Nessuna\"). I versi sono quelli delle forze che agiscono SULL'ALBERO. Piano verticale V: +V ↑ verso l'alto. Piano orizzontale H: +H ⊙ uscente dal foglio (verso chi guarda), −H ⊗ entrante nel foglio. Fr va sempre dal punto di contatto verso l'asse dell'albero; Ft è tangente nel punto di contatto. La vista in prospettiva dell'albero e la vista di testa (da B) mostrano il risultato.",
+        shaftElementsHint: "Forze delle ruote: Ft = 2·Mt/d, Fr = Ft·tanθ/cosα, Fa = Ft·tanα, con la coppia dell'elemento = quota × Mt (per esempio 50 % se due utenze si dividono la potenza; per una ruota folle scegli \"Nessuna\"). I versi sono quelli delle forze che agiscono SULL'ALBERO. Piano verticale V: +V ↑ verso l'alto. Piano orizzontale H: +H ⊙ uscente dal foglio (verso chi guarda), −H ⊗ entrante nel foglio. Fr va sempre dal punto di contatto verso l'asse dell'albero; Ft è tangente nel punto di contatto. Con \"Dalla ruota coniugata\" indichi dove sta la ruota coniugata (angolo da +V verso +H, 90° = +H) e il senso di rotazione dell'albero visto da B: il tool trova da solo i due versi (Ft segue la rotazione su una ruota condotta, si oppone su una motrice). Una ruota di rinvio sono due elementi nella stessa x: uno con coppia entrante (dalla motrice), uno con coppia uscente (verso la condotta). La vista in prospettiva dell'albero e la vista di testa (da B) mostrano il risultato.",
         optElNone: "—",
         optElGear: "Ruota dentata",
         optElCoupling: "Giunto / solo coppia",
@@ -3122,14 +3192,14 @@
         const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
         set('shaftTorqueInput', 'power'); set('shaftPower', 30); set('shaftSpeed', 200);
         set('shaftLength', 320); set('shaftXA', 0); set('shaftXB', 240); set('shaftAxialBearing', 'A'); set('shaftTheta', 20);
-        set('shaftBearingLife', 10); set('shaftBearingType', 'ball'); set('shaftBearingCA', 0); set('shaftBearingCB', 0);
+        set('shaftBearingLife', 10); set('shaftBearingType', 'ball'); set('shaftBearingCA', 0); set('shaftBearingCB', 0); set('shaftRotation', 'ccw');
         const els = [
-          { type: 'gear', x: 67.5, d: 210, helix: 0, torque: 'in', ft: '-H', fr: '+V' },
-          { type: 'gear', x: 305, d: 105, helix: 0, torque: 'out', ft: '-H', fr: '-V' },
+          { type: 'gear', x: 67.5, d: 210, helix: 0, torque: 'in', ft: '-H', fr: '+V', mesh: 180 },
+          { type: 'gear', x: 305, d: 105, helix: 0, torque: 'out', ft: '-H', fr: '-V', mesh: 0 },
           { type: 'none' }, { type: 'none' }];
         els.forEach((e, i) => {
           const p = 'shaftEl' + (i + 1);
-          set(p + 'Type', e.type); set(p + 'Share', 100);
+          set(p + 'Type', e.type); set(p + 'Share', 100); set(p + 'DirMode', e.mesh === undefined ? 'manual' : 'mesh'); if (e.mesh !== undefined) set(p + 'Angle', e.mesh);
           if (e.type === 'gear') { set(p + 'X', e.x); set(p + 'D', e.d); set(p + 'Helix', e.helix); set(p + 'Torque', e.torque); set(p + 'FtDir', e.ft); set(p + 'FrDir', e.fr); }
         });
         set('shaftSecX', 240);
