@@ -91,6 +91,7 @@ function reportNum(x, n = 2) {
 function reportSvgForPrint(svgHtml) {
   const map = {
     '#cbd5e1': '#334155', '#e2e8f0': '#0f172a', '#94a3b8': '#475569', '#64748b': '#64748b', '#475569': '#94a3b8', '#334155': '#cbd5e1',
+    '#ffffff': '#0f172a', '#0284c7': '#0369a1',
     '#38bdf8': '#0369a1', '#fbbf24': '#b45309', '#34d399': '#047857', '#f43f5e': '#be123c', '#a855f7': '#7e22ce'
   };
   return svgHtml.replace(/#[0-9a-fA-F]{6}\b/g, c => map[c.toLowerCase()] || c)
@@ -150,7 +151,7 @@ function reportCSS() {
   `;
 }
 
-function reportShell(title, subtitle, body, R) {
+function reportShell(title, subtitle, body, R, disclaimer = null) {
   const today = new Date().toLocaleDateString(currentLang === 'it' ? 'it-IT' : 'en-GB');
   let link = '';
   try { link = typeof shareUrl === 'function' ? shareUrl() : window.location.href; } catch (e) { link = window.location.href; }
@@ -164,7 +165,7 @@ function reportShell(title, subtitle, body, R) {
 <div class="meta"><div><b>${R.project}:</b><span contenteditable="true" title="${R.clickToEdit}">—</span></div>
 <div><b>${R.author}:</b><span contenteditable="true" title="${R.clickToEdit}">—</span></div><div><b>${R.date}:</b>${today}</div></div></header>
 ${body}
-<footer class="rep"><p>${R.disclaimer}</p><p>${R.generated} · <a href="${reportEsc(link)}">${R.reopen} ↗</a> <span class="small">(${reportEsc(link.split('?')[0])})</span></p></footer>
+<footer class="rep"><p>${disclaimer || R.disclaimer}</p><p>${R.generated} · <a href="${reportEsc(link)}">${R.reopen} ↗</a> <span class="small">(${reportEsc(link.split('?')[0])})</span></p></footer>
 </div></body></html>`;
 }
 
@@ -370,5 +371,280 @@ function openShaftReport() {
 }
 
 function openReport() {
-  if (activeModule === 'shafts') openShaftReport();
+  const build = { shafts: buildShaftReportHtml, gears: buildGearReportHtml, belts: buildBeltReportHtml, fits: buildFitReportHtml }[activeModule];
+  const html = build ? build() : null;
+  if (html) reportOpen(html);
+}
+
+// ---------------------------------------------------------------------------
+// Gears report (design: Hertz → module and face width → Lewis; or capacity of an existing pair)
+// ---------------------------------------------------------------------------
+const REPORT_GEAR_TXT = {
+  it: {
+    title: 'Coppia di ruote dentate cilindriche — dimensionamento di massima',
+    disclaimer: 'Dimensionamento di massima con il metodo del corso di Costruzione di Macchine (Hertz e Lewis, fattori dai diagrammi). I valori servono come prime quote per il CAD: il progetto esecutivo va verificato con ISO 6336, i dati del produttore delle ruote o un\'analisi FEM.', titleW: 'Coppia di ruote dentate cilindriche — potenza trasmissibile',
+    spur: 'denti diritti', helical: 'denti elicoidali', type: 'Tipo di dentatura', s1: 'Dati di progetto', s2: 'Geometria della coppia',
+    s3: 'Progetto a usura (Hertz)', s4: 'Verifica a flessione (Lewis)', s5: 'Combinazioni valutate dall\'ottimizzatore', s6: 'Quote per il CAD', s7: 'Ipotesi e note',
+    s3w: 'Potenza limite a usura (Hertz)', s4w: 'Potenza limite a flessione (Lewis)', s5w: 'Potenza e coppia massime',
+    power: 'Potenza', speed: 'Velocità del pignone', torque: 'Coppia sul pignone', ratio: 'Rapporto richiesto τ = z₁/z₂', center: 'Interasse richiesto',
+    Ke: 'Coefficiente elastico della coppia Ke', sigmaH: 'Pressione di contatto ammissibile σH', sigmaL: 'Tensione di flessione ammissibile σL', xr: 'Correzione del pignone x₁',
+    options: 'Opzioni', autoZ: 'z ottimizzati automaticamente', lockM: 'modulo imposto', lockL: 'larghezza di fascia imposta', none: 'nessuna',
+    teeth: 'Numero di denti', module: 'Modulo', helixAngle: 'Angolo d\'elica α', pitch: 'Diametri primitivi', centerD: 'Interasse',
+    face: 'Larghezza di fascia L', phi: 'ϕ = L/dp₁', undercut: 'Sottotaglio', ok: 'VERIFICATO', ko: 'NON VERIFICATO', inRange: 'nell\'intervallo consigliato 0,5–1,0', outRange: 'fuori dall\'intervallo consigliato 0,5–1,0',
+    serie: 'Serie UNI', chosenM: 'Modulo unificato scelto', mmin: 'Modulo minimo (ϕ = 1)', combo: 'Combinazione', selected: 'scelta',
+    item: 'Elemento', pinion: 'Pignone (1)', wheel: 'Ruota (2)', tip: 'Ø di testa', root: 'Ø di piede', limitedBy: 'Limitata da', hertz: 'usura (Hertz)', lewis: 'flessione (Lewis)',
+    hyp: [
+      'Angolo di pressione θ = 20°, dentatura normale (addendum m, dedendum 1,25 m); il pignone è la ruota più sollecitata.',
+      'Usura: pressione di Hertz sul primitivo, W = σH²·L·ω₁·sin2θ·m²·z₁²/(8·Ke·(1 + τ)); il progetto fissa ϕ = L/dp₁ e ricava il modulo, poi la larghezza al modulo unificato.',
+      'Flessione: formula di Lewis σL = Fc/(L·m·y), con y dal diagramma del corso (z o z equivalente per le elicoidali).',
+      'Ruote elicoidali: fattori Φ, Ψ, Γt dal diagramma del corso; z_eq = z/cos³α.',
+      'I risultati sono di massima: per il progetto esecutivo usare ISO 6336 (fattori di carico, velocità, lubrificazione, materiali).'
+    ]
+  },
+  en: {
+    title: 'Pair of cylindrical gears — preliminary sizing',
+    disclaimer: 'Preliminary sizing with the method of the Machine Design course (Hertz and Lewis, factors from charts). The values are first dimensions for CAD: the final design must be checked with ISO 6336, the gear manufacturer\'s data or an FEM analysis.', titleW: 'Pair of cylindrical gears — power capacity',
+    spur: 'spur', helical: 'helical', type: 'Tooth type', s1: 'Design data', s2: 'Pair geometry',
+    s3: 'Pitting design (Hertz)', s4: 'Bending check (Lewis)', s5: 'Combinations evaluated by the optimizer', s6: 'Dimensions for CAD', s7: 'Assumptions and notes',
+    s3w: 'Pitting power limit (Hertz)', s4w: 'Bending power limit (Lewis)', s5w: 'Maximum power and torque',
+    power: 'Power', speed: 'Pinion speed', torque: 'Pinion torque', ratio: 'Required ratio τ = z₁/z₂', center: 'Required centre distance',
+    Ke: 'Elastic coefficient of the pair Ke', sigmaH: 'Allowable contact pressure σH', sigmaL: 'Allowable bending stress σL', xr: 'Pinion profile shift x₁',
+    options: 'Options', autoZ: 'teeth optimized automatically', lockM: 'module imposed', lockL: 'face width imposed', none: 'none',
+    teeth: 'Number of teeth', module: 'Module', helixAngle: 'Helix angle α', pitch: 'Pitch diameters', centerD: 'Centre distance',
+    face: 'Face width L', phi: 'ϕ = L/dp₁', undercut: 'Undercut', ok: 'VERIFIED', ko: 'NOT VERIFIED', inRange: 'in the recommended range 0.5–1.0', outRange: 'outside the recommended range 0.5–1.0',
+    serie: 'UNI series', chosenM: 'Chosen standard module', mmin: 'Minimum module (ϕ = 1)', combo: 'Combination', selected: 'chosen',
+    item: 'Item', pinion: 'Pinion (1)', wheel: 'Wheel (2)', tip: 'Tip Ø', root: 'Root Ø', limitedBy: 'Limited by', hertz: 'pitting (Hertz)', lewis: 'bending (Lewis)',
+    hyp: [
+      'Pressure angle θ = 20°, standard teeth (addendum m, dedendum 1.25 m); the pinion is the most loaded gear.',
+      'Pitting: Hertz pressure at the pitch point, W = σH²·L·ω₁·sin2θ·m²·z₁²/(8·Ke·(1 + τ)); the design fixes ϕ = L/dp₁ and finds the module, then the face width at the standard module.',
+      'Bending: Lewis formula σL = Fc/(L·m·y), with y from the course chart (z, or the equivalent z for helical gears).',
+      'Helical gears: factors Φ, Ψ, Γt from the course chart; z_eq = z/cos³α.',
+      'The results are preliminary: for the final design use ISO 6336 (load, speed and lubrication factors, materials).'
+    ]
+  }
+};
+
+function buildGearReportHtml() {
+  calculateGears();                                   // fresh state
+  const R = REPORT_TXT[currentLang] || REPORT_TXT.en;
+  const G = REPORT_GEAR_TXT[currentLang] || REPORT_GEAR_TXT.en;
+  const N = reportNum, st = lastGearState;
+  if (!st) return null;
+  let body = '', sec = 0;
+  const H = title => `<h3><span class="n">${++sec}.</span>${title}</h3>`;
+  const sin2t = Math.sin(2 * GEAR_THETA);
+  const chartSvg = () => { const c = document.getElementById('gearChart'); return c ? `<div class="fig">${reportSvgForPrint(c.outerHTML)}</div>` : ''; };
+  const cadRows = (z1, z2, mn, mt, x1, L, alpha) => {
+    const dp1 = mt * z1, dp2 = mt * z2;
+    return reportTable([G.item, 'z', `${G.pitch.split(' ')[0]} dp [mm]`, `${G.tip} [mm]`, `${G.root} [mm]`], [
+      [G.pinion, z1, N(dp1, 2), N(dp1 + 2 * mn * (1 + x1), 2), N(dp1 - 2 * mn * (1.25 - x1), 2)],
+      [G.wheel, z2, N(dp2, 2), N(dp2 + 2 * mn, 2), N(dp2 - 2.5 * mn, 2)]
+    ]) + reportKV([
+      [G.module, alpha > 0 ? `mn = ${N(mn, 3)} mm · mt = ${N(mt, 3)} mm` : `m = ${N(mn, 3)} mm`],
+      ...(alpha > 0 ? [[G.helixAngle, `${N(alpha, 2)}°`]] : []),
+      [G.centerD, `${N(mt * ((z1 + z2) / 2 + x1), 2)} mm`], [G.face, `${N(L, 1)} mm → ${N(Math.ceil(L), 0)} mm`], ['x₁ / x₂', `${N(x1, 2)} / 0`]
+    ]);
+  };
+
+  if (st.mode === 'wmax') {
+    const p = st.params, r = st.r, hel = p.toothType === 'helical';
+    const omega = 2 * Math.PI * p.n1 / 60, tau = p.z1 / p.z2;
+    const cosA = Math.cos(p.alphaDeg * Math.PI / 180), mt = hel ? p.m_input / cosA : p.m_input;
+    const f = hel ? getHelicalFactors(p.alphaDeg, p.z1, p.z2) : null;
+    body += H(G.s1) + reportKV([
+      [G.type, hel ? G.helical : G.spur], [G.module, hel ? `mn = ${N(p.m_input, 3)} mm (α = ${N(p.alphaDeg, 1)}°, mt = ${N(mt, 3)} mm)` : `m = ${N(p.m_input, 3)} mm`],
+      [G.teeth, `z₁ = ${p.z1} · z₂ = ${p.z2} (τ = ${N(tau, 3)})`], [G.face, `L = ${N(p.L_mm, 1)} mm`], [G.speed, `n₁ = ${N(p.n1, 0)} rpm (ω₁ = ${N(omega, 2)} rad/s)`],
+      [G.Ke, `${N(p.Ke_GPa, 1)} GPa`], [G.sigmaH, `${N(p.sigmaH_lim, 1)} MPa`], [G.sigmaL, `${N(p.sigmaL_lim, 1)} MPa`], [G.xr, N(p.xr1, 2)]
+    ]);
+    body += H(G.s2) + reportKV([[G.pitch, `dp₁ = ${N(r.dp1, 2)} mm · dp₂ = ${N(r.dp2, 2)} mm`], [G.centerD, `${N(r.a_center, 2)} mm`], [G.phi, N(r.phi, 3)]]) + chartSvg();
+    body += H(G.s3w) + `<div class="f">W_H = σH²·L·ω₁·sin2θ·mt²·z₁²${hel ? '·Γt/Φ' : ''} / (8·Ke·(1 + τ))\n    = ${N(p.sigmaH_lim, 1)}²·${N(p.L_mm, 1)}·${N(omega, 2)}·${N(sin2t, 4)}·${N(mt, 3)}²·${p.z1}²${hel ? `·${N(f.Gamma_T, 3)}/${N(f.Phi, 3)}` : ''} / (8·${N(p.Ke_GPa * 1000, 0)}·${N(1 + tau, 4)})\n    = ${N(r.P_kW_H, 2)} kW</div>`;
+    body += H(G.s4w) + `<div class="f">y = ${N(r.yLewis, 3)}${hel ? ` (z_eq = ${N(p.z1 / Math.pow(cosA, 3), 1)})` : ''}\nW_L = σL·ω₁·L·mt·mn·z₁·y${hel ? '·Γt/Ψ' : ''} / 2 = ${N(r.P_kW_L, 2)} kW</div>`;
+    body += H(G.s5w) + `<div class="res"><div>P max = <span class="big">${N(r.P_kW_max, 2)} kW</span> · M₁ max = <span class="big">${N(r.M1_max, 1)} N·m</span></div><div>${G.limitedBy} ${r.limitedBy === 'hertz' ? G.hertz : G.lewis} · Fc max = ${N(r.Fc_max, 0)} N</div></div>`;
+    body += H(G.s6) + cadRows(p.z1, p.z2, p.m_input, mt, p.xr1, p.L_mm, hel ? p.alphaDeg : 0);
+    body += H(G.s7) + '<ul>' + G.hyp.map(h => `<li>${h}</li>`).join('') + '</ul>';
+    return reportShell(G.titleW, `P max = ${N(r.P_kW_max, 2)} kW`, body, R, G.disclaimer);
+  }
+
+  const r = st.r, hel = st.gearType === 'helical', ld = st.load;
+  const Ke = st.Ke_GPa * 1000, W = ld.W_watt * 1000;
+  const opts = [st.isAutoZ && st.supportsAutoZ ? G.autoZ : '', st.isLockM ? `${G.lockM} (${N(st.lockedM, 2)} mm)` : '', st.isLockL ? `${G.lockL} (${N(st.lockedL, 1)} mm)` : ''].filter(Boolean);
+  body += H(G.s1) + reportKV([
+    [G.type, hel ? G.helical : G.spur],
+    [G.power, `P = ${N(ld.W_watt / 1000, 2)} kW`], [G.speed, `n₁ = ${N(ld.n1_rpm, 0)} rpm (ω₁ = ${N(ld.omega1, 2)} rad/s)`], [G.torque, `M₁ = ${N(ld.M1_Nm, 1)} N·m`],
+    [G.ratio, `${N(st.targetTau, 4)}`], ...(st.geomMode === 'center' ? [[G.center, `${N(st.targetI, 1)} mm`]] : []),
+    [G.Ke, `${N(st.Ke_GPa, 1)} GPa`], [G.sigmaH, `${N(st.sigmaH_lim, 1)} MPa`], [G.xr, N(st.xr1, 2)], [G.options, opts.length ? opts.join(' · ') : G.none]
+  ]);
+  const unitOk = r.phiOk, lewOk = r.lewisOk;
+  body += H(G.s2) + reportKV([
+    [G.teeth, `z₁ = ${st.z1} · z₂ = ${st.z2} · τ = ${N(st.tau, 4)}`],
+    [G.module, hel ? `mn = ${N(r.mn, 3)} mm · mt = ${N(r.mt, 3)} mm · α = ${N(r.alphaDeg, 2)}°` : `m = ${N(r.m_norm, 3)} mm (${G.serie} ${r.activeModuleObj.serie || '—'})`],
+    [G.pitch, `dp₁ = ${N(r.dp1, 2)} mm · dp₂ = ${N(r.dp2, 2)} mm`], [G.centerD, `${N(r.a_center, 2)} mm`],
+    [G.face, `L = ${N(r.L_face, 1)} mm · ϕ = ${N(r.phi, 3)} (${unitOk ? G.inRange : G.outRange})`],
+    [G.undercut, `z${hel ? '_eq' : '₁'} = ${N(r.z_check, 1)} ${r.undercutOk ? '≥' : '<'} z_min = ${N(r.z_min, 1)} <span class="${r.undercutOk ? 'ok' : 'ko'}">${r.undercutOk ? G.ok : G.ko}</span>`]
+  ]) + chartSvg();
+  // Hertz
+  const hz = [];
+  if (!st.activeCombo && !st.isLockM) {
+    hz.push(`${G.mmin}: m³ = 8·Ke·W·(1 + τ)${hel ? '·0,6' : ''} / (ω₁·sin2θ·z₁³·σH²)`);
+    hz.push(`     = 8·${N(Ke, 0)}·${N(W, 0)}·${N(1 + st.tau, 4)}${hel ? '·0,6' : ''} / (${N(ld.omega1, 2)}·${N(sin2t, 4)}·${st.z1}³·${N(st.sigmaH_lim, 1)}²)  →  m_min = ${N(r.m_min, 3)} mm`);
+  }
+  hz.push(`${G.chosenM}: ${hel ? `mn = ${N(r.mn, 3)} mm → mt = mn/cosα = ${N(r.mt, 3)} mm` : `m = ${N(r.m_norm, 3)} mm`} (${G.serie} ${r.activeModuleObj.serie || '—'})`);
+  if (!st.isLockL) hz.push(`ϕ = 8·Ke·W·(1 + τ) / (ω₁·sin2θ·z₁³·m³·σH²)${hel ? '·Φ/Γt' : ''} = ${N(r.phi, 3)}  →  L = ϕ·dp₁ = ${N(r.phi, 3)}·${N(r.dp1, 2)} = ${N(r.L_face, 1)} mm`);
+  else hz.push(`L = ${N(r.L_face, 1)} mm (${G.lockL}) → ϕ = L/dp₁ = ${N(r.phi, 3)}`);
+  if (hel) hz.push(`Φ = ${N(r.factors.Phi, 3)} · Ψ = ${N(r.factors.Psi, 3)} · Γt = Γt₁ + Γt₂ = ${N(r.factors.Gamma_T1, 3)} + ${N(r.factors.Gamma_T2, 3)} = ${N(r.factors.Gamma_T, 3)}`);
+  body += H(G.s3) + `<div class="f">${hz.join('\n')}</div>`;
+  // Lewis
+  body += H(G.s4) + `<div class="f">Fc = 2·M₁/dp₁ = 2·${N(ld.M1_Nm * 1000, 0)}/${N(r.dp1, 2)} = ${N(r.Fc, 0)} N\ny = ${N(r.yLewis, 3)}${hel ? ` (z_eq = z₁/cos³α = ${N(r.z_check, 1)})` : ''}\nσL = Fc/(L·m·y)${hel ? '·Ψ/Γt' : ''} = ${N(r.Fc, 0)}/(${N(r.L_face, 1)}·${N(r.mn, 3)}·${N(r.yLewis, 3)})${hel ? `·${N(r.factors.Psi, 3)}/${N(r.factors.Gamma_T, 3)}` : ''} = ${N(r.sigma_L, 1)} MPa</div>` +
+    `<div class="res"><div>σL = <span class="big">${N(r.sigma_L, 0)} MPa</span> ≤ 800 MPa <span class="${lewOk ? 'ok' : 'ko'}">${lewOk ? G.ok : G.ko}</span> · ϕ = <b>${N(r.phi, 2)}</b> (${unitOk ? G.inRange : G.outRange})</div></div>`;
+  // optimizer table
+  if (st.combos.length) {
+    body += H(G.s5) + reportTable([G.combo, 'τ', 'err', G.module, G.centerD, 'ϕ (L)', 'σL [MPa]'], st.combos.map((c, i) => ({
+      cls: i === st.selectedComboIdx ? 'hl' : '',
+      cells: [`z₁ = ${c.z1}, z₂ = ${c.z2}${i === st.selectedComboIdx ? ` (${G.selected})` : ''}`, N(c.tau, 3), `±${N(c.err, 2)} %`,
+        hel ? `mn ${N(c.m, 2)}, α ${N(c.alpha, 1)}°` : `m ${N(c.m, 2)}`, `${N(c.i, 1)} mm`, `${N(c.phi, 2)} (${N(c.L, 1)} mm)`, N(c.sigmaL, 0)]
+    })));
+  }
+  body += H(G.s6) + cadRows(st.z1, st.z2, r.mn, r.mt, st.xr1, r.L_face, hel ? r.alphaDeg : 0);
+  body += H(G.s7) + '<ul>' + G.hyp.map(h => `<li>${h}</li>`).join('') + '</ul>';
+  return reportShell(G.title, `z₁ = ${st.z1}, z₂ = ${st.z2}, ${hel ? 'mn' : 'm'} = ${N(r.mn, 2)} mm, L = ${N(r.L_face, 1)} mm`, body, R, G.disclaimer);
+}
+
+// ---------------------------------------------------------------------------
+// Timing belts report
+// ---------------------------------------------------------------------------
+const REPORT_BELT_TXT = {
+  it: {
+    title: 'Trasmissione a cinghia sincrona — dimensionamento di massima', s1: 'Dati di progetto', s2: 'Pulegge e cinghia', s3: 'Interasse effettivo',
+    s4: 'Denti in presa e angolo di avvolgimento', s5: 'Larghezza della cinghia', s6: 'Quote per il CAD e ordinazione', s7: 'Ipotesi e note',
+    profile: 'Profilo', pitch: 'Passo p', power: 'Potenza', speed: 'Velocità puleggia motrice', c0: 'Fattore di servizio c₀', center0: 'Interasse desiderato',
+    ratio: 'Rapporto τ = z₂/z₁', target: 'richiesto', pulley: 'Puleggia', driver: 'motrice (1)', driven: 'condotta (2)', teethW: 'denti', belt: 'Cinghia',
+    widthReq: 'Larghezza minima', widthChosen: 'Larghezza scelta (catalogo)', ok: 'VERIFICATO', ko: 'NON VERIFICATO — serve un profilo più grande',
+    tooSmall: 'Interasse troppo piccolo per queste pulegge: aumentalo.', mesh: 'Denti in presa sulla motrice', meshOk: '≥ 6: nessuna riduzione', meshKo: '< 6: capacità ridotta',
+    order: 'Designazione per l\'ordine', od: 'Ø esterno e flange: dal catalogo del produttore',
+    disclaimer: 'Dimensionamento di massima: geometria esatta, larghezza con una forza ammissibile media per profilo (valore indicativo). Per la scelta definitiva usare il catalogo del produttore della cinghia (tabelle di potenza, velocità, tensionamento).',
+    hyp: [
+      'Diametro primitivo dp = z·p/π; sviluppo primitivo L₀ = 2C₀ + π/2·(dp₁ + dp₂) + (dp₂ − dp₁)²/(4C₀), arrotondato a un numero intero di denti.',
+      'Interasse effettivo dalla soluzione esatta dell\'equazione dello sviluppo (cinghia tesa, rami rettilinei).',
+      'Forza tangenziale Ft = Pc/v con Pc = c₀·P; forza ammissibile per mm di larghezza media per profilo, corretta con c₁ (denti in presa) e c₂ (lunghezza).',
+      'La larghezza è un valore indicativo: i cataloghi danno la potenza trasmissibile in funzione di velocità e numero di denti.'
+    ]
+  },
+  en: {
+    title: 'Synchronous belt drive — preliminary sizing', s1: 'Design data', s2: 'Pulleys and belt', s3: 'Actual centre distance',
+    s4: 'Teeth in mesh and wrap angle', s5: 'Belt width', s6: 'Dimensions for CAD and ordering', s7: 'Assumptions and notes',
+    profile: 'Profile', pitch: 'Pitch p', power: 'Power', speed: 'Driver pulley speed', c0: 'Service factor c₀', center0: 'Desired centre distance',
+    ratio: 'Ratio τ = z₂/z₁', target: 'required', pulley: 'Pulley', driver: 'driver (1)', driven: 'driven (2)', teethW: 'teeth', belt: 'Belt',
+    widthReq: 'Minimum width', widthChosen: 'Chosen width (catalog)', ok: 'VERIFIED', ko: 'NOT VERIFIED — a larger profile is needed',
+    tooSmall: 'Centre distance too small for these pulleys: increase it.', mesh: 'Teeth in mesh on the driver', meshOk: '≥ 6: no reduction', meshKo: '< 6: reduced capacity',
+    order: 'Ordering designation', od: 'Outside Ø and flanges: from the manufacturer\'s catalog',
+    disclaimer: 'Preliminary sizing: exact geometry, width from an average allowable force per profile (indicative). For the final choice use the belt manufacturer\'s catalog (power ratings, speed, tensioning).',
+    hyp: [
+      'Pitch diameter dp = z·p/π; pitch length L₀ = 2C₀ + π/2·(dp₁ + dp₂) + (dp₂ − dp₁)²/(4C₀), rounded to a whole number of teeth.',
+      'Actual centre distance from the exact solution of the length equation (taut belt, straight spans).',
+      'Tangential force Ft = Pc/v with Pc = c₀·P; allowable force per mm of width averaged per profile, corrected with c₁ (teeth in mesh) and c₂ (length).',
+      'The width is indicative: catalogs give the transmissible power as a function of speed and number of teeth.'
+    ]
+  }
+};
+
+function buildBeltReportHtml() {
+  calculateBelts();
+  const R = REPORT_TXT[currentLang] || REPORT_TXT.en, B = REPORT_BELT_TXT[currentLang] || REPORT_BELT_TXT.en, N = reportNum;
+  const sel = document.getElementById('beltProfile'), profKey = sel.value, profName = sel.options[sel.selectedIndex].text;
+  const z1 = parseInt(document.getElementById('pulleyZ1').value) || 20;
+  let z2, tauInfo = '';
+  if (currentRatioMethod === 'teeth') z2 = parseInt(document.getElementById('pulleyZ2').value) || 40;
+  else { const tt = parseFloat(document.getElementById('targetTau').value) || 2; const q = beltZ2FromTau(z1, tt); z2 = q.z2; tauInfo = ` (${B.target} ${N(tt, 3)}, Δ ${N(q.errPct, 1)} %)`; }
+  const c0In = parseFloat(document.getElementById('desiredCenter').value) || 150, C0 = currentUnit === 'metric' ? c0In : c0In * 25.4;
+  const P = parseFloat(document.getElementById('motorPower').value) || 1.5, n1 = parseFloat(document.getElementById('driverSpeed').value) || 1500;
+  const c0 = parseFloat(document.getElementById('serviceFactor').value) || 1.5;
+  const r = computeBelts({ profKey, z1, z2, C0_mm: C0, P_kW: P, n1_rpm: n1, c0 });
+  const power = currentBeltMode !== 'geom';
+  let body = '', sec = 0;
+  const H = title => `<h3><span class="n">${++sec}.</span>${title}</h3>`;
+  body += H(B.s1) + reportKV([
+    [B.profile, reportEsc(profName)], [B.pitch, `${N(r.p, 2)} mm`], [B.ratio, `${N(r.ratio, 3)}${tauInfo}`], [B.center0, `C₀ = ${N(C0, 1)} mm`],
+    ...(power ? [[B.power, `P = ${N(P, 2)} kW`], [B.speed, `n₁ = ${N(n1, 0)} rpm`], [B.c0, N(c0, 2)]] : [])
+  ]);
+  body += H(B.s2) + reportTable([B.pulley, 'z', 'dp = z·p/π [mm]'], [[B.driver, z1, N(r.dp1, 2)], [B.driven, z2, N(r.dp2, 2)]]);
+  if (!r.valid) {
+    body += `<div class="res ko">${B.tooSmall}</div>`;
+    return reportShell(B.title, reportEsc(profName), body, R, B.disclaimer);
+  }
+  body += `<div class="f">L₀ = 2·C₀ + π/2·(dp₁ + dp₂) + (dp₂ − dp₁)²/(4·C₀) = ${N(2 * C0 + Math.PI / 2 * (r.dp1 + r.dp2) + Math.pow(r.dp2 - r.dp1, 2) / (4 * C0), 2)} mm\nz_b = L₀/p → ${r.zb} ${B.teethW}  →  Lp = z_b·p = ${N(r.Lp, 1)} mm</div>`;
+  body += H(B.s3) + `<div class="f">C = [B + √(B² − 32·(dp₂ − dp₁)²)]/16,  B = 4·Lp − 2π·(dp₁ + dp₂)\nC = ${N(r.exactC_mm, 2)} mm  (Δ = ${N(r.cDiff, 2)} mm)</div>`;
+  const ch = document.getElementById('beltChart');
+  if (ch) body += `<div class="fig">${reportSvgForPrint(ch.outerHTML)}</div>`;
+  body += H(B.s4) + reportKV([
+    ['β₁', `π − 2·asin((dp₂ − dp₁)/(2C)) = ${N(r.wrapDeg1, 1)}°`],
+    [B.mesh, `z₁·β₁/360 = ${N(r.z_mesh, 1)} (${r.meshOk ? B.meshOk : B.meshKo}, c₁ = ${N(r.c1, 2)})`]
+  ]);
+  if (power) {
+    body += H(B.s5) + `<div class="f">v = π·dp₁·n₁/60000 = ${N(r.beltSpeed, 2)} m/s · Mt = ${N(r.torqueNm, 2)} N·m\nPc = c₀·P = ${N(r.Pc_kW, 2)} kW  →  Ft = Pc/v = ${N(r.Ft, 0)} N\nF_amm = f₀·c₁·c₂ = ${N(baseAllowableForce[profKey] || 20, 1)}·${N(r.c1, 2)}·${N(r.c2, 2)} N/mm  →  b_min = Ft/F_amm = ${N(r.reqWidthMm, 1)} mm</div>` +
+      `<div class="res"><div>${B.widthChosen}: <span class="big">${r.chosenWidth} mm</span> <span class="${r.widthOk ? 'ok' : 'ko'}">${r.widthOk ? B.ok : B.ko}</span></div></div>`;
+  }
+  body += H(B.s6) + reportKV([
+    [`${B.pulley} ${B.driver}`, `z₁ = ${z1} · dp₁ = ${N(r.dp1, 2)} mm`], [`${B.pulley} ${B.driven}`, `z₂ = ${z2} · dp₂ = ${N(r.dp2, 2)} mm`],
+    ['C', `${N(r.exactC_mm, 2)} mm`], [B.belt, `Lp = ${N(r.Lp, 1)} mm · ${r.zb} ${B.teethW}${power ? ` · b = ${r.chosenWidth} mm` : ''}`],
+    [B.order, `${reportEsc(profName.split(' (')[0])} · ${N(r.Lp, 0)} mm · ${r.zb} ${B.teethW}${power ? ` · ${r.chosenWidth} mm` : ''}`], ['Ø', B.od]
+  ]);
+  body += H(B.s7) + '<ul>' + B.hyp.map(h => `<li>${h}</li>`).join('') + '</ul>';
+  return reportShell(B.title, `${reportEsc(profName)} · z₁ = ${z1}, z₂ = ${z2} · C = ${N(r.exactC_mm, 1)} mm`, body, R, B.disclaimer);
+}
+
+// ---------------------------------------------------------------------------
+// ISO fits report
+// ---------------------------------------------------------------------------
+const REPORT_FIT_TXT = {
+  it: {
+    title: 'Accoppiamento albero-foro ISO 286 — sistema foro base H7', s1: 'Dati', s2: 'Scostamenti e dimensioni limite', s3: 'Giochi e natura dell\'accoppiamento',
+    s4: 'Lavorazioni e rugosità', s5: 'Confronto con gli altri accoppiamenti H7', s6: 'Quote per il disegno', s7: 'Note',
+    d: 'Diametro nominale', step: 'Scaglione ISO 286', fit: 'Accoppiamento', hole: 'Foro', shaft: 'Albero', es: 'Scost. sup.', ei: 'Scost. inf.', it: 'Tolleranza',
+    dmax: 'Dim. max', dmin: 'Dim. min', playMax: 'Gioco max', playMin: 'Gioco min', kind: 'Natura', clearance: 'con gioco', interference: 'con interferenza', transition: 'incerto',
+    proc: 'Lavorazione', ra: 'Rugosità', mean: 'Gioco medio', reverse: 'Scelto con la ricerca inversa: gioco desiderato', drawing: 'Indicazione a disegno',
+    disclaimer: 'Valori da ISO 286-2 per lo scaglione del diametro nominale (3–500 mm). Per accoppiamenti con interferenza verificare anche pressione di calettamento e tensioni (Lamé), e le condizioni di montaggio.',
+    notes: ['Sistema foro base: foro H7 (EI = 0, ES = IT7), l\'albero porta la posizione della tolleranza.', 'Gioco = dimensione del foro − dimensione dell\'albero; un gioco negativo è un\'interferenza.', 'Lavorazioni e rugosità sono indicazioni tipiche per la classe di tolleranza.']
+  },
+  en: {
+    title: 'Shaft-hole fit ISO 286 — hole-basis system H7', s1: 'Data', s2: 'Deviations and limit sizes', s3: 'Clearances and type of fit',
+    s4: 'Machining and roughness', s5: 'Comparison with the other H7 fits', s6: 'Drawing callouts', s7: 'Notes',
+    d: 'Nominal diameter', step: 'ISO 286 size range', fit: 'Fit', hole: 'Hole', shaft: 'Shaft', es: 'Upper dev.', ei: 'Lower dev.', it: 'Tolerance',
+    dmax: 'Max size', dmin: 'Min size', playMax: 'Max clearance', playMin: 'Min clearance', kind: 'Type', clearance: 'clearance', interference: 'interference', transition: 'transition',
+    proc: 'Machining', ra: 'Roughness', mean: 'Mean clearance', reverse: 'Chosen by the reverse lookup: desired clearance', drawing: 'Drawing callout',
+    disclaimer: 'Values from ISO 286-2 for the size range of the nominal diameter (3–500 mm). For interference fits also check the fit pressure and stresses (Lamé) and the assembly conditions.',
+    notes: ['Hole-basis system: hole H7 (EI = 0, ES = IT7), the shaft carries the tolerance position.', 'Clearance = hole size − shaft size; a negative clearance is an interference.', 'Machining and roughness are typical indications for the tolerance grade.']
+  }
+};
+
+function buildFitReportHtml() {
+  calculateFits();
+  const R = REPORT_TXT[currentLang] || REPORT_TXT.en, F = REPORT_FIT_TXT[currentLang] || REPORT_FIT_TXT.en, N = reportNum;
+  const t = translations[currentLang];
+  const dIn = parseFloat(document.getElementById('nominalDiameter').value), d = currentUnit === 'metric' ? dIn : dIn * 25.4;
+  if (!isFitDiameterValid(d)) return null;
+  const step = findIsoStep(d), fit = document.getElementById('fitType').value, a = analyzeFit(step, fit);
+  const um = v => `${v > 0 ? '+' : ''}${N(v, v % 1 ? 1 : 0)} µm`, mm = v => N(v, 3);
+  const kindTxt = F[a.kind];
+  let body = '', sec = 0;
+  const H = title => `<h3><span class="n">${++sec}.</span>${title}</h3>`;
+  const rev = currentMode === 'reverse' ? [[F.reverse, `${document.getElementById('reverseTargetVal').value} µm (${document.getElementById('reverseFitNature').value})`]] : [];
+  body += H(F.s1) + reportKV([[F.d, `Ø ${N(d, 2)} mm`], [F.step, `${step.min} – ${step.max} mm`], [F.fit, `${fit} — ${reportEsc(t.fits[fit].label)}`], ...rev]);
+  const itS = a.devs.es - a.devs.ei;
+  body += H(F.s2) + reportTable(['', F.es, F.ei, F.it, F.dmax, F.dmin], [
+    [`${F.hole} H7`, um(a.ES_H), um(a.EI_H), `${N(a.ES_H - a.EI_H, 0)} µm`, mm(d + a.ES_H / 1000), mm(d + a.EI_H / 1000)],
+    [`${F.shaft} ${a.shaftClass}`, um(a.devs.es), um(a.devs.ei), `${N(itS, 0)} µm`, mm(d + a.devs.es / 1000), mm(d + a.devs.ei / 1000)]
+  ]);
+  const ch = document.getElementById('toleranceChart');
+  if (ch) body += `<div class="fig">${reportSvgForPrint(ch.outerHTML)}</div>`;
+  body += H(F.s3) + `<div class="f">${F.playMax} = ES − ei = ${N(a.ES_H, 1)} − (${N(a.devs.ei, 1)}) = ${N(a.maxPlay, 1)} µm\n${F.playMin} = EI − es = ${N(a.EI_H, 1)} − (${N(a.devs.es, 1)}) = ${N(a.minPlay, 1)} µm\n${F.mean} = ${N((a.maxPlay + a.minPlay) / 2, 1)} µm</div>` +
+    `<div class="res"><div>${F.kind}: <span class="big">${kindTxt}</span> · ${F.playMin} ${um(a.minPlay)} · ${F.playMax} ${um(a.maxPlay)}</div></div>`;
+  body += H(F.s4) + reportTable(['', F.proc, F.ra], [[F.hole, reportEsc(t.fits[fit].holeProc), fitsRa[fit].holeRa], [F.shaft, reportEsc(t.fits[fit].shaftProc), fitsRa[fit].shaftRa]]);
+  body += H(F.s5) + reportTable([F.fit, F.playMin, F.playMax, F.kind], fitKeys.map(k => { const b = analyzeFit(step, k); return { cls: k === fit ? 'hl' : '', cells: [k, um(b.minPlay), um(b.maxPlay), F[b.kind]] }; }));
+  const sgn = v => (v >= 0 ? '+' : '−') + N(Math.abs(v) / 1000, 3);
+  body += H(F.s6) + reportKV([
+    [`${F.hole}`, `Ø${N(d, d % 1 ? 2 : 0)} H7 (${sgn(a.ES_H)} / ${sgn(a.EI_H)})`], [`${F.shaft}`, `Ø${N(d, d % 1 ? 2 : 0)} ${a.shaftClass} (${sgn(a.devs.es)} / ${sgn(a.devs.ei)})`],
+    [F.drawing, `Ø${N(d, d % 1 ? 2 : 0)} ${fit}`]
+  ]);
+  body += H(F.s7) + '<ul>' + F.notes.map(h => `<li>${h}</li>`).join('') + '</ul>';
+  return reportShell(F.title, `Ø${N(d, 2)} ${fit} · ${kindTxt}`, body, R, F.disclaimer);
 }

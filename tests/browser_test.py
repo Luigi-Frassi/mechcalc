@@ -332,7 +332,18 @@ with sync_playwright() as p:
     body = rep.evaluate("document.body.textContent")
     svgs = rep.evaluate("document.querySelectorAll('svg').length")
     check('relazione di calcolo (alberi): capitoli, Mf 1887, d = 65 e diagrammi', all(k in body for k in ['Relazione di calcolo', 'Reazioni vincolari', 'Retta di Goodman', 'Quote per il CAD', '1.887', 'd = 65 mm']) and svgs >= 5, f'svg={svgs} missing=' + str([k for k in ['Relazione di calcolo', 'Reazioni vincolari', 'Retta di Goodman', 'Quote per il CAD', '1.887', 'd = 65 mm'] if k not in body]))
-    check('  bottone Relazione nascosto fuori dal modulo alberi', pg6.evaluate("switchModule('gears'); document.getElementById('reportBtn').classList.contains('hidden')"))
+    check('  bottone Relazione visibile in tutti i moduli', pg6.evaluate("['fits','belts','gears','shafts'].every(m => { switchModule(m); return !document.getElementById('reportBtn').classList.contains('hidden'); })"))
+    # relazioni degli altri moduli: ingranaggi (progetto e potenza massima), cinghie, accoppiamenti
+    for q, keys in [('?m=gears&lang=it', ['Progetto a usura (Hertz)', 'Verifica a flessione (Lewis)', 'Quote per il CAD', 'm = 2,250 mm']),
+                    ('?m=gears&lang=it&gwToothType=helical&gwModule=4&gwFaceWidth=70&gwZ1=18&gwZ2=50&gwSpeed=750&gwAlpha=25&gwSigmaH=981&gop=wmax', ['Potenza e coppia massime', '94,91 kW']),
+                    ('?m=belts&lang=it&bmode=power', ['Larghezza della cinghia', 'Interasse effettivo', 'Designazione']),
+                    ('?m=fits&lang=it&nominalDiameter=30&fitType=H7%2Fk6', ['Scostamenti e dimensioni limite', 'Ø30 H7/k6', '+0,015'])]:
+        pq = new_page(); pq.goto(BASE + q); settle(pq)
+        with ctx.expect_page() as rp2:
+            pq.click('#reportBtn')
+        rr = rp2.value; rr.wait_for_load_state()
+        tx = rr.evaluate("document.body.textContent")
+        check('  relazione ' + q.split('&')[0][3:] + ': ' + ', '.join(keys), all(k in tx for k in keys), str([k for k in keys if k not in tx]))
     check('  quota e coppia "nessuna" nel selettore', pg3.evaluate("[...document.getElementById('shaftEl1Torque').options].some(o => o.value === 'none')"))
 
     check('  progetto: scheda carico massimo nascosta', pg.evaluate("document.getElementById('shaftMaxCard').classList.contains('hidden')"))

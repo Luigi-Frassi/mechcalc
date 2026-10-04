@@ -7,6 +7,7 @@
 let selectedAlternativeModule = null;
 let autoOptCombos = [];
 let selectedComboIdx = 0;
+let lastGearState = null;   // inputs and results of the last calculation, read by the calculation report
 
 function drawGearScheme(d1, d2, a) {
   const svg = document.getElementById('gearChart');
@@ -56,7 +57,7 @@ function drawGearScheme(d1, d2, a) {
 // ========================================================
 function renderGearWmax(isIt) {
   const toothType = document.getElementById('gwToothType')?.value || 'spur';
-  const r = computeGearWmax({
+  const params = {
     toothType,
     m_input: parseFloat(document.getElementById('gwModule')?.value) || 5.0,
     L_mm: parseFloat(document.getElementById('gwFaceWidth')?.value) || 60.0,
@@ -68,7 +69,9 @@ function renderGearWmax(isIt) {
     sigmaH_lim: parseFloat(document.getElementById('gwSigmaH')?.value) || 721.52,
     sigmaL_lim: parseFloat(document.getElementById('gwSigmaL')?.value) || 400.0,
     xr1: parseFloat(document.getElementById('gwXr1')?.value) || 0.0
-  });
+  };
+  const r = computeGearWmax(params);
+  lastGearState = { mode: 'wmax', params, r };
 
   const pDisp = document.getElementById('gwPmaxDisp');
   if (pDisp) pDisp.innerText = `${r.P_kW_max.toFixed(2)} kW`;
@@ -274,6 +277,13 @@ function calculateGears() {
     supportsAutoZ, activeCombo,
     useRecommended: selectedAlternativeModule === 'recommended'
   });
+
+  lastGearState = {
+    mode: 'design', gearType, loadMode, geomMode, isAutoZ, isLockM, isLockL, load, Ke_GPa, sigmaH_lim, xr1,
+    z1, z2, tau, targetI, lockedM, lockedL, supportsAutoZ, activeCombo,
+    targetTau: normalizeGearTau(parseFloat(document.getElementById('gearTargetTau')?.value) || 0.5),
+    combos: supportsAutoZ ? autoOptCombos.slice() : [], selectedComboIdx, r
+  };
 
   const helicalDetails = document.getElementById('helicalStepDetails');
   if (helicalDetails) {
