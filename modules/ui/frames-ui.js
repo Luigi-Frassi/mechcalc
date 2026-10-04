@@ -35,7 +35,10 @@ const FR_TXT = {
     secTitle: 'Sezioni scelte (la più grande per famiglia, quote in mm)',
     memTitle: 'Aste — famiglia', colSec: 'Sezione', colL: 'L [mm]', colN: 'N [kN]', colM: '|M| max [kN·m]', colS: 'σ max [MPa]', colX: 'X', colXb: 'X inst.', colU: 'Utilizzo',
     reacTitle: 'Reazioni vincolari', colRx: 'Rx [kN]', colRy: 'Ry [kN]', colRM: 'M [kN·m]',
-    nbTitle: 'Confronto con il notebook (FSD continuo, aste solo assiali)',
+    nbTitle: 'Confronto con il notebook (aree continue, aste solo assiali, stessi limiti 5–226 cm²)',
+    nbRows: { fsd: 'FSD del notebook, senza instabilità', fsdB: 'FSD con instabilità, tondo pieno (|σ| ≤ 0,8·σcr come nel tuo gradiente)', grad: 'Gradiente del notebook (L-BFGS-B con penalità, tondo pieno)', cat: 'Torsio, sezioni a catalogo con Eulero' },
+    nbCols: ['Metodo', 'Massa', 'Note'], nbUnstable: n => `${n} aste compresse instabili (σ > σcr)`, nbAllOk: 'resistenza e instabilità verificate',
+    nbGradNote: 'risultato del notebook: |σ| < σcr in tutte le aste compresse, 7 oltre il margine 0,8 (penalità, non vincolo)', nbCatNote: f => `famiglia ${f}`,
     nbText: (W, nInst, sAmm) => `Con le aree libere (5–226 cm², come nel notebook) e σamm = σs/X = ${sAmm} MPa l'FSD del notebook arriva a ${W} kg, ma ${nInst} aste compresse risultano instabili se fatte a tondo pieno (σ > σcr). Il dimensionamento a catalogo qui sopra tiene conto di Eulero.`,
     nbOk: (W, sAmm) => `Con le aree libere (5–226 cm², come nel notebook) e σamm = σs/X = ${sAmm} MPa l'FSD del notebook arriva a ${W} kg: è il limite inferiore teorico, senza instabilità né sezioni commerciali.`,
     hyp: 'Ipotesi: travi di Eulero-Bernoulli, piccoli spostamenti, flessione nel piano attorno all\'asse forte; σ = |N|/A + |M|/W; instabilità di Eulero con il momento d\'inerzia minimo e lunghezza libera β·L; peso proprio trascurato; taglio non verificato.',
@@ -71,7 +74,10 @@ const FR_TXT = {
     secTitle: 'Chosen sections (the largest per family, dimensions in mm)',
     memTitle: 'Members — family', colSec: 'Section', colL: 'L [mm]', colN: 'N [kN]', colM: '|M| max [kN·m]', colS: 'σ max [MPa]', colX: 'X', colXb: 'Buckl. X', colU: 'Utilization',
     reacTitle: 'Support reactions', colRx: 'Rx [kN]', colRy: 'Ry [kN]', colRM: 'M [kN·m]',
-    nbTitle: 'Comparison with the notebook (continuous FSD, axial bars only)',
+    nbTitle: 'Comparison with the notebook (continuous areas, axial bars only, same bounds 5–226 cm²)',
+    nbRows: { fsd: 'Notebook FSD, no buckling', fsdB: 'FSD with buckling, solid round (|σ| ≤ 0.8·σcr as in your gradient method)', grad: 'Notebook gradient (L-BFGS-B with penalties, solid round)', cat: 'Torsio, catalog sections with Euler' },
+    nbCols: ['Method', 'Mass', 'Notes'], nbUnstable: n => `${n} compressed bars buckle (σ > σcr)`, nbAllOk: 'strength and buckling verified',
+    nbGradNote: 'notebook result: |σ| < σcr in every compressed bar, 7 above the 0.8 margin (penalty, not a constraint)', nbCatNote: f => `${f} family`,
     nbText: (W, nInst, sAmm) => `With free areas (5–226 cm², as in the notebook) and σallow = σy/X = ${sAmm} MPa the notebook FSD reaches ${W} kg, but ${nInst} compressed bars buckle if made as solid rounds (σ > σcr). The catalog sizing above includes Euler buckling.`,
     nbOk: (W, sAmm) => `With free areas (5–226 cm², as in the notebook) and σallow = σy/X = ${sAmm} MPa the notebook FSD reaches ${W} kg: the theoretical lower bound, without buckling or commercial sections.`,
     hyp: 'Assumptions: Euler-Bernoulli beams, small displacements, in-plane bending about the strong axis; σ = |N|/A + |M|/W; Euler buckling with the minimum moment of inertia and effective length β·L; self-weight neglected; shear not checked.',
@@ -668,7 +674,9 @@ function calculateFrames() {
       if (frModel.members.every(mm => mm.relStart && mm.relEnd) && !frModel.dloads.length) {
         const sAmm = mat.sigmaS / mat.X;
         const nb = frameFSDContinuous(frModel, { E: mat.E, rho: mat.rho, sigmaAllow: sAmm, Amin: 500, Amax: 22600, Ainit: 4000, eta: 0.5, maxIter: 60, tol: 1e-4 });
-        if (nb.ok) frResults.notebook = { ...nb, sAmm, nInst: nb.sigma.filter((sg, i) => sg < 0 && -sg > nb.sigCr[i]).length };
+        const nbB = frameFSDContinuous(frModel, { E: mat.E, rho: mat.rho, sigmaAllow: sAmm, Amin: 500, Amax: 22600, Ainit: 4000, eta: 0.5, maxIter: 120, tol: 1e-4, buckling: 0.8 });
+        if (nb.ok) frResults.notebook = { ...nb, sAmm, nInst: nb.sigma.filter((sg, i) => sg < 0 && -sg > nb.sigCr[i]).length,
+          buck: nbB.ok ? nbB : null, tower: frIsNotebookTower() && Math.abs(mat.E - 70000) < 1 && Math.abs(sAmm - 170) < 0.5 && Math.abs(mat.rho - 2770) < 1 };
       }
     }
   } else frResults.error = 'empty';
@@ -711,7 +719,8 @@ function frRenderResults() {
   frEl('frCmp').innerHTML = `<thead><tr class="text-slate-400"><th class="pb-1 pr-2">${t.family}</th><th class="pr-2">${t.sections}</th><th class="pr-2">${t.mass}</th><th class="pr-2">${t.Xmin}</th><th class="pr-2">${t.Xbmin}</th><th class="pr-2">${t.dmax}</th><th>${t.status}</th></tr></thead><tbody>${rows}</tbody>`;
   // notebook comparison
   const nb = R.notebook;
-  frEl('frNb').innerHTML = nb ? `<div class="text-xs text-slate-300 border-l-2 border-amber-400 pl-3"><b class="text-white">${t.nbTitle}.</b> ${nb.nInst ? t.nbText(frNum(nb.W, 1), nb.nInst, frNum(nb.sAmm, 1)) : t.nbOk(frNum(nb.W, 1), frNum(nb.sAmm, 1))}</div>` : '';
+  frEl('frNb').innerHTML = nb ? `<div class="text-xs text-slate-300 border-l-2 border-amber-400 pl-3"><b class="text-white">${t.nbTitle}</b>` +
+    frTable(t.nbCols, frNotebookRows(R, t, frNum).map(r => `<tr class="border-t border-slate-700/50"><td class="py-1 pr-2">${r[0]}</td><td class="pr-2 text-white font-semibold">${r[1]}</td><td>${r[2]}</td></tr>`)) + `</div>` : '';
   // section drawings
   frEl('frSecs').innerHTML = R.fams.map(f => {
     const z = R.byFamily[f];
@@ -732,6 +741,24 @@ function frRenderResults() {
   const evr = evz || R.base;
   frEl('frReacTbl').innerHTML = evr ? frTable([t.node, t.type, t.colRx, t.colRy, t.colRM], evr.an.reactions.map(r =>
     `<tr class="border-t border-slate-700/50"><td class="py-1 pr-2">${r.node + 1}</td><td class="pr-2">${t.sup[r.type]}</td><td class="pr-2">${frNum(r.Rx / 1000, 2)}</td><td class="pr-2">${frNum(r.Ry / 1000, 2)}</td><td>${frNum(r.M / 1e6, 2)}</td></tr>`)) : '';
+}
+
+// Rows of the notebook comparison: [method, mass, note]
+const FR_NB_GRADIENT_KG = 1453.59;   // Luigi's notebook, gradient method on the radio tower (scipy L-BFGS-B), as printed by the notebook
+function frNotebookRows(R, t, num) {
+  const nb = R.notebook, rows = [];
+  if (!nb) return rows;
+  rows.push([t.nbRows.fsd, `${num(nb.W, 1)} kg`, nb.nInst ? t.nbUnstable(nb.nInst) : t.nbAllOk]);
+  if (nb.buck) rows.push([t.nbRows.fsdB, `${num(nb.buck.W, 1)} kg`, t.nbAllOk]);
+  if (nb.tower) rows.push([t.nbRows.grad, `${num(FR_NB_GRADIENT_KG, 1)} kg`, t.nbGradNote]);
+  if (R.best) rows.push([t.nbRows.cat, `${num(R.byFamily[R.best].mass, 1)} kg`, t.nbCatNote(t.fam[R.best])]);
+  return rows;
+}
+function frIsNotebookTower() {
+  const p = frPreset('tower'), m = frModel;
+  const key = o => JSON.stringify({ n: o.nodes.map(n => [n.x, n.y]), m: o.members.map(mm => [mm.n1, mm.n2, !!mm.relStart, !!mm.relEnd]), s: o.supports.map(s => [s.node, s.type]),
+    l: o.loads.map(l => [l.node, l.Fx || 0, l.Fy || 0, l.M || 0]), d: o.dloads.length });
+  return key(p) === key(m);
 }
 
 // ---- share link: the whole model in one compact parameter ------------------------------------------------

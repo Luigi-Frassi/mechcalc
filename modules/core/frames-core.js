@@ -392,7 +392,10 @@ function frameSize(model, family, mat, mode = 'member') {
 
 // ---- continuous FSD on areas, as in the notebook (truss bars, axial stress only) ---------------------
 // A ← A · clip(|σ|/σamm, 0.5, 1.5)^η, bounded in [Amin, Amax]; I = A²/(4π) (solid round, used only for buckling info)
-function frameFSDContinuous(model, { E, rho, sigmaAllow, Amin, Amax, Ainit, eta = 0.5, maxIter = 60, tol = 1e-4 }) {
+// With buckling = k (e.g. 0.8, the margin of the notebook's gradient method), a compressed bar must also keep
+// |σ| ≤ k·σcr with σcr = π E A / (4 L²) (solid round): A ≥ √(4 L² |N| / (k π E)). The update then drives each area
+// towards the larger of the two requirements: A ← A · clip(A_req / A, 0.5, 1.5)^η.
+function frameFSDContinuous(model, { E, rho, sigmaAllow, Amin, Amax, Ainit, eta = 0.5, maxIter = 60, tol = 1e-4, buckling = 0 }) {
   const nM = model.members.length;
   const L = model.members.map((m, i) => frMemberGeom(model, i).L);
   let A = Array.isArray(Ainit) ? Ainit.slice() : new Array(nM).fill(Ainit || (Amin + Amax) / 2);
@@ -404,7 +407,12 @@ function frameFSDContinuous(model, { E, rho, sigmaAllow, Amin, Amax, Ainit, eta 
     const sig = an.members.map((mr, i) => frameMemberActions(mr, 0).N / A[i]);
     const W = rho * A.reduce((s, a, i) => s + a * L[i], 0) * 1e-9;
     hist.push({ W, smax: Math.max(...sig.map(Math.abs)) });
-    const An = A.map((a, i) => Math.min(Amax, Math.max(Amin, a * Math.pow(Math.min(1.5, Math.max(0.5, Math.abs(sig[i]) / sigmaAllow)), eta))));
+    const ratio = i => {
+      let r = Math.abs(sig[i]) / sigmaAllow;
+      if (buckling > 0 && sig[i] < 0) r = Math.max(r, Math.sqrt(4 * L[i] ** 2 * Math.abs(sig[i] * A[i]) / (buckling * Math.PI * E)) / A[i]);
+      return r;
+    };
+    const An = A.map((a, i) => Math.min(Amax, Math.max(Amin, a * Math.pow(Math.min(1.5, Math.max(0.5, ratio(i))), eta))));
     const ch = Math.max(...An.map((a, i) => Math.abs(a - A[i]) / Math.max(A[i], 1e-12)));
     A = An;
     if (ch < tol) { converged = true; iter++; break; }

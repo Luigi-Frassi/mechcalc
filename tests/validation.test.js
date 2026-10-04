@@ -869,6 +869,11 @@ for (const [a, z1, z2, phi, g1, g2, psi] of [
   rel('Torre radio (notebook): peso FSD [kg]', fsd.W, 284.96, 1e-4);
   abs('Torre radio (notebook): iterazioni FSD', fsd.iterations, 27, 0);
   rel('Torre radio (notebook): area FSD asta 0 [cm²]', fsd.A[0] / 100, 31.89, 1e-3);
+  // FSD con instabilità come nel metodo col gradiente del notebook (tondo pieno, |σ| ≤ 0,8·σcr): ogni asta verificata,
+  // massa vicina ai 1453,6 kg del gradiente (che lasciava 7 aste di poco oltre il margine 0,8)
+  const fsdB = F.frameFSDContinuous(tower, { E: 70000, rho: 2770, sigmaAllow: 170, Amin: 500, Amax: 22600, Ainit: 4000, eta: 0.5, maxIter: 120, tol: 1e-4, buckling: 0.8 });
+  abs('Torre radio, FSD con instabilità: max |σ|/(0,8·σcr) delle aste compresse', Math.max(...fsdB.sigma.map((sg, i) => sg < 0 ? -sg / (0.8 * fsdB.sigCr[i]) : 0)), 1, 2e-3);
+  rel('Torre radio, FSD con instabilità vs gradiente del notebook (1453,6 kg) [kg]', fsdB.W, 1453.59, 0.015, 'il gradiente viola di poco il margine 0,8');
   // profilati: proprietà dalla geometria nominale (raccordi inclusi) contro i valori di catalogo
   const ipe200 = F.frSecI('IPE', 'IPE 200', 200, 100, 5.6, 8.5, 12), ipe300 = F.frSecI('IPE', 'IPE 300', 300, 150, 7.1, 10.7, 15), hea200 = F.frSecI('HEA', 'HEA 200', 190, 200, 6.5, 10, 18);
   rel('IPE 200: A = 28,5 cm²', ipe200.A / 100, 28.5, 0.003); rel('IPE 200: Iy = 1943 cm⁴', ipe200.Iy / 1e4, 1943, 0.003); rel('IPE 200: Iz = 142 cm⁴', ipe200.Iz / 1e4, 142, 0.005);

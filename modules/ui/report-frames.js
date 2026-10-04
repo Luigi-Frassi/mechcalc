@@ -156,7 +156,8 @@ function buildFrameReportHtml() {
   if (Rs.notebook) {
     const nb = Rs.notebook;
     body += H(F.s9) + reportEq([`A_i \\leftarrow A_i \\left(\\frac{|\\sigma_i|}{\\sigma_{amm}}\\right)^{\\eta},\\qquad \\sigma_{amm} = \\frac{\\sigma_s}{X} = ${T(nb.sAmm, 1)}\\ \\text{MPa},\\quad \\eta = 0{,}5`.replace('0{,}5', currentLang === 'it' ? '0{,}5' : '0.5')])
-      + reportKV([[F.nb2, `${N(nb.W, 1)} kg (${nb.iterations} it.)`], [F.nb3, `${nb.nInst} ${F.of} ${nb.A.length}`]])
+      + (nb.buck ? reportEq([`|\\sigma_i| \\le 0{,}8\\,\\sigma_{cr,i} = 0{,}8\\,\\frac{\\pi E A_i}{4 L_i^2} \\;\\Rightarrow\\; A_i \\ge \\sqrt{\\frac{4 L_i^2 |N_i|}{0{,}8\\,\\pi E}}`.replace(/0\{,\}8/g, currentLang === 'it' ? '0{,}8' : '0.8')]) : '')
+      + reportTable(t.nbCols, frNotebookRows(Rs, t, N))
       + `<p class="small">${nb.nInst ? t.nbText(N(nb.W, 1), nb.nInst, N(nb.sAmm, 1)) : t.nbOk(N(nb.W, 1), N(nb.sAmm, 1))}</p>`;
   }
 

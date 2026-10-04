@@ -393,7 +393,8 @@ with sync_playwright() as p:
     pf2 = new_page(); pf2.goto(url); settle(pf2)
     check('  il link condivisibile riapre la stessa struttura', pf2.evaluate("frModel.members.length === 1 && frModel.dloads.length === 1 && frModel.supports.length === 2 && frResults.best") == best.split(' ')[0], url[-80:])
     pf3 = new_page(); pf3.goto(BASE + '?demo=frames&lang=it'); settle(pf3)
-    tw = pf3.evaluate("[frModel.members.length, frResults.best, Math.round(frResults.notebook.W), frResults.byFamily.IPE.ok]")
+    tw = pf3.evaluate("[frModel.members.length, frResults.best, Math.round(frResults.notebook.W), frResults.byFamily.IPE.ok, frResults.notebook.tower, Math.round(frResults.notebook.buck.W)]")
+    check('  confronto col notebook: 285 kg senza instabilità, ~1471 kg con instabilità (tondo pieno), gradiente 1453,6 kg', tw[2] == 285 and tw[4] is True and abs(tw[5] - 1471) <= 2 and '1.453,6 kg' in pf3.evaluate("document.getElementById('frNb').textContent"), str(tw))
     check('  demo torre radio (notebook): 20 aste, tubo il più leggero, IPE non basta (Eulero)', tw[0] == 20 and tw[1] == 'tube' and tw[3] is False, str(tw))
     pf3.click('#reportBtn')
     with ctx.expect_page() as rpf:
