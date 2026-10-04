@@ -328,9 +328,10 @@ with sync_playwright() as p:
     pg6.evaluate("loadDemoPreset('shaftExam')"); settle(pg6)
     with ctx.expect_page() as rp:
         pg6.click('#reportBtn')
-    rep = rp.value; rep.wait_for_load_state()
+    rep = rp.value; rep.wait_for_load_state(); rep.wait_for_function("document.querySelector('.page') !== null")
     body = rep.evaluate("document.body.textContent")
     svgs = rep.evaluate("document.querySelectorAll('svg').length")
+    check('  relazione: formule impaginate (frazioni e radici vere)', rep.evaluate("document.querySelectorAll('.eq .katex .mfrac').length > 5 && document.querySelectorAll('.katex .sqrt').length > 1"))
     check('relazione di calcolo (alberi): capitoli, Mf 1887, d = 65 e diagrammi', all(k in body for k in ['Relazione di calcolo', 'Reazioni vincolari', 'Retta di Goodman', 'Quote per il CAD', '1.887', 'd = 65 mm']) and svgs >= 5, f'svg={svgs} missing=' + str([k for k in ['Relazione di calcolo', 'Reazioni vincolari', 'Retta di Goodman', 'Quote per il CAD', '1.887', 'd = 65 mm'] if k not in body]))
     check('  bottone Relazione visibile in tutti i moduli', pg6.evaluate("['fits','belts','gears','shafts'].every(m => { switchModule(m); return !document.getElementById('reportBtn').classList.contains('hidden'); })"))
     # relazioni degli altri moduli: ingranaggi (progetto e potenza massima), cinghie, accoppiamenti
@@ -341,7 +342,7 @@ with sync_playwright() as p:
         pq = new_page(); pq.goto(BASE + q); settle(pq)
         with ctx.expect_page() as rp2:
             pq.click('#reportBtn')
-        rr = rp2.value; rr.wait_for_load_state()
+        rr = rp2.value; rr.wait_for_load_state(); rr.wait_for_function("document.querySelector('.page') !== null")
         tx = rr.evaluate("document.body.textContent")
         check('  relazione ' + q.split('&')[0][3:] + ': ' + ', '.join(keys), all(k in tx for k in keys), str([k for k in keys if k not in tx]))
     check('  quota e coppia "nessuna" nel selettore', pg3.evaluate("[...document.getElementById('shaftEl1Torque').options].some(o => o.value === 'none')"))

@@ -22,7 +22,7 @@ const REPORT_TXT = {
     mate: 'ruota coniugata a', manualDirs: 'versi scelti a mano',
     forcesTitle: 'Forze delle ruote sull\'albero', formulaGear: 'Ft = 2·Mt/d,  Fr = Ft·tanθ/cosα,  Fa = Ft·tanα',
     react: 'Reazione', axial: 'assiale', req: 'C richiesto', lifeL: 'durata L', catalog: 'C catalogo', lifeCat: 'durata con C catalogo', hours: 'h',
-    bearingFormula: 'C = R · L^(1/p), p = 3 (sfere) o 10/3 (rulli); con C di catalogo L = (C/R)^p',
+    bearingFormula: 'C = R · L^(1/p), p = 3 (sfere) o 10/3 (rulli); con C di catalogo L = (C/R)^p', ballW: 'sfere', rollerW: 'rulli',
     critAt: 'Sezione con Mf massimo', sectionUsed: 'Sezione dimensionata (dati della scheda Progetto/Verifica)',
     realSecs: 'Verifica delle sezioni reali', worst: 'più critica',
     notch: 'Intaglio', shoulder: 'spallamento', keyway: 'cava per linguetta', combined: 'spallamento + cava per linguetta', manualKe: 'Ke noto', none: 'sezione liscia',
@@ -33,11 +33,11 @@ const REPORT_TXT = {
     maxLoad: 'Carico massimo con questo diametro', lifeAtX: 'Vita con X richiesto', miner: 'Danno cumulato (Miner)', manson: 'Danno cumulato (Manson)',
     remaining: 'vita residua', phase: 'fase', cad: 'Elemento', value: 'Valore', note: 'Nota',
     hyp: [
-      'Albero su due appoggi (cuscinetti) in due piani ortogonali V e H; momento risultante Mf = √(Mv² + Mh²).',
-      'Forze delle ruote applicate nel punto di contatto; la forza assiale delle ruote elicoidali genera una coppia concentrata Fa·r.',
-      'Fatica: σa,eq = √((Ke σa)² + 3(Ke\' τa)²), σm,eq = σm/2 + √((σm/2)² + τm²); Goodman σa,eq/(b₁b₂σN) + σm,eq/σR = 1/X.',
-      'Kt dalla formula B·(r/d)^a del corso, q dalla formula di Neuber (coincide con i diagrammi), Ke = q(Kt − 1) + 1; b₁ e b₂ dai diagrammi del corso.',
-      'Vita finita: retta di Wöhler tra σR a 10³ e σLF a 10⁶ cicli.'
+      'Albero su due appoggi (cuscinetti) in due piani ortogonali V e H; momento flettente risultante $M_f = \\sqrt{M_v^2 + M_h^2}$.',
+      'Forze delle ruote applicate nel punto di contatto; la forza assiale delle ruote elicoidali genera una coppia concentrata $F_a\\,r$.',
+      'Fatica: $\\sigma_{a,eq} = \\sqrt{(K_e\\,\\sigma_a)^2 + 3\\,(K_e\'\\,\\tau_a)^2}$, $\\sigma_{m,eq} = \\frac{\\sigma_m}{2} + \\sqrt{\\left(\\frac{\\sigma_m}{2}\\right)^2 + \\tau_m^2}$; retta di Goodman $\\frac{\\sigma_{a,eq}}{b_1 b_2 \\sigma_N} + \\frac{\\sigma_{m,eq}}{\\sigma_R} = \\frac{1}{X}$.',
+      '$K_t$ dalla formula $B\\,(r/d)^a$ del corso, $q$ dalla formula di Neuber (coincide con i diagrammi), $K_e = q\\,(K_t - 1) + 1$; $b_1$ e $b_2$ dai diagrammi del corso.',
+      'Vita finita: retta di Wöhler tra $\\sigma_R$ a $10^3$ e $\\sigma_{LF}$ a $10^6$ cicli.'
     ]
   },
   en: {
@@ -56,7 +56,7 @@ const REPORT_TXT = {
     mate: 'mating gear at', manualDirs: 'directions chosen by hand',
     forcesTitle: 'Gear forces on the shaft', formulaGear: 'Ft = 2·Mt/d,  Fr = Ft·tanθ/cosα,  Fa = Ft·tanα',
     react: 'Reaction', axial: 'axial', req: 'Required C', lifeL: 'life L', catalog: 'catalog C', lifeCat: 'life with catalog C', hours: 'h',
-    bearingFormula: 'C = R · L^(1/p), p = 3 (ball) or 10/3 (roller); with a catalog C, L = (C/R)^p',
+    bearingFormula: 'C = R · L^(1/p), p = 3 (ball) or 10/3 (roller); with a catalog C, L = (C/R)^p', ballW: 'ball', rollerW: 'roller',
     critAt: 'Section with the largest Mf', sectionUsed: 'Designed section (data of the Design/Check tab)',
     realSecs: 'Check of the real sections', worst: 'most critical',
     notch: 'Notch', shoulder: 'shoulder', keyway: 'keyway', combined: 'shoulder + keyway', manualKe: 'known Ke', none: 'plain section',
@@ -67,11 +67,11 @@ const REPORT_TXT = {
     maxLoad: 'Maximum load at this diameter', lifeAtX: 'Life at the required X', miner: 'Cumulative damage (Miner)', manson: 'Cumulative damage (Manson)',
     remaining: 'remaining life', phase: 'phase', cad: 'Item', value: 'Value', note: 'Note',
     hyp: [
-      'Shaft on two supports (bearings) in two orthogonal planes V and H; resultant moment Mf = √(Mv² + Mh²).',
-      'Gear forces applied at the mesh point; the axial force of helical gears adds a concentrated couple Fa·r.',
-      'Fatigue: σa,eq = √((Ke σa)² + 3(Ke\' τa)²), σm,eq = σm/2 + √((σm/2)² + τm²); Goodman σa,eq/(b₁b₂σN) + σm,eq/σR = 1/X.',
-      'Kt from the course formula B·(r/d)^a, q from Neuber\'s formula (it matches the charts), Ke = q(Kt − 1) + 1; b₁ and b₂ from the course charts.',
-      'Finite life: Wöhler line between σR at 10³ and σLF at 10⁶ cycles.'
+      'Shaft on two supports (bearings) in two orthogonal planes V and H; resultant bending moment $M_f = \\sqrt{M_v^2 + M_h^2}$.',
+      'Gear forces applied at the mesh point; the axial force of helical gears adds a concentrated couple $F_a\\,r$.',
+      'Fatigue: $\\sigma_{a,eq} = \\sqrt{(K_e\\,\\sigma_a)^2 + 3\\,(K_e\'\\,\\tau_a)^2}$, $\\sigma_{m,eq} = \\frac{\\sigma_m}{2} + \\sqrt{\\left(\\frac{\\sigma_m}{2}\\right)^2 + \\tau_m^2}$; Goodman line $\\frac{\\sigma_{a,eq}}{b_1 b_2 \\sigma_N} + \\frac{\\sigma_{m,eq}}{\\sigma_R} = \\frac{1}{X}$.',
+      '$K_t$ from the course formula $B\\,(r/d)^a$, $q$ from Neuber\'s formula (it matches the charts), $K_e = q\\,(K_t - 1) + 1$; $b_1$ and $b_2$ from the course charts.',
+      'Finite life: Wöhler line between $\\sigma_R$ at $10^3$ and $\\sigma_{LF}$ at $10^6$ cycles.'
     ]
   }
 };
@@ -85,6 +85,47 @@ function reportNum(x, n = 2) {
   if (x === null || x === undefined || Number.isNaN(x)) return '—';
   if (!Number.isFinite(x)) return '∞';
   return x.toLocaleString(currentLang === 'it' ? 'it-IT' : 'en-GB', { minimumFractionDigits: n, maximumFractionDigits: n });
+}
+
+// ---- typeset formulas (KaTeX, vendored in vendor/katex, loaded only when a report is generated)
+let reportKatexPromise = null;
+function reportLoadKatex() {
+  if (window.katex) return Promise.resolve(true);
+  if (!reportKatexPromise) {
+    reportKatexPromise = new Promise(res => {
+      const sc = document.createElement('script');
+      sc.src = 'vendor/katex/katex.min.js';
+      sc.onload = () => res(!!window.katex);
+      sc.onerror = () => res(false);
+      document.head.appendChild(sc);
+    });
+  }
+  return reportKatexPromise;
+}
+
+// Number for a TeX formula: thin space for thousands, decimal comma in Italian
+function texNum(x, n = 2) {
+  if (x === null || x === undefined || Number.isNaN(x)) return '-';
+  if (!Number.isFinite(x)) return '\\infty';
+  const neg = x < 0;
+  const [i, f] = Math.abs(x).toFixed(n).split('.');
+  const ig = i.replace(/\B(?=(\d{3})+(?!\d))/g, '\\,');
+  return (neg ? '-' : '') + ig + (f ? (currentLang === 'it' ? '{,}' : '.') + f : '');
+}
+
+// Display formulas: one TeX line per row, left aligned in a framed block
+function reportTex(tex, display = true) {
+  if (window.katex) {
+    try { return window.katex.renderToString(tex, { displayMode: display, throwOnError: false, output: 'html' }); } catch (e) { /* fall through */ }
+  }
+  return display ? `<div class="f">${reportEsc(tex)}</div>` : `<code>${reportEsc(tex)}</code>`;
+}
+function reportEq(lines) {
+  return `<div class="eq">${lines.filter(Boolean).map(l => reportTex(l, true)).join('')}</div>`;
+}
+// Text with inline formulas between $…$
+function reportTexify(str) {
+  return String(str).split(/\$([^$]+)\$/).map((part, i) => i % 2 ? reportTex(part, false) : part).join('');
 }
 
 // The app draws its SVGs for a dark background: map the light strokes/texts to dark ones for white paper
@@ -133,6 +174,10 @@ function reportCSS() {
   table.kv th { width: 42%; background: #f8fafc; font-weight: 500; color: #334155; }
   tr.hl td { background: #fff1f2; font-weight: 600; }
   .f { font-family: "JetBrains Mono", Consolas, monospace; font-size: 9.3pt; background: #f8fafc; border-left: 3px solid #2563eb; padding: 5px 8px; margin: 4px 0; white-space: pre-wrap; break-inside: avoid; }
+  .eq { border-left: 3px solid #2563eb; background: #f8fafc; padding: 2px 12px; margin: 4px 0 8px; break-inside: avoid; }
+  .eq .katex-display { text-align: left; margin: 6px 0; }
+  .eq .katex-display > .katex { text-align: left; }
+  .katex { font-size: 1.08em; }
   .ok { color: #047857; font-weight: 700; } .ko { color: #b91c1c; font-weight: 700; }
   .res { border: 1.5px solid #0f172a; border-radius: 6px; padding: 8px 10px; margin: 8px 0; break-inside: avoid; }
   .res .big { font-size: 13pt; font-weight: 700; }
@@ -156,7 +201,8 @@ function reportShell(title, subtitle, body, R, disclaimer = null) {
   let link = '';
   try { link = typeof shareUrl === 'function' ? shareUrl() : window.location.href; } catch (e) { link = window.location.href; }
   return `<!doctype html><html lang="${currentLang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${reportEsc(R.docTitle)} — ${reportEsc(subtitle)}</title><style>${reportCSS()}</style></head><body>
+<title>${reportEsc(R.docTitle)} — ${reportEsc(subtitle)}</title>
+<link rel="stylesheet" href="${new URL('vendor/katex/katex.min.css', window.location.href).href}"><style>${reportCSS()}</style></head><body>
 <div class="toolbar"><button onclick="window.print()">🖨 ${R.printBtn}</button>
 <button class="sec" onclick="(function(){var h='<!doctype html>'+document.documentElement.outerHTML;var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([h],{type:'text/html'}));a.download='relazione-mechcalc.html';a.click();})()">⬇ ${R.htmlBtn}</button>
 <span>${R.printHint}</span></div>
@@ -169,8 +215,8 @@ ${body}
 </div></body></html>`;
 }
 
-function reportOpen(html) {
-  const w = window.open('', '_blank');
+function reportOpen(html, w = null) {
+  w = w || window.open('', '_blank');
   if (w && w.document) { w.document.open(); w.document.write(html); w.document.close(); return true; }
   // popup blocked: download the report instead
   const a = document.createElement('a');
@@ -238,7 +284,7 @@ function buildShaftReportHtml() {
     body += H(R.s2) + reportTable([R.point, R.pos, R.descr], rows);
     const gearRows = beam.loads.filter(l => l.el.type === 'gear').map(l => [nameOf(l.el), N(l.MtEl, 1), N(l.Ft, 0), N(l.Fr, 0), N(l.FaMag, 0), N(l.Fv, 0), N(l.Fh, 0)]);
     if (gearRows.length) {
-      body += `<h4>${R.forcesTitle}</h4><div class="f">${R.formulaGear}</div>` +
+      body += `<h4>${R.forcesTitle}</h4>` + reportEq(['F_t = \\dfrac{2\\,M_t}{d},\\qquad F_r = \\dfrac{F_t \\tan\\theta}{\\cos\\alpha},\\qquad F_a = F_t \\tan\\alpha']) +
         reportTable([R.point, 'Mt [N·m]', 'Ft [N]', 'Fr [N]', 'Fa [N]', 'V [N]', 'H [N]'], gearRows);
       const views = beam.loads.filter(l => l.el.type === 'gear').map(l =>
         `<div class="gv">${reportSvgForPrint(shaftGearIsoView(l.el, bi, labels, active, MtShaft, t))}${reportSvgForPrint(shaftGearEndView(l.el, l.dirs, bi.rotation, t, nameOf(l.el)))}</div>`).join('');
@@ -255,7 +301,8 @@ function buildShaftReportHtml() {
         lc ? `${N(Ccat / 1000, 1)} kN → ${N(lc.L, 1)}·10⁶${lc.hours ? ` (${N(lc.hours, 0)} h)` : ''}` : '—'];
     });
     body += H(R.s3) + reportTable([R.point, 'V [kN]', 'H [kN]', 'R [kN]', `${R.axial} [kN]`, `${R.req} [kN]`, R.lifeCat], brg) +
-      `<div class="f">${R.bearingFormula}${rpm > 0 ? `\nL = ${N(bi.life, 1)}·10⁶ = ${N(bi.life * 1e6 / (60 * rpm), 0)} h @ ${N(rpm, 0)} rpm` : ''}</div>`;
+      reportEq([`C = R\\,L^{1/p}\\qquad \\left(p = 3\\ \\text{${R.ballW}},\\ p = \\tfrac{10}{3}\\ \\text{${R.rollerW}}\\right),\\qquad L = \\left(\\dfrac{C}{R}\\right)^{p}`,
+        rpm > 0 ? `L_h = \\dfrac{L \\cdot 10^6}{60\\,n} = \\dfrac{${texNum(bi.life, 1)} \\cdot 10^6}{60 \\cdot ${texNum(rpm, 0)}} = ${texNum(bi.life * 1e6 / (60 * rpm), 0)}\\ \\text{h}` : '']);
 
     // ---- 4. diagrams (redrawn fresh from the beam)
     const chart = document.getElementById('shaftBeamChart');
@@ -301,21 +348,29 @@ function buildShaftReportHtml() {
   ]);
   if (res) {
     const fs = shaftFatigueStrength(inp.sigmaR, inp.sigmaLF, inp.cycles);
-    const lines = [];
-    lines.push(`σf = 32·Mf/(π·d³) = 32·${N(L.Mf * 1000, 0)}/(π·${N(d, 1)}³) = ${N(res.sigmaBa || res.sigmaBm, 2)} MPa`);
-    if (L.Mt) lines.push(`τ = 16·Mt/(π·d³) = 16·${N(L.Mt * 1000, 0)}/(π·${N(d, 1)}³) = ${N(res.tauA + res.tauM, 2)} MPa  (τa = ${N(res.tauA, 2)}, τm = ${N(res.tauM, 2)})`);
-    if (L.N) lines.push(`σN = N/A = ${N(res.sigmaN, 2)} MPa`);
-    body += `<h4>${R.nominal}</h4><div class="f">${lines.join('\n')}</div>`;
+    const T = texNum, sb = res.sigmaBa || res.sigmaBm, sm = res.sigmaBm + res.sigmaN;
+    const nom = [`\\sigma_f = \\dfrac{32\\,M_f}{\\pi\\, d^3} = \\dfrac{32 \\cdot ${T(L.Mf * 1000, 0)}}{\\pi \\cdot ${T(d, d % 1 ? 1 : 0)}^3} = ${T(sb, 2)}\\ \\text{MPa}`];
+    if (L.Mt) nom.push(`\\tau = \\dfrac{16\\,M_t}{\\pi\\, d^3} = \\dfrac{16 \\cdot ${T(L.Mt * 1000, 0)}}{\\pi \\cdot ${T(d, d % 1 ? 1 : 0)}^3} = ${T(res.tauA + res.tauM, 2)}\\ \\text{MPa}\\qquad (\\tau_a = ${T(res.tauA, 2)},\\ \\tau_m = ${T(res.tauM, 2)})`);
+    if (L.N) nom.push(`\\sigma_N = \\dfrac{N}{A} = \\dfrac{4\\,N}{\\pi\\, d^2} = ${T(res.sigmaN, 2)}\\ \\text{MPa}`);
+    body += `<h4>${R.nominal}</h4>` + reportEq(nom);
     const cl = [];
-    if (res.KtB !== undefined) cl.push(`Kt = ${N(res.KtB, 3)} (r/d = ${N(res.rd, 4)}) · q = ${N(res.qB, 3)} → Ke,sp = q·(Kt − 1) + 1 = ${N(res.shoulderKe || res.ke, 3)}`);
-    if (res.keyKe) cl.push(`ke ${R.keyway} = ${N(res.keyKe, 2)} / ke' = ${N(res.keyKeT, 2)}`);
-    cl.push(`Ke = ${N(res.ke, 3)} · Ke' = ${N(res.keT, 3)} · b₁(${N(d, 0)}) = ${N(res.b1, 3)} · b₂ = ${N(res.b2, 3)}`);
-    cl.push(fs.finite ? `σN = σR·(10³/N)^(1/m) = ${N(res.sigmaNf, 1)} MPa  (m = 3/log(σR/σLF) = ${N(fs.m, 3)})` : `σN = σLF = ${N(res.sigmaNf, 0)} MPa`);
-    body += `<h4>${R.coeffs}</h4><div class="f">${cl.join('\n')}</div>`;
-    body += `<h4>${R.eqStress}</h4><div class="f">σa,eq = √((Ke·σa)² + 3·(Ke'·τa)²) = ${N(res.sigmaAeq, 2)} MPa\nσm,eq = σm/2 + √((σm/2)² + τm²) = ${N(res.sigmaMeq, 2)} MPa</div>`;
+    if (res.KtB !== undefined) cl.push(`K_e = q\\,(K_t - 1) + 1 = ${T(res.qB, 3)} \\cdot (${T(res.KtB, 3)} - 1) + 1 = ${T(res.shoulderKe || res.ke, 3)}\\qquad \\left(\\tfrac{r}{d} = ${T(res.rd, 4)},\\ \\tfrac{D}{d} = ${T(inp.notch.Dd || (D / d), 2)}\\right)`);
+    if (res.keyKe && res.shoulderKe) cl.push(`K_e = K_{e,\\text{sp}} \\cdot k_{e,\\text{l}} = ${T(res.shoulderKe, 3)} \\cdot ${T(res.keyKe, 2)} = ${T(res.ke, 3)},\\qquad K_e' = ${T(res.shoulderKeT, 3)} \\cdot ${T(res.keyKeT, 2)} = ${T(res.keT, 3)}`);
+    else cl.push(`K_e = ${T(res.ke, 3)},\\qquad K_e' = ${T(res.keT, 3)}`);
+    cl.push(`b_1(${T(d, 0)}) = ${T(res.b1, 3)},\\qquad b_2 = ${T(res.b2, 3)}`);
+    cl.push(fs.finite
+      ? `\\sigma_N = \\sigma_R \\left(\\dfrac{10^3}{N}\\right)^{1/m} = ${T(inp.sigmaR, 0)} \\left(\\dfrac{10^3}{${T(inp.cycles, 0)}}\\right)^{1/${T(fs.m, 3)}} = ${T(res.sigmaNf, 1)}\\ \\text{MPa},\\qquad m = \\dfrac{3}{\\log(\\sigma_R/\\sigma_{LF})} = ${T(fs.m, 3)}`
+      : `\\sigma_N = \\sigma_{LF} = ${T(res.sigmaNf, 0)}\\ \\text{MPa}`);
+    body += `<h4>${R.coeffs}</h4>` + reportEq(cl);
+    body += `<h4>${R.eqStress}</h4>` + reportEq([
+      `\\sigma_{a,eq} = \\sqrt{(K_e\\,\\sigma_a)^2 + 3\\,(K_e'\\,\\tau_a)^2} = \\sqrt{(${T(res.ke, 3)} \\cdot ${T(res.sigmaBa, 2)})^2 + 3\\,(${T(res.keT, 3)} \\cdot ${T(res.tauA, 2)})^2} = ${T(res.sigmaAeq, 2)}\\ \\text{MPa}`,
+      `\\sigma_{m,eq} = \\dfrac{\\sigma_m}{2} + \\sqrt{\\left(\\dfrac{\\sigma_m}{2}\\right)^2 + \\tau_m^2} = \\dfrac{${T(sm, 2)}}{2} + \\sqrt{\\left(\\dfrac{${T(sm, 2)}}{2}\\right)^2 + ${T(res.tauM, 2)}^2} = ${T(res.sigmaMeq, 2)}\\ \\text{MPa}`]);
     const okF = res.Xfatigue >= Xreq - 1e-9, okY = res.Xyield >= Xreq - 1e-9;
     const vMis = shaftStaticVonMises(inp, d);
-    body += `<h4>${R.goodman} · ${R.yieldT}</h4><div class="f">1/X = σa,eq/(b₁·b₂·σN) + σm,eq/σR = ${N(res.sigmaAeq, 2)}/(${N(res.b1, 3)}·${N(res.b2, 3)}·${N(res.sigmaNf, 1)}) + ${N(res.sigmaMeq, 2)}/${N(inp.sigmaR, 0)}  →  X = ${N(res.Xfatigue, 3)}\nX = σs/(σa,eq + σm,eq) = ${N(inp.sigmaS, 0)}/${N(res.sigmaAeq + res.sigmaMeq, 2)} = ${N(res.Xyield, 3)}\n${R.vonMises}: σid = √(σ² + 3τ²) = ${N(vMis.sigmaId, 2)} MPa → X = ${N(vMis.X, 2)}</div>`;
+    body += `<h4>${R.goodman} · ${R.yieldT}</h4>` + reportEq([
+      `\\dfrac{1}{X} = \\dfrac{\\sigma_{a,eq}}{b_1\\, b_2\\, \\sigma_N} + \\dfrac{\\sigma_{m,eq}}{\\sigma_R} = \\dfrac{${T(res.sigmaAeq, 2)}}{${T(res.b1, 3)} \\cdot ${T(res.b2, 3)} \\cdot ${T(res.sigmaNf, 1)}} + \\dfrac{${T(res.sigmaMeq, 2)}}{${T(inp.sigmaR, 0)}} \\;\\Rightarrow\\; X = ${T(res.Xfatigue, 3)}`,
+      `X = \\dfrac{\\sigma_s}{\\sigma_{a,eq} + \\sigma_{m,eq}} = \\dfrac{${T(inp.sigmaS, 0)}}{${T(res.sigmaAeq + res.sigmaMeq, 2)}} = ${T(res.Xyield, 3)}`]) +
+      `<p class="small">${R.vonMises}:</p>` + reportEq([`\\sigma_{id} = \\sqrt{\\sigma^2 + 3\\,\\tau^2} = ${T(vMis.sigmaId, 2)}\\ \\text{MPa} \\;\\Rightarrow\\; X = \\dfrac{\\sigma_s}{\\sigma_{id}} = ${T(vMis.X, 2)}`]);
     let resBox = '';
     if (des && des.ok) resBox += `<div>${R.dMin}: <span class="big">d ≥ ${N(des.dMin, 1)} mm</span> (${R.governs} ${des.governing === 'yield' ? R.yieldG : R.fatigue})</div>` +
       `<div>${R.dChosen}: <span class="big">d = ${N(d, 0)} mm${D ? ` · D = ${N(D, 0)} mm` : ''}</span>${shoulder ? ` · r = ${N(inp.notch.r, 1)} mm` : ''}</div>`;
@@ -360,7 +415,7 @@ function buildShaftReportHtml() {
   }
 
   // ---- 9. assumptions
-  body += H(R.s9) + '<ul>' + R.hyp.map(h => `<li>${h}</li>`).join('') + '</ul>';
+  body += H(R.s9) + '<ul>' + R.hyp.map(h => `<li>${reportTexify(h)}</li>`).join('') + '</ul>';
 
   calculateShafts();   // restore the app view (the report redrew some charts)
   return reportShell(R.shaftTitle, mode === 'check' ? `${R.s6c} · d = ${N(d, 1)} mm` : (d ? `d = ${N(d, 0)} mm` : ''), body, R);
@@ -372,8 +427,15 @@ function openShaftReport() {
 
 function openReport() {
   const build = { shafts: buildShaftReportHtml, gears: buildGearReportHtml, belts: buildBeltReportHtml, fits: buildFitReportHtml }[activeModule];
-  const html = build ? build() : null;
-  if (html) reportOpen(html);
+  if (!build) return;
+  // open the tab now (inside the click, so popup blockers allow it), fill it when the formula typesetter is ready
+  const w = window.open('', '_blank');
+  if (w && w.document) w.document.write('<p style="font-family:sans-serif;padding:20px">…</p>');
+  reportLoadKatex().then(() => {
+    const html = build();
+    if (html) reportOpen(html, w);
+    else if (w) w.close();
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -394,10 +456,10 @@ const REPORT_GEAR_TXT = {
     serie: 'Serie UNI', chosenM: 'Modulo unificato scelto', mmin: 'Modulo minimo (ϕ = 1)', combo: 'Combinazione', selected: 'scelta',
     item: 'Elemento', pinion: 'Pignone (1)', wheel: 'Ruota (2)', tip: 'Ø di testa', root: 'Ø di piede', limitedBy: 'Limitata da', hertz: 'usura (Hertz)', lewis: 'flessione (Lewis)',
     hyp: [
-      'Angolo di pressione θ = 20°, dentatura normale (addendum m, dedendum 1,25 m); il pignone è la ruota più sollecitata.',
-      'Usura: pressione di Hertz sul primitivo, W = σH²·L·ω₁·sin2θ·m²·z₁²/(8·Ke·(1 + τ)); il progetto fissa ϕ = L/dp₁ e ricava il modulo, poi la larghezza al modulo unificato.',
-      'Flessione: formula di Lewis σL = Fc/(L·m·y), con y dal diagramma del corso (z o z equivalente per le elicoidali).',
-      'Ruote elicoidali: fattori Φ, Ψ, Γt dal diagramma del corso; z_eq = z/cos³α.',
+      'Angolo di pressione $\\theta = 20°$, dentatura normale (addendum $m$, dedendum $1{,}25\\,m$); il pignone è la ruota più sollecitata.',
+      'Usura: pressione di Hertz sul primitivo, $W = \\frac{\\sigma_H^2\\, L\\, \\omega_1 \\sin 2\\theta\\; m^2 z_1^2}{8\\, K_e\\, (1 + \\tau)}$; il progetto fissa $\\phi = L/d_{p1}$ e ricava il modulo, poi la larghezza al modulo unificato.',
+      'Flessione: formula di Lewis $\\sigma_L = \\frac{F_c}{L\\, m\\, y}$, con $y$ dal diagramma del corso ($z$ o $z$ equivalente per le elicoidali).',
+      'Ruote elicoidali: fattori $\\Phi$, $\\Psi$, $\\Gamma_t$ dal diagramma del corso; $z_{eq} = z/\\cos^3\\alpha$.',
       'I risultati sono di massima: per il progetto esecutivo usare ISO 6336 (fattori di carico, velocità, lubrificazione, materiali).'
     ]
   },
@@ -415,10 +477,10 @@ const REPORT_GEAR_TXT = {
     serie: 'UNI series', chosenM: 'Chosen standard module', mmin: 'Minimum module (ϕ = 1)', combo: 'Combination', selected: 'chosen',
     item: 'Item', pinion: 'Pinion (1)', wheel: 'Wheel (2)', tip: 'Tip Ø', root: 'Root Ø', limitedBy: 'Limited by', hertz: 'pitting (Hertz)', lewis: 'bending (Lewis)',
     hyp: [
-      'Pressure angle θ = 20°, standard teeth (addendum m, dedendum 1.25 m); the pinion is the most loaded gear.',
-      'Pitting: Hertz pressure at the pitch point, W = σH²·L·ω₁·sin2θ·m²·z₁²/(8·Ke·(1 + τ)); the design fixes ϕ = L/dp₁ and finds the module, then the face width at the standard module.',
-      'Bending: Lewis formula σL = Fc/(L·m·y), with y from the course chart (z, or the equivalent z for helical gears).',
-      'Helical gears: factors Φ, Ψ, Γt from the course chart; z_eq = z/cos³α.',
+      'Pressure angle $\\theta = 20°$, standard teeth (addendum $m$, dedendum $1.25\\,m$); the pinion is the most loaded gear.',
+      'Pitting: Hertz pressure at the pitch point, $W = \\frac{\\sigma_H^2\\, L\\, \\omega_1 \\sin 2\\theta\\; m^2 z_1^2}{8\\, K_e\\, (1 + \\tau)}$; the design fixes $\\phi = L/d_{p1}$ and finds the module, then the face width at the standard module.',
+      'Bending: Lewis formula $\\sigma_L = \\frac{F_c}{L\\, m\\, y}$, with $y$ from the course chart ($z$, or the equivalent $z$ for helical gears).',
+      'Helical gears: factors $\\Phi$, $\\Psi$, $\\Gamma_t$ from the course chart; $z_{eq} = z/\\cos^3\\alpha$.',
       'The results are preliminary: for the final design use ISO 6336 (load, speed and lubrication factors, materials).'
     ]
   }
@@ -457,11 +519,16 @@ function buildGearReportHtml() {
       [G.Ke, `${N(p.Ke_GPa, 1)} GPa`], [G.sigmaH, `${N(p.sigmaH_lim, 1)} MPa`], [G.sigmaL, `${N(p.sigmaL_lim, 1)} MPa`], [G.xr, N(p.xr1, 2)]
     ]);
     body += H(G.s2) + reportKV([[G.pitch, `dp₁ = ${N(r.dp1, 2)} mm · dp₂ = ${N(r.dp2, 2)} mm`], [G.centerD, `${N(r.a_center, 2)} mm`], [G.phi, N(r.phi, 3)]]) + chartSvg();
-    body += H(G.s3w) + `<div class="f">W_H = σH²·L·ω₁·sin2θ·mt²·z₁²${hel ? '·Γt/Φ' : ''} / (8·Ke·(1 + τ))\n    = ${N(p.sigmaH_lim, 1)}²·${N(p.L_mm, 1)}·${N(omega, 2)}·${N(sin2t, 4)}·${N(mt, 3)}²·${p.z1}²${hel ? `·${N(f.Gamma_T, 3)}/${N(f.Phi, 3)}` : ''} / (8·${N(p.Ke_GPa * 1000, 0)}·${N(1 + tau, 4)})\n    = ${N(r.P_kW_H, 2)} kW</div>`;
-    body += H(G.s4w) + `<div class="f">y = ${N(r.yLewis, 3)}${hel ? ` (z_eq = ${N(p.z1 / Math.pow(cosA, 3), 1)})` : ''}\nW_L = σL·ω₁·L·mt·mn·z₁·y${hel ? '·Γt/Ψ' : ''} / 2 = ${N(r.P_kW_L, 2)} kW</div>`;
+    const T = texNum;
+    body += H(G.s3w) + reportEq([
+      `W_H = \\dfrac{\\sigma_H^2\\, L\\, \\omega_1 \\sin 2\\theta\\; m_t^2\\, z_1^2}{8\\, K_e\\, (1 + \\tau)}${hel ? '\\cdot\\dfrac{\\Gamma_t}{\\Phi}' : ''}`,
+      `\\phantom{W_H} = \\dfrac{${T(p.sigmaH_lim, 1)}^2 \\cdot ${T(p.L_mm, 1)} \\cdot ${T(omega, 2)} \\cdot ${T(sin2t, 4)} \\cdot ${T(mt, 3)}^2 \\cdot ${p.z1}^2}{8 \\cdot ${T(p.Ke_GPa * 1000, 0)} \\cdot ${T(1 + tau, 4)}}${hel ? `\\cdot\\dfrac{${T(f.Gamma_T, 3)}}{${T(f.Phi, 3)}}` : ''} = ${T(r.P_kW_H, 2)}\\ \\text{kW}`]);
+    body += H(G.s4w) + reportEq([
+      `y = ${T(r.yLewis, 3)}${hel ? `\\qquad \\left(z_{eq} = \\dfrac{z_1}{\\cos^3\\alpha} = ${T(p.z1 / Math.pow(cosA, 3), 1)}\\right)` : ''}`,
+      `W_L = \\dfrac{\\sigma_L\\, \\omega_1\\, L\\, m_t\\, m_n\\, z_1\\, y}{2}${hel ? '\\cdot\\dfrac{\\Gamma_t}{\\Psi}' : ''} = \\dfrac{${T(p.sigmaL_lim, 0)} \\cdot ${T(omega, 2)} \\cdot ${T(p.L_mm, 1)} \\cdot ${T(mt, 3)} \\cdot ${T(p.m_input, 3)} \\cdot ${p.z1} \\cdot ${T(r.yLewis, 3)}}{2}${hel ? `\\cdot\\dfrac{${T(f.Gamma_T, 3)}}{${T(f.Psi, 3)}}` : ''} = ${T(r.P_kW_L, 2)}\\ \\text{kW}`]);
     body += H(G.s5w) + `<div class="res"><div>P max = <span class="big">${N(r.P_kW_max, 2)} kW</span> · M₁ max = <span class="big">${N(r.M1_max, 1)} N·m</span></div><div>${G.limitedBy} ${r.limitedBy === 'hertz' ? G.hertz : G.lewis} · Fc max = ${N(r.Fc_max, 0)} N</div></div>`;
     body += H(G.s6) + cadRows(p.z1, p.z2, p.m_input, mt, p.xr1, p.L_mm, hel ? p.alphaDeg : 0);
-    body += H(G.s7) + '<ul>' + G.hyp.map(h => `<li>${h}</li>`).join('') + '</ul>';
+    body += H(G.s7) + '<ul>' + G.hyp.map(h => `<li>${reportTexify(h)}</li>`).join('') + '</ul>';
     return reportShell(G.titleW, `P max = ${N(r.P_kW_max, 2)} kW`, body, R, G.disclaimer);
   }
 
@@ -483,18 +550,21 @@ function buildGearReportHtml() {
     [G.undercut, `z${hel ? '_eq' : '₁'} = ${N(r.z_check, 1)} ${r.undercutOk ? '≥' : '<'} z_min = ${N(r.z_min, 1)} <span class="${r.undercutOk ? 'ok' : 'ko'}">${r.undercutOk ? G.ok : G.ko}</span>`]
   ]) + chartSvg();
   // Hertz
-  const hz = [];
+  const T = texNum, hz = [], hzTxt = [];
   if (!st.activeCombo && !st.isLockM) {
-    hz.push(`${G.mmin}: m³ = 8·Ke·W·(1 + τ)${hel ? '·0,6' : ''} / (ω₁·sin2θ·z₁³·σH²)`);
-    hz.push(`     = 8·${N(Ke, 0)}·${N(W, 0)}·${N(1 + st.tau, 4)}${hel ? '·0,6' : ''} / (${N(ld.omega1, 2)}·${N(sin2t, 4)}·${st.z1}³·${N(st.sigmaH_lim, 1)}²)  →  m_min = ${N(r.m_min, 3)} mm`);
+    hz.push(`m_{min}^3 = \\dfrac{8\\, K_e\\, W\\, (1 + \\tau)${hel ? '\\cdot 0{,}6' : ''}}{\\omega_1 \\sin 2\\theta\\; z_1^3\\, \\sigma_H^2} = \\dfrac{8 \\cdot ${T(Ke, 0)} \\cdot ${T(W, 0)} \\cdot ${T(1 + st.tau, 4)}${hel ? '\\cdot 0{,}6' : ''}}{${T(ld.omega1, 2)} \\cdot ${T(sin2t, 4)} \\cdot ${st.z1}^3 \\cdot ${T(st.sigmaH_lim, 1)}^2} \\;\\Rightarrow\\; m_{min} = ${T(r.m_min, 3)}\\ \\text{mm}\\quad (\\phi = 1)`);
   }
-  hz.push(`${G.chosenM}: ${hel ? `mn = ${N(r.mn, 3)} mm → mt = mn/cosα = ${N(r.mt, 3)} mm` : `m = ${N(r.m_norm, 3)} mm`} (${G.serie} ${r.activeModuleObj.serie || '—'})`);
-  if (!st.isLockL) hz.push(`ϕ = 8·Ke·W·(1 + τ) / (ω₁·sin2θ·z₁³·m³·σH²)${hel ? '·Φ/Γt' : ''} = ${N(r.phi, 3)}  →  L = ϕ·dp₁ = ${N(r.phi, 3)}·${N(r.dp1, 2)} = ${N(r.L_face, 1)} mm`);
-  else hz.push(`L = ${N(r.L_face, 1)} mm (${G.lockL}) → ϕ = L/dp₁ = ${N(r.phi, 3)}`);
-  if (hel) hz.push(`Φ = ${N(r.factors.Phi, 3)} · Ψ = ${N(r.factors.Psi, 3)} · Γt = Γt₁ + Γt₂ = ${N(r.factors.Gamma_T1, 3)} + ${N(r.factors.Gamma_T2, 3)} = ${N(r.factors.Gamma_T, 3)}`);
-  body += H(G.s3) + `<div class="f">${hz.join('\n')}</div>`;
+  hzTxt.push(`${G.chosenM}: <b>${hel ? `mn = ${N(r.mn, 3)} mm → mt = mn / cos α = ${N(r.mt, 3)} mm` : `m = ${N(r.m_norm, 3)} mm`}</b> (${G.serie} ${r.activeModuleObj.serie || '—'})`);
+  const hz2 = [];
+  if (!st.isLockL) hz2.push(`\\phi = \\dfrac{8\\, K_e\\, W\\, (1 + \\tau)}{\\omega_1 \\sin 2\\theta\\; z_1^3\\, ${hel ? 'm_t' : 'm'}^3\\, \\sigma_H^2}${hel ? '\\cdot\\dfrac{\\Phi}{\\Gamma_t}' : ''} = ${T(r.phi, 3)} \\;\\Rightarrow\\; L = \\phi\\, d_{p1} = ${T(r.phi, 3)} \\cdot ${T(r.dp1, 2)} = ${T(r.L_face, 1)}\\ \\text{mm}`);
+  else hz2.push(`L = ${T(r.L_face, 1)}\\ \\text{mm} \\;\\Rightarrow\\; \\phi = \\dfrac{L}{d_{p1}} = ${T(r.phi, 3)}`);
+  if (hel) hz2.push(`\\Phi = ${T(r.factors.Phi, 3)},\\qquad \\Psi = ${T(r.factors.Psi, 3)},\\qquad \\Gamma_t = \\Gamma_{t1} + \\Gamma_{t2} = ${T(r.factors.Gamma_T1, 3)} + ${T(r.factors.Gamma_T2, 3)} = ${T(r.factors.Gamma_T, 3)}`);
+  body += H(G.s3) + (hz.length ? reportEq(hz) : '') + `<p>${hzTxt.join('')}</p>` + reportEq(hz2);
   // Lewis
-  body += H(G.s4) + `<div class="f">Fc = 2·M₁/dp₁ = 2·${N(ld.M1_Nm * 1000, 0)}/${N(r.dp1, 2)} = ${N(r.Fc, 0)} N\ny = ${N(r.yLewis, 3)}${hel ? ` (z_eq = z₁/cos³α = ${N(r.z_check, 1)})` : ''}\nσL = Fc/(L·m·y)${hel ? '·Ψ/Γt' : ''} = ${N(r.Fc, 0)}/(${N(r.L_face, 1)}·${N(r.mn, 3)}·${N(r.yLewis, 3)})${hel ? `·${N(r.factors.Psi, 3)}/${N(r.factors.Gamma_T, 3)}` : ''} = ${N(r.sigma_L, 1)} MPa</div>` +
+  body += H(G.s4) + reportEq([
+    `F_c = \\dfrac{2\\, M_1}{d_{p1}} = \\dfrac{2 \\cdot ${T(ld.M1_Nm * 1000, 0)}}{${T(r.dp1, 2)}} = ${T(r.Fc, 0)}\\ \\text{N}`,
+    `y = ${T(r.yLewis, 3)}${hel ? `\\qquad \\left(z_{eq} = \\dfrac{z_1}{\\cos^3\\alpha} = ${T(r.z_check, 1)}\\right)` : ''}`,
+    `\\sigma_L = \\dfrac{F_c}{L\\, m${hel ? '_n' : ''}\\, y}${hel ? '\\cdot\\dfrac{\\Psi}{\\Gamma_t}' : ''} = \\dfrac{${T(r.Fc, 0)}}{${T(r.L_face, 1)} \\cdot ${T(r.mn, 3)} \\cdot ${T(r.yLewis, 3)}}${hel ? `\\cdot\\dfrac{${T(r.factors.Psi, 3)}}{${T(r.factors.Gamma_T, 3)}}` : ''} = ${T(r.sigma_L, 1)}\\ \\text{MPa}`]) +
     `<div class="res"><div>σL = <span class="big">${N(r.sigma_L, 0)} MPa</span> ≤ 800 MPa <span class="${lewOk ? 'ok' : 'ko'}">${lewOk ? G.ok : G.ko}</span> · ϕ = <b>${N(r.phi, 2)}</b> (${unitOk ? G.inRange : G.outRange})</div></div>`;
   // optimizer table
   if (st.combos.length) {
@@ -505,7 +575,7 @@ function buildGearReportHtml() {
     })));
   }
   body += H(G.s6) + cadRows(st.z1, st.z2, r.mn, r.mt, st.xr1, r.L_face, hel ? r.alphaDeg : 0);
-  body += H(G.s7) + '<ul>' + G.hyp.map(h => `<li>${h}</li>`).join('') + '</ul>';
+  body += H(G.s7) + '<ul>' + G.hyp.map(h => `<li>${reportTexify(h)}</li>`).join('') + '</ul>';
   return reportShell(G.title, `z₁ = ${st.z1}, z₂ = ${st.z2}, ${hel ? 'mn' : 'm'} = ${N(r.mn, 2)} mm, L = ${N(r.L_face, 1)} mm`, body, R, G.disclaimer);
 }
 
@@ -523,9 +593,9 @@ const REPORT_BELT_TXT = {
     order: 'Designazione per l\'ordine', od: 'Ø esterno e flange: dal catalogo del produttore',
     disclaimer: 'Dimensionamento di massima: geometria esatta, larghezza con una forza ammissibile media per profilo (valore indicativo). Per la scelta definitiva usare il catalogo del produttore della cinghia (tabelle di potenza, velocità, tensionamento).',
     hyp: [
-      'Diametro primitivo dp = z·p/π; sviluppo primitivo L₀ = 2C₀ + π/2·(dp₁ + dp₂) + (dp₂ − dp₁)²/(4C₀), arrotondato a un numero intero di denti.',
+      'Diametro primitivo $d_p = z\\,p/\\pi$; sviluppo primitivo $L_0 = 2C_0 + \\frac{\\pi}{2}(d_{p1} + d_{p2}) + \\frac{(d_{p2} - d_{p1})^2}{4C_0}$, arrotondato a un numero intero di denti.',
       'Interasse effettivo dalla soluzione esatta dell\'equazione dello sviluppo (cinghia tesa, rami rettilinei).',
-      'Forza tangenziale Ft = Pc/v con Pc = c₀·P; forza ammissibile per mm di larghezza media per profilo, corretta con c₁ (denti in presa) e c₂ (lunghezza).',
+      'Forza tangenziale $F_t = P_c/v$ con $P_c = c_0\\,P$; forza ammissibile per mm di larghezza media per profilo, corretta con $c_1$ (denti in presa) e $c_2$ (lunghezza).',
       'La larghezza è un valore indicativo: i cataloghi danno la potenza trasmissibile in funzione di velocità e numero di denti.'
     ]
   },
@@ -539,9 +609,9 @@ const REPORT_BELT_TXT = {
     order: 'Ordering designation', od: 'Outside Ø and flanges: from the manufacturer\'s catalog',
     disclaimer: 'Preliminary sizing: exact geometry, width from an average allowable force per profile (indicative). For the final choice use the belt manufacturer\'s catalog (power ratings, speed, tensioning).',
     hyp: [
-      'Pitch diameter dp = z·p/π; pitch length L₀ = 2C₀ + π/2·(dp₁ + dp₂) + (dp₂ − dp₁)²/(4C₀), rounded to a whole number of teeth.',
+      'Pitch diameter $d_p = z\\,p/\\pi$; pitch length $L_0 = 2C_0 + \\frac{\\pi}{2}(d_{p1} + d_{p2}) + \\frac{(d_{p2} - d_{p1})^2}{4C_0}$, rounded to a whole number of teeth.',
       'Actual centre distance from the exact solution of the length equation (taut belt, straight spans).',
-      'Tangential force Ft = Pc/v with Pc = c₀·P; allowable force per mm of width averaged per profile, corrected with c₁ (teeth in mesh) and c₂ (length).',
+      'Tangential force $F_t = P_c/v$ with $P_c = c_0\\,P$; allowable force per mm of width averaged per profile, corrected with $c_1$ (teeth in mesh) and $c_2$ (length).',
       'The width is indicative: catalogs give the transmissible power as a function of speed and number of teeth.'
     ]
   }
@@ -571,16 +641,25 @@ function buildBeltReportHtml() {
     body += `<div class="res ko">${B.tooSmall}</div>`;
     return reportShell(B.title, reportEsc(profName), body, R, B.disclaimer);
   }
-  body += `<div class="f">L₀ = 2·C₀ + π/2·(dp₁ + dp₂) + (dp₂ − dp₁)²/(4·C₀) = ${N(2 * C0 + Math.PI / 2 * (r.dp1 + r.dp2) + Math.pow(r.dp2 - r.dp1, 2) / (4 * C0), 2)} mm\nz_b = L₀/p → ${r.zb} ${B.teethW}  →  Lp = z_b·p = ${N(r.Lp, 1)} mm</div>`;
-  body += H(B.s3) + `<div class="f">C = [B + √(B² − 32·(dp₂ − dp₁)²)]/16,  B = 4·Lp − 2π·(dp₁ + dp₂)\nC = ${N(r.exactC_mm, 2)} mm  (Δ = ${N(r.cDiff, 2)} mm)</div>`;
+  const T = texNum, L0 = 2 * C0 + Math.PI / 2 * (r.dp1 + r.dp2) + Math.pow(r.dp2 - r.dp1, 2) / (4 * C0);
+  body += reportEq([
+    `L_0 = 2\\,C_0 + \\dfrac{\\pi}{2}\\,(d_{p1} + d_{p2}) + \\dfrac{(d_{p2} - d_{p1})^2}{4\\,C_0} = 2 \\cdot ${T(C0, 1)} + \\dfrac{\\pi}{2}\\,(${T(r.dp1, 2)} + ${T(r.dp2, 2)}) + \\dfrac{(${T(r.dp2, 2)} - ${T(r.dp1, 2)})^2}{4 \\cdot ${T(C0, 1)}} = ${T(L0, 2)}\\ \\text{mm}`,
+    `z_b = \\dfrac{L_0}{p} = ${T(L0 / r.p, 2)} \\;\\to\\; ${r.zb} \\;\\Rightarrow\\; L_p = z_b\\, p = ${T(r.Lp, 1)}\\ \\text{mm}`]);
+  const Bq = 4 * r.Lp - 2 * Math.PI * (r.dp1 + r.dp2);
+  body += H(B.s3) + reportEq([
+    `C = \\dfrac{B + \\sqrt{B^2 - 32\\,(d_{p2} - d_{p1})^2}}{16},\\qquad B = 4\\,L_p - 2\\pi\\,(d_{p1} + d_{p2}) = ${T(Bq, 2)}\\ \\text{mm}`,
+    `C = ${T(r.exactC_mm, 2)}\\ \\text{mm}\\qquad (\\Delta = ${T(r.cDiff, 2)}\\ \\text{mm})`]);
   const ch = document.getElementById('beltChart');
   if (ch) body += `<div class="fig">${reportSvgForPrint(ch.outerHTML)}</div>`;
   body += H(B.s4) + reportKV([
-    ['β₁', `π − 2·asin((dp₂ − dp₁)/(2C)) = ${N(r.wrapDeg1, 1)}°`],
-    [B.mesh, `z₁·β₁/360 = ${N(r.z_mesh, 1)} (${r.meshOk ? B.meshOk : B.meshKo}, c₁ = ${N(r.c1, 2)})`]
+    ['β₁', reportTex(`\\beta_1 = \\pi - 2 \\arcsin\\dfrac{d_{p2} - d_{p1}}{2\\,C} = ${T(r.wrapDeg1, 1)}^\\circ`, false)],
+    [B.mesh, reportTex(`z_1\\,\\dfrac{\\beta_1}{360^\\circ} = ${T(r.z_mesh, 1)}`, false) + ` (${r.meshOk ? B.meshOk : B.meshKo}, c₁ = ${N(r.c1, 2)})`]
   ]);
   if (power) {
-    body += H(B.s5) + `<div class="f">v = π·dp₁·n₁/60000 = ${N(r.beltSpeed, 2)} m/s · Mt = ${N(r.torqueNm, 2)} N·m\nPc = c₀·P = ${N(r.Pc_kW, 2)} kW  →  Ft = Pc/v = ${N(r.Ft, 0)} N\nF_amm = f₀·c₁·c₂ = ${N(baseAllowableForce[profKey] || 20, 1)}·${N(r.c1, 2)}·${N(r.c2, 2)} N/mm  →  b_min = Ft/F_amm = ${N(r.reqWidthMm, 1)} mm</div>` +
+    body += H(B.s5) + reportEq([
+      `v = \\dfrac{\\pi\\, d_{p1}\\, n_1}{60\\,000} = \\dfrac{\\pi \\cdot ${T(r.dp1, 2)} \\cdot ${T(n1, 0)}}{60\\,000} = ${T(r.beltSpeed, 2)}\\ \\text{m/s}`,
+      `P_c = c_0\\, P = ${T(c0, 2)} \\cdot ${T(P, 2)} = ${T(r.Pc_kW, 2)}\\ \\text{kW} \\;\\Rightarrow\\; F_t = \\dfrac{P_c}{v} = ${T(r.Ft, 0)}\\ \\text{N}`,
+      `F_{amm} = f_0\\, c_1\\, c_2 = ${T(baseAllowableForce[profKey] || 20, 1)} \\cdot ${T(r.c1, 2)} \\cdot ${T(r.c2, 2)}\\ \\text{N/mm} \\;\\Rightarrow\\; b_{min} = \\dfrac{F_t}{F_{amm}} = ${T(r.reqWidthMm, 1)}\\ \\text{mm}`]) +
       `<div class="res"><div>${B.widthChosen}: <span class="big">${r.chosenWidth} mm</span> <span class="${r.widthOk ? 'ok' : 'ko'}">${r.widthOk ? B.ok : B.ko}</span></div></div>`;
   }
   body += H(B.s6) + reportKV([
@@ -588,7 +667,7 @@ function buildBeltReportHtml() {
     ['C', `${N(r.exactC_mm, 2)} mm`], [B.belt, `Lp = ${N(r.Lp, 1)} mm · ${r.zb} ${B.teethW}${power ? ` · b = ${r.chosenWidth} mm` : ''}`],
     [B.order, `${reportEsc(profName.split(' (')[0])} · ${N(r.Lp, 0)} mm · ${r.zb} ${B.teethW}${power ? ` · ${r.chosenWidth} mm` : ''}`], ['Ø', B.od]
   ]);
-  body += H(B.s7) + '<ul>' + B.hyp.map(h => `<li>${h}</li>`).join('') + '</ul>';
+  body += H(B.s7) + '<ul>' + B.hyp.map(h => `<li>${reportTexify(h)}</li>`).join('') + '</ul>';
   return reportShell(B.title, `${reportEsc(profName)} · z₁ = ${z1}, z₂ = ${z2} · C = ${N(r.exactC_mm, 1)} mm`, body, R, B.disclaimer);
 }
 
@@ -636,7 +715,11 @@ function buildFitReportHtml() {
   ]);
   const ch = document.getElementById('toleranceChart');
   if (ch) body += `<div class="fig">${reportSvgForPrint(ch.outerHTML)}</div>`;
-  body += H(F.s3) + `<div class="f">${F.playMax} = ES − ei = ${N(a.ES_H, 1)} − (${N(a.devs.ei, 1)}) = ${N(a.maxPlay, 1)} µm\n${F.playMin} = EI − es = ${N(a.EI_H, 1)} − (${N(a.devs.es, 1)}) = ${N(a.minPlay, 1)} µm\n${F.mean} = ${N((a.maxPlay + a.minPlay) / 2, 1)} µm</div>` +
+  const T = texNum;
+  body += H(F.s3) + reportEq([
+    `G_{max} = ES - ei = ${T(a.ES_H, 1)} - (${T(a.devs.ei, 1)}) = ${T(a.maxPlay, 1)}\\ \\mu\\text{m}`,
+    `G_{min} = EI - es = ${T(a.EI_H, 1)} - (${T(a.devs.es, 1)}) = ${T(a.minPlay, 1)}\\ \\mu\\text{m}`,
+    `G_{med} = \\dfrac{G_{max} + G_{min}}{2} = ${T((a.maxPlay + a.minPlay) / 2, 1)}\\ \\mu\\text{m}`]) +
     `<div class="res"><div>${F.kind}: <span class="big">${kindTxt}</span> · ${F.playMin} ${um(a.minPlay)} · ${F.playMax} ${um(a.maxPlay)}</div></div>`;
   body += H(F.s4) + reportTable(['', F.proc, F.ra], [[F.hole, reportEsc(t.fits[fit].holeProc), fitsRa[fit].holeRa], [F.shaft, reportEsc(t.fits[fit].shaftProc), fitsRa[fit].shaftRa]]);
   body += H(F.s5) + reportTable([F.fit, F.playMin, F.playMax, F.kind], fitKeys.map(k => { const b = analyzeFit(step, k); return { cls: k === fit ? 'hl' : '', cells: [k, um(b.minPlay), um(b.maxPlay), F[b.kind]] }; }));
@@ -645,6 +728,6 @@ function buildFitReportHtml() {
     [`${F.hole}`, `Ø${N(d, d % 1 ? 2 : 0)} H7 (${sgn(a.ES_H)} / ${sgn(a.EI_H)})`], [`${F.shaft}`, `Ø${N(d, d % 1 ? 2 : 0)} ${a.shaftClass} (${sgn(a.devs.es)} / ${sgn(a.devs.ei)})`],
     [F.drawing, `Ø${N(d, d % 1 ? 2 : 0)} ${fit}`]
   ]);
-  body += H(F.s7) + '<ul>' + F.notes.map(h => `<li>${h}</li>`).join('') + '</ul>';
+  body += H(F.s7) + '<ul>' + F.notes.map(h => `<li>${reportTexify(h)}</li>`).join('') + '</ul>';
   return reportShell(F.title, `Ø${N(d, 2)} ${fit} · ${kindTxt}`, body, R, F.disclaimer);
 }
