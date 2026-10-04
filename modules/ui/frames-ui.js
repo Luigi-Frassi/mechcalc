@@ -36,8 +36,8 @@ const FR_TXT = {
     memTitle: 'Aste — famiglia', colSec: 'Sezione', colL: 'L [mm]', colN: 'N [kN]', colM: '|M| max [kN·m]', colS: 'σ max [MPa]', colX: 'X', colXb: 'X inst.', colU: 'Utilizzo',
     reacTitle: 'Reazioni vincolari', colRx: 'Rx [kN]', colRy: 'Ry [kN]', colRM: 'M [kN·m]',
     nbTitle: 'Confronto con il notebook (FSD continuo, aste solo assiali)',
-    nbText: (W, nInst, sAmm) => `Con le aree libere e σamm = σs/X = ${sAmm} MPa l'FSD del notebook arriva a ${W} kg, ma ${nInst} aste compresse risultano instabili se fatte a tondo pieno (σ > σcr). Il dimensionamento a catalogo qui sopra tiene conto di Eulero.`,
-    nbOk: (W, sAmm) => `Con le aree libere e σamm = σs/X = ${sAmm} MPa l'FSD del notebook arriva a ${W} kg: è il limite inferiore teorico, senza instabilità né sezioni commerciali.`,
+    nbText: (W, nInst, sAmm) => `Con le aree libere (5–226 cm², come nel notebook) e σamm = σs/X = ${sAmm} MPa l'FSD del notebook arriva a ${W} kg, ma ${nInst} aste compresse risultano instabili se fatte a tondo pieno (σ > σcr). Il dimensionamento a catalogo qui sopra tiene conto di Eulero.`,
+    nbOk: (W, sAmm) => `Con le aree libere (5–226 cm², come nel notebook) e σamm = σs/X = ${sAmm} MPa l'FSD del notebook arriva a ${W} kg: è il limite inferiore teorico, senza instabilità né sezioni commerciali.`,
     hyp: 'Ipotesi: travi di Eulero-Bernoulli, piccoli spostamenti, flessione nel piano attorno all\'asse forte; σ = |N|/A + |M|/W; instabilità di Eulero con il momento d\'inerzia minimo e lunghezza libera β·L; peso proprio trascurato; taglio non verificato.',
     empty: 'Disegna una struttura: scegli "Asta" e trascina sulla griglia, oppure carica un esempio.',
     scale: 'scala', drawHint: 'Trascina per disegnare'
@@ -72,8 +72,8 @@ const FR_TXT = {
     memTitle: 'Members — family', colSec: 'Section', colL: 'L [mm]', colN: 'N [kN]', colM: '|M| max [kN·m]', colS: 'σ max [MPa]', colX: 'X', colXb: 'Buckl. X', colU: 'Utilization',
     reacTitle: 'Support reactions', colRx: 'Rx [kN]', colRy: 'Ry [kN]', colRM: 'M [kN·m]',
     nbTitle: 'Comparison with the notebook (continuous FSD, axial bars only)',
-    nbText: (W, nInst, sAmm) => `With free areas and σallow = σy/X = ${sAmm} MPa the notebook FSD reaches ${W} kg, but ${nInst} compressed bars buckle if made as solid rounds (σ > σcr). The catalog sizing above includes Euler buckling.`,
-    nbOk: (W, sAmm) => `With free areas and σallow = σy/X = ${sAmm} MPa the notebook FSD reaches ${W} kg: the theoretical lower bound, without buckling or commercial sections.`,
+    nbText: (W, nInst, sAmm) => `With free areas (5–226 cm², as in the notebook) and σallow = σy/X = ${sAmm} MPa the notebook FSD reaches ${W} kg, but ${nInst} compressed bars buckle if made as solid rounds (σ > σcr). The catalog sizing above includes Euler buckling.`,
+    nbOk: (W, sAmm) => `With free areas (5–226 cm², as in the notebook) and σallow = σy/X = ${sAmm} MPa the notebook FSD reaches ${W} kg: the theoretical lower bound, without buckling or commercial sections.`,
     hyp: 'Assumptions: Euler-Bernoulli beams, small displacements, in-plane bending about the strong axis; σ = |N|/A + |M|/W; Euler buckling with the minimum moment of inertia and effective length β·L; self-weight neglected; shear not checked.',
     empty: 'Draw a structure: pick "Member" and drag on the grid, or load an example.',
     scale: 'scale', drawHint: 'Drag to draw'
@@ -667,7 +667,7 @@ function calculateFrames() {
       // the notebook comparison, for pure trusses (every member hinged at both ends, nodal loads only)
       if (frModel.members.every(mm => mm.relStart && mm.relEnd) && !frModel.dloads.length) {
         const sAmm = mat.sigmaS / mat.X;
-        const nb = frameFSDContinuous(frModel, { E: mat.E, rho: mat.rho, sigmaAllow: sAmm, Amin: 50, Amax: 1e6, Ainit: 2000, eta: 0.5, maxIter: 200, tol: 1e-4 });
+        const nb = frameFSDContinuous(frModel, { E: mat.E, rho: mat.rho, sigmaAllow: sAmm, Amin: 500, Amax: 22600, Ainit: 4000, eta: 0.5, maxIter: 60, tol: 1e-4 });
         if (nb.ok) frResults.notebook = { ...nb, sAmm, nInst: nb.sigma.filter((sg, i) => sg < 0 && -sg > nb.sigCr[i]).length };
       }
     }
