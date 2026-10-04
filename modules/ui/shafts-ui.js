@@ -164,6 +164,7 @@ function calculateShafts() {
   }
 
   lastShaftSection = { mode, d, D: shoulder ? D : null };
+  shaftMaterialHint(d, t);
   if (shoulder && inp.notch.r > 5) warnings.push(shaftText(t, 'shaftWarnQr', { r: shaftFmt(inp.notch.r, 1), q: shaftFmt(res.qB, 3) }));
   if (shoulder && res.rdOutOfRange) warnings.push(shaftText(t, 'shaftWarnRd', { rd: shaftFmt(res.rd, 3) }));
   if (shoulder && D && (D / d > 2.0 || D / d < 1.09)) warnings.push(shaftText(t, 'shaftWarnDd', { Dd: shaftFmt(D / d, 2) }));
@@ -885,4 +886,49 @@ function drawShaftBeamChart(res, bi, xSel, t) {
     s += `<text x="${px + 3}" y="28" fill="#e2e8f0" font-size="8" font-family="monospace">x=${shaftFmt(xSel, 1)}</text>`;
   }
   svg.innerHTML = s;
+}
+
+// ---- steel table (core/materials-core.js): fills σR, σs, σLF; editing one of them goes back to "custom" ----
+function shaftMaterialLabel(key) {
+  const m = typeof shaftSteel === 'function' ? shaftSteel(key) : null;
+  if (!m) return null;
+  return `${m.id} +QT · ${m.dmin ? m.dmin + ' < ' : ''}d ≤ ${m.dmax} mm`;
+}
+(function shaftMaterialInit() {
+  const sel = document.getElementById('shaftMaterial');
+  if (!sel || typeof shaftSteelKeys !== 'function') return;
+  for (const key of shaftSteelKeys()) {
+    const m = shaftSteel(key), o = document.createElement('option');
+    o.value = key;
+    o.textContent = `${shaftMaterialLabel(key)} · σR ${m.sigmaR} · σs ${m.sigmaS} · σLF ≈ ${m.sigmaLF} MPa`;
+    sel.appendChild(o);
+  }
+  sel.addEventListener('change', () => {
+    const m = shaftSteel(sel.value);
+    if (!m) return;
+    for (const [id, v] of [['shaftSigmaR', m.sigmaR], ['shaftSigmaS', m.sigmaS], ['shaftSigmaLF', m.sigmaLF]]) {
+      const el = document.getElementById(id);
+      if (el) el.value = v;
+    }
+    calculateShafts();
+  });
+  for (const id of ['shaftSigmaR', 'shaftSigmaS', 'shaftSigmaLF']) {
+    document.getElementById(id)?.addEventListener('input', ev => { if (ev.isTrusted) sel.value = 'custom'; });
+  }
+})();
+
+// hint when the chosen diameter falls in another size range of the table
+function shaftMaterialHint(d, t) {
+  const info = document.getElementById('shaftMatInfo');
+  if (!info) return;
+  const m = typeof shaftSteel === 'function' ? shaftSteel(document.getElementById('shaftMaterial')?.value) : null;
+  const r = m && d > 0 && typeof shaftSteelRangeFor === 'function' ? shaftSteelRangeFor(d) : null;
+  if (m && r && r !== m.dmax) {
+    const lo = (SHAFT_STEEL_RANGES.find(x => x[1] === r) || [0])[0];
+    info.innerText = shaftText(t, 'shaftMatRange', { d: shaftFmt(d, 0), r: `${lo ? lo + ' < ' : ''}d ≤ ${r} mm` });
+    info.className = 'text-[11px] text-amber-400';
+  } else {
+    info.innerText = t.shaftMatNote || '';
+    info.className = 'text-[11px] text-slate-500';
+  }
 }

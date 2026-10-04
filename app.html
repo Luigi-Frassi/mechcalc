@@ -4,6 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Torsio Engineering — calcolatore</title>
+  <meta name="description" content="Calcolatore di dimensionamento di massima: alberi, ruote dentate, cinghie sincrone, accoppiamenti ISO, strutture FEM e collegamenti bullonati, con relazione di calcolo e DXF.">
+  <link rel="canonical" href="https://torsio-engineering.vercel.app/app.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Torsio Engineering">
+  <meta property="og:title" content="Torsio Engineering — calcolatore">
+  <meta property="og:description" content="Calcolatore di dimensionamento di massima: alberi, ruote dentate, cinghie sincrone, accoppiamenti ISO, strutture FEM e collegamenti bullonati, con relazione di calcolo e DXF.">
+  <meta property="og:url" content="https://torsio-engineering.vercel.app/app.html">
+  <meta property="og:image" content="https://torsio-engineering.vercel.app/vendor/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     // Torsio Engineering palette: graphite with a green cast (slate) and machine-tool green (blue) replace the Tailwind defaults
@@ -35,7 +46,7 @@
       } catch (e) { return null; }
     });
   </script>
-  <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
+  <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col md:flex-row">
 
@@ -1624,6 +1635,17 @@
       </div>
       <div class="bg-slate-800/60 p-6 rounded-xl border border-slate-700/60 mb-4 backdrop-blur">
       <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3" data-i18n="shaftMaterialTitle">Material and life</h3>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+        <div class="md:col-span-2">
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftMatLabel">Steel (table)</label>
+          <select id="shaftMaterial" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="custom" selected data-i18n="optMatCustom">Custom (values entered below)</option>
+          </select>
+        </div>
+        <div class="md:col-span-2 flex items-end">
+          <p class="text-[11px] text-slate-500" id="shaftMatInfo" data-i18n="shaftMatNote">Quenched and tempered steels, EN 10083 (+QT): σR = minimum Rm, σs = minimum Re, σLF ≈ 0.5·σR (estimate: use the course value if you have it).</p>
+        </div>
+      </div>
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
           <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" data-i18n="shaftSigmaRLabel">Ultimate strength σR</label>
@@ -2152,6 +2174,9 @@
         shaftSigmaRLabel: "Ultimate strength σR",
         shaftSigmaSLabel: "Yield strength σs",
         shaftSigmaLFSub: "Rotating bending, 10⁶ cycles",
+        shaftMatLabel: "Steel (table)", optMatCustom: "Custom (values entered below)",
+        shaftMatNote: "Quenched and tempered steels, EN 10083 (+QT): σR = minimum Rm, σs = minimum Re, σLF ≈ 0.5·σR (estimate: use the course value if you have it).",
+        shaftMatRange: "Your diameter d = {d} mm is in the range {r}: the strength drops with the size.",
         shaftSigmaLFLabel: "Fatigue limit σLF",
         shaftLifeLabel: "Required life",
         optLifeInfinite: "Infinite (≥ 10⁶ cycles)",
@@ -2594,6 +2619,9 @@
         shaftSigmaRLabel: "Rottura σR",
         shaftSigmaSLabel: "Snervamento σs",
         shaftSigmaLFSub: "Flessione rotante, 10⁶ cicli",
+        shaftMatLabel: "Acciaio (tabella)", optMatCustom: "Personalizzato (valori inseriti sotto)",
+        shaftMatNote: "Acciai da bonifica EN 10083 (+QT): σR = Rm minimo, σs = Re minimo, σLF ≈ 0,5·σR (stima: se hai il valore del corso usa quello).",
+        shaftMatRange: "Il tuo diametro d = {d} mm è nella fascia {r}: la resistenza cala con la dimensione.",
         shaftSigmaLFLabel: "Limite di fatica σLF",
         shaftLifeLabel: "Durata richiesta",
         optLifeInfinite: "Infinita (≥ 10⁶ cicli)",
@@ -3527,6 +3555,7 @@
   <script src="modules/core/gears-core.js"></script>
   <script src="modules/ui/gears-ui.js"></script>
   <script src="modules/core/shafts-core.js"></script>
+  <script src="modules/core/materials-core.js"></script>
   <script src="modules/ui/shafts-ui.js"></script>
   <script src="modules/core/frames-core.js"></script>
   <script src="modules/ui/frames-ui.js"></script>

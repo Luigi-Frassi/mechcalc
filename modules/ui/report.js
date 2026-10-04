@@ -301,7 +301,7 @@ function buildShaftReportHtml() {
   body += H(R.s1) + reportKV([
     ...(torqueInput === 'power' ? [[R.power, `${N(shaftVal('shaftPower', 0), 2)} kW`], [R.speed, `${N(rpm, 0)} rpm  (ω = ${N(2 * Math.PI * rpm / 60, 2)} rad/s)`]] : []),
     [R.torque, `Mt = ${N(MtShaft, 1)} N·m` + (torqueInput === 'power' ? '  (Mt = P/ω)' : '')],
-    [R.material, `σR = ${N(inp.sigmaR, 0)} MPa · σs = ${N(inp.sigmaS, 0)} MPa · σLF = ${N(inp.sigmaLF, 0)} MPa`],
+    [R.material, (typeof shaftMaterialLabel === 'function' && shaftMaterialLabel(document.getElementById('shaftMaterial')?.value) ? shaftMaterialLabel(document.getElementById('shaftMaterial').value) + ' (EN 10083) · ' : '') + `σR = ${N(inp.sigmaR, 0)} MPa · σs = ${N(inp.sigmaS, 0)} MPa · σLF = ${N(inp.sigmaLF, 0)} MPa`],
     [R.finish, reportEsc(finishName)], [R.Xreq, `X = ${N(Xreq, 2)}`], [R.life, lifeTxt],
     [R.theta, `θ = ${N(bi.theta, 1)}°`], [R.length, bi.L > 0 ? `L = ${N(bi.L, 1)} mm` : '—'],
     [R.bearings, `${bi.bearingType === 'roller' ? 'rulli / roller (p = 10/3)' : 'sfere / ball (p = 3)'} · L = ${N(bi.life, 1)}·10⁶`],

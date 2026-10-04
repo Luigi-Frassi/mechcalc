@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Metodo e validazione — Torsio Engineering</title>
+  <meta name="description" content="Come calcola Torsio Engineering: metodi, formule, fonti e casi di prova svolti a mano per alberi, ruote dentate, cinghie, accoppiamenti, strutture FEM e collegamenti bullonati.">
+  <link rel="canonical" href="https://torsio-engineering.vercel.app/metodo.html">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Torsio Engineering">
+  <meta property="og:title" content="Metodo e validazione — Torsio Engineering">
+  <meta property="og:description" content="Metodi, formule, fonti e 387 casi di prova svolti a mano: cosa calcola Torsio e dove si ferma.">
+  <meta property="og:url" content="https://torsio-engineering.vercel.app/metodo.html">
+  <meta property="og:image" content="https://torsio-engineering.vercel.app/vendor/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="vendor/brand/torsio-mark.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap">
+  <link rel="stylesheet" href="vendor/katex/katex.min.css">
+  <style>
+    :root { --paper: #eef1ec; --sheet: #f8faf7; --ink: #1c2120; --ink-2: #4f5b55; --line: #c9d1cb; --green: #2e5a42; --green-2: #4c8c66; --signal: #e8b321; --measure: 40rem; }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Archivo", "Helvetica Neue", Arial, sans-serif; font-size: 17px; line-height: 1.55; }
+    a { color: var(--green); }
+    a:focus-visible, button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; border-radius: 4px; }
+    .wrap { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+    html[lang="it"] [data-l="en"], html[lang="en"] [data-l="it"] { display: none !important; }
+
+    .top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 0; }
+    .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+    .brand img { width: 34px; height: 34px; }
+    .brand b { font-weight: 800; font-stretch: 118%; font-size: 21px; letter-spacing: -0.01em; }
+    .brand span { color: var(--ink-2); font-size: 15px; margin-left: 2px; }
+    .nav { display: flex; align-items: center; gap: 22px; font-size: 15px; }
+    .nav .links { display: contents; }
+    .nav a { color: var(--ink-2); text-decoration: none; }
+    .nav a:hover { color: var(--ink); }
+    .lang { border: 1px solid var(--line); border-radius: 6px; display: inline-flex; overflow: hidden; }
+    .lang button { background: none; border: 0; font: inherit; font-size: 13px; padding: 4px 9px; cursor: pointer; color: var(--ink-2); }
+    .lang button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); }
+    .btn { display: inline-flex; align-items: center; gap: 8px; font: inherit; font-weight: 700; font-size: 16px; text-decoration: none; border-radius: 8px; padding: 12px 20px; cursor: pointer; border: 2px solid var(--ink); }
+    .btn.go { background: var(--signal); color: var(--ink); }
+    .btn.go:hover { background: #f0c241; }
+    .btn.small { padding: 7px 14px; font-size: 14px; }
+
+    h1 { font-weight: 800; font-stretch: 112%; font-size: clamp(34px, 4.2vw, 50px); line-height: 1.05; letter-spacing: -0.02em; margin: 0 0 18px; }
+    .lead { font-size: 19px; color: var(--ink-2); max-width: var(--measure); margin: 0; }
+    header.page-head { padding: 36px 0 56px; }
+    section { padding: 56px 0; border-top: 1px solid var(--line); }
+    h2 { font-weight: 800; font-stretch: 108%; font-size: clamp(26px, 2.8vw, 34px); line-height: 1.12; letter-spacing: -0.015em; margin: 0 0 12px; }
+    h3 { font-size: 20px; font-stretch: 105%; margin: 28px 0 8px; }
+    p { max-width: var(--measure); }
+    .muted { color: var(--ink-2); }
+
+    /* summary table */
+    .tbl { width: 100%; border-collapse: collapse; font-size: 15px; background: var(--sheet); border: 1px solid var(--line); }
+    .tbl th { text-align: left; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-2); padding: 10px 12px; border-bottom: 2px solid var(--ink); }
+    .tbl td { padding: 11px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .tbl td.n { font-weight: 800; font-stretch: 110%; font-size: 18px; text-align: right; white-space: nowrap; }
+    .tbl tfoot td { border-bottom: 0; font-weight: 700; }
+    .tbl a { font-weight: 600; }
+    .scroll { overflow-x: auto; }
+
+    /* module cards */
+    .mods { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+    .mod { min-width: 0; background: var(--sheet); border: 1px solid var(--line); border-radius: 6px; padding: 22px 24px; }
+    .mod h3 { margin: 0 0 4px; }
+    .mod .src { font-size: 13.5px; color: var(--green); font-weight: 600; margin: 0 0 12px; }
+    .mod p, .mod li { font-size: 15.5px; }
+    .mod ul { padding-left: 18px; margin: 8px 0 0; }
+    .mod li { margin-bottom: 4px; }
+    .mod .lim { border-left: 3px solid var(--signal); padding-left: 12px; color: var(--ink-2); margin-top: 14px; font-size: 14.5px; }
+    .eq { border-left: 3px solid var(--green); background: #f1f4f0; padding: 2px 12px; margin: 10px 0; overflow-x: auto; }
+    .eq .katex-display { margin: 8px 0; text-align: left; }
+    .eq .katex { font-size: 1em; }
+    .steps { counter-reset: s; list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; }
+    .steps li { counter-increment: s; }
+    .steps li::before { content: counter(s); display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--ink); font-weight: 800; font-size: 14px; margin-bottom: 10px; }
+    .steps b { display: block; font-size: 17px; margin-bottom: 4px; }
+    .steps span { color: var(--ink-2); font-size: 15.5px; }
+    .limits { margin: 0; padding-left: 18px; max-width: var(--measure); }
+    .limits li { margin-bottom: 8px; }
+    .closing { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px; }
+    footer { border-top: 1px solid var(--line); padding: 28px 0 40px; font-size: 14px; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
+
+    @media (max-width: 900px) {
+      .mods { grid-template-columns: minmax(0, 1fr); }
+      .steps { grid-template-columns: 1fr; gap: 20px; }
+      .nav .links { display: none; }
+    }
+    @media (max-width: 520px) {
+      .wrap { padding: 0 16px; }
+      .brand span { display: none; }
+      .nav { gap: 10px; }
+      .nav .btn.small { padding: 6px 10px; font-size: 13px; }
+      .mod { padding: 18px 16px; }
+      .tbl { font-size: 14px; }
+      .tbl th, .tbl td { padding: 8px; }
+      section { padding: 44px 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <a class="brand" href="./"><img src="vendor/brand/torsio-mark.svg" alt=""><b>Torsio</b><span>Engineering</span></a>
+      <nav class="nav" aria-label="Navigazione">
+        <span class="links">
+          <a href="./"><span data-l="it">Home</span><span data-l="en">Home</span></a>
+          <a href="#moduli"><span data-l="it">Moduli</span><span data-l="en">Modules</span></a>
+          <a href="#limiti"><span data-l="it">Limiti</span><span data-l="en">Limits</span></a>
+        </span>
+        <span class="lang" role="group" aria-label="Lingua"><button type="button" data-lang="it" aria-pressed="true">IT</button><button type="button" data-lang="en" aria-pressed="false">EN</button></span>
+        <a class="btn go small" href="app.html" data-app><span data-l="it">Apri il calcolatore</span><span data-l="en">Open the calculator</span></a>
+      </nav>
+    </div>
+
+    <header class="page-head">
+      <h1><span data-l="it">Metodo e validazione</span><span data-l="en">Method and validation</span></h1>
+      <p class="lead" data-l="it">Ogni modulo usa un metodo dichiarato, con le sue fonti, ed è controllato contro risultati svolti a mano. Qui trovi cosa calcola, con quali formule, quanto è stato verificato e dove si ferma.</p>
+      <p class="lead" data-l="en">Every module uses a stated method with its sources and is checked against hand-worked results. Here you find what it calculates, with which formulas, how far it has been verified and where it stops.</p>
+    </header>
+  </div>
+
+  <section>
+    <div class="wrap">
+      <h2><span data-l="it">Come viene verificato</span><span data-l="en">How it is verified</span></h2>
+      <ol class="steps" style="margin-top:28px">
+        <li data-l="it"><b>Risultati svolti a mano</b><span>Temi d'esame del corso di Costruzione di Macchine ed esercizi di Elementi Costruttivi, risolti a mano dall'inizio alla fine: reazioni, momenti, coefficienti letti dai diagrammi, diametri.</span></li>
+        <li data-l="it"><b>Una tolleranza per ogni caso</b><span>1 % per i risultati che dipendono solo dalle formule, 2 % dove entrano i diagrammi del corso letti a occhio, tolleranze assolute per le letture dei grafici.</span></li>
+        <li data-l="it"><b>Ripetuti a ogni modifica</b><span>387 casi automatici sui calcoli e un test che apre la pagina vera nel browser (link condivisi, progetti, relazioni, DXF). Se un caso non torna, la modifica non va online.</span></li>
+        <li data-l="en"><b>Hand-worked results</b><span>Exam problems of the Machine Design course and Machine Elements exercises, solved by hand from start to finish: reactions, moments, coefficients read from the charts, diameters.</span></li>
+        <li data-l="en"><b>A tolerance for every case</b><span>1 % for results that depend only on the formulas, 2 % where the course charts read by eye come in, absolute tolerances for chart readings.</span></li>
+        <li data-l="en"><b>Run at every change</b><span>387 automatic cases on the calculations and a test that opens the real page in a browser (shared links, projects, reports, DXF). If a case fails, the change does not go online.</span></li>
+      </ol>
+      <p class="muted" style="margin-top:28px" data-l="it">Quando il risultato non coincide con la soluzione svolta, la differenza viene ricostruita passo per passo e annotata accanto al caso di prova. Finora 16 differenze, quasi tutte sviste di trascrizione nella soluzione a mano (un coefficiente copiato da un altro esercizio, un braccio sbagliato nelle reazioni) o letture dei diagrammi diverse di qualche centesimo.</p>
+      <p class="muted" style="margin-top:28px" data-l="en">When a result does not match the worked solution, the difference is traced step by step and noted next to the test case. So far 16 differences, almost all transcription slips in the hand solution (a coefficient copied from another exercise, a wrong lever arm in the reactions) or chart readings a few hundredths apart.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2><span data-l="it">Quadro dei moduli</span><span data-l="en">Modules at a glance</span></h2>
+      <div class="scroll" style="margin-top:24px">
+        <table class="tbl">
+          <thead><tr>
+            <th><span data-l="it">Modulo</span><span data-l="en">Module</span></th>
+            <th><span data-l="it">Metodo</span><span data-l="en">Method</span></th>
+            <th><span data-l="it">Controllato su</span><span data-l="en">Checked against</span></th>
+            <th style="text-align:right"><span data-l="it">Casi</span><span data-l="en">Cases</span></th>
+            <th><span data-l="it">Passo successivo</span><span data-l="en">Next step</span></th>
+          </tr></thead>
+          <tbody>
+            <tr><td><a href="#alberi"><span data-l="it">Alberi</span><span data-l="en">Shafts</span></a></td>
+              <td><span data-l="it">Goodman con Kt, q, b₁, b₂ dai diagrammi del corso; Wöhler e Miner; cuscinetti</span><span data-l="en">Goodman with Kt, q, b₁, b₂ from the course charts; Wöhler and Miner; bearings</span></td>
+              <td><span data-l="it">13 temi d'esame (2002–2023) rifatti per intero</span><span data-l="en">13 exam problems (2002–2023) redone in full</span></td><td class="n">283</td><td>DIN 743 · FKM</td></tr>
+            <tr><td><a href="#ruote"><span data-l="it">Ruote dentate</span><span data-l="en">Gears</span></a></td>
+              <td><span data-l="it">Hertz (pitting) e Lewis (flessione), denti diritti ed elicoidali</span><span data-l="en">Hertz (pitting) and Lewis (bending), spur and helical</span></td>
+              <td><span data-l="it">5 temi d'esame (2018–2022) e letture dei diagrammi</span><span data-l="en">5 exam problems (2018–2022) and chart readings</span></td><td class="n">33</td><td>ISO 6336</td></tr>
+            <tr><td><a href="#bulloni"><span data-l="it">Collegamenti bullonati</span><span data-l="en">Bolted joints</span></a></td>
+              <td><span data-l="it">Giunzioni ad attrito, coppia di serraggio, carico esterno, viti di manovra</span><span data-l="en">Friction joints, tightening torque, external load, power screws</span></td>
+              <td><span data-l="it">5 esercizi d'esame svolti</span><span data-l="en">5 worked exam exercises</span></td><td class="n">30</td><td>VDI 2230</td></tr>
+            <tr><td><a href="#strutture"><span data-l="it">Strutture (FEM)</span><span data-l="en">Structures (FEM)</span></a></td>
+              <td><span data-l="it">Telaio piano agli elementi finiti, scelta della sezione a catalogo, instabilità di Eulero</span><span data-l="en">Plane frame finite elements, catalog section choice, Euler buckling</span></td>
+              <td><span data-l="it">Soluzioni chiuse di Scienza delle Costruzioni e un notebook di ottimizzazione</span><span data-l="en">Closed-form beam solutions and a weight optimisation notebook</span></td><td class="n">26</td><td><span data-l="it">Eurocodice 3 · FEM completo</span><span data-l="en">Eurocode 3 · full FEM</span></td></tr>
+            <tr><td><a href="#alberi"><span data-l="it">Disegno DXF e linguette</span><span data-l="en">DXF drawing and keys</span></a></td>
+              <td>UNI 6604</td><td><span data-l="it">Tabelle della norma, struttura del file R12</span><span data-l="en">Tables of the standard, R12 file structure</span></td><td class="n">9</td><td>CAD</td></tr>
+            <tr><td><a href="#materiali"><span data-l="it">Materiali degli alberi</span><span data-l="en">Shaft materials</span></a></td>
+              <td>EN 10083-2 / -3 (+QT)</td><td><span data-l="it">Valori minimi della norma</span><span data-l="en">Minimum values of the standard</span></td><td class="n">6</td><td><span data-l="it">Certificato del materiale</span><span data-l="en">Material certificate</span></td></tr>
+            <tr><td><a href="#accoppiamenti"><span data-l="it">Accoppiamenti ISO</span><span data-l="en">ISO fits</span></a></td>
+              <td>ISO 286-2</td><td><span data-l="it">Tabelle della norma (nessun tema d'esame)</span><span data-l="en">Tables of the standard (no exam problem)</span></td><td class="n">—</td><td>—</td></tr>
+            <tr><td><a href="#cinghie"><span data-l="it">Cinghie sincrone</span><span data-l="en">Timing belts</span></a></td>
+              <td>ISO 5296 · DIN 7721</td><td><span data-l="it">Geometria esatta; larghezza indicativa</span><span data-l="en">Exact geometry; indicative width</span></td><td class="n">—</td><td><span data-l="it">Catalogo del produttore</span><span data-l="en">Manufacturer's catalog</span></td></tr>
+          </tbody>
+          <tfoot><tr><td colspan="3"><span data-l="it">Totale dei casi automatici</span><span data-l="en">Total automatic cases</span></td><td class="n">387</td><td></td></tr></tfoot>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="moduli">
+    <div class="wrap">
+      <h2><span data-l="it">Metodo, modulo per modulo</span><span data-l="en">Method, module by module</span></h2>
+      <div class="mods" style="margin-top:24px">
+
+        <article class="mod" id="alberi">
+          <h3><span data-l="it">Alberi</span><span data-l="en">Shafts</span></h3>
+          <p class="src"><span data-l="it">Corso di Costruzione di Macchine · 283 casi</span><span data-l="en">Machine Design course · 283 cases</span></p>
+          <p data-l="it">Dal modello a trave (reazioni dei cuscinetti, momenti nei due piani, forze delle ruote con la loro direzione) alla sezione critica, poi il diametro minimo a fatica con la retta di Goodman.</p>
+          <p data-l="en">From the beam model (bearing reactions, moments in both planes, gear forces with their direction) to the critical section, then the minimum diameter for fatigue with the Goodman line.</p>
+          <div class="eq" data-tex="\dfrac{1}{X} = \dfrac{\sigma_{a,eq}}{b_1\, b_2\, \sigma_N} + \dfrac{\sigma_{m,eq}}{\sigma_R} \qquad K_e = 1 + q\,(K_t - 1)"></div>
+          <ul data-l="it"><li>Kt, q, b₁ (dimensione) e b₂ (finitura) dai diagrammi del corso; linguette con i coefficienti del corso.</li><li>Vita finita con Wöhler e Miner, durata dei cuscinetti con L₁₀ = (C/P)ᵖ.</li><li>Profilo dell'albero proposto per il CAD, linguette UNI 6604, esportazione DXF.</li></ul>
+          <ul data-l="en"><li>Kt, q, b₁ (size) and b₂ (finish) from the course charts; keyways with the course factors.</li><li>Finite life with Wöhler and Miner, bearing life with L₁₀ = (C/P)ᵖ.</li><li>Proposed shaft profile for CAD, UNI 6604 keys, DXF export.</li></ul>
+          <p class="lim" data-l="it">Non calcola deformata, velocità critica né le verifiche della DIN 743.</p>
+          <p class="lim" data-l="en">It does not calculate deflection, critical speed or the DIN 743 checks.</p>
+        </article>
+
+        <article class="mod" id="ruote">
+          <h3><span data-l="it">Ruote dentate</span><span data-l="en">Gears</span></h3>
+          <p class="src"><span data-l="it">Corso di Costruzione di Macchine · 33 casi</span><span data-l="en">Machine Design course · 33 cases</span></p>
+          <p data-l="it">Modulo e larghezza di fascia dalla pressione di contatto di Hertz, verifica a flessione di Lewis, potenza trasmissibile di una coppia esistente.</p>
+          <p data-l="en">Module and face width from the Hertz contact pressure, Lewis bending check, power capacity of an existing pair.</p>
+          <div class="eq" data-tex="W_H = \dfrac{\sigma_H^2\, L\, \omega_1 \sin 2\vartheta\; m_t^2 z_1^2}{8\, K_e\,(1+\tau)}\,\dfrac{\Gamma_t}{\Phi} \qquad \sigma_L = \dfrac{F_c}{L\, m_n\, y}\,\dfrac{\Psi}{\Gamma_t}"></div>
+          <ul data-l="it"><li>y di Lewis e Φ, Ψ, Γₜ delle elicoidali digitalizzati dai diagrammi del corso.</li><li>Ricerca automatica delle combinazioni di denti e moduli unificati.</li></ul>
+          <ul data-l="en"><li>Lewis y and the helical Φ, Ψ, Γₜ digitised from the course charts.</li><li>Automatic search over tooth combinations and standard modules.</li></ul>
+          <p class="lim" data-l="it">Nessun fattore di carico dinamico, di distribuzione o di lubrificazione: per quelli serve la ISO 6336.</p>
+          <p class="lim" data-l="en">No dynamic, load distribution or lubrication factors: those need ISO 6336.</p>
+        </article>
+
+        <article class="mod" id="bulloni">
+          <h3><span data-l="it">Collegamenti bullonati</span><span data-l="en">Bolted joints</span></h3>
+          <p class="src"><span data-l="it">Appunti di Elementi Costruttivi delle Macchine · 30 casi</span><span data-l="en">Machine Elements notes · 30 cases</span></p>
+          <p data-l="it">Numero di viti di una giunzione ad attrito, precarico e coppia di serraggio, carico esterno assiale con il diagramma di serraggio, viti di manovra.</p>
+          <p data-l="en">Number of bolts of a friction joint, preload and tightening torque, external axial load with the tightening diagram, power screws.</p>
+          <div class="eq" data-tex="N = \dfrac{T\,X}{f} \qquad M_s = N\,\dfrac{d_m}{2}\,\dfrac{\cos\beta\sin\alpha + f\cos\alpha}{\cos\beta\cos\alpha - f\sin\alpha} + \dfrac{N}{2}\,D_m\,f"></div>
+          <ul data-l="it"><li>d_m = 0,9·d, A_res = π(0,8·d)²/4, β = 30°, D_m = (D_c + d)/2.</li><li>Rigidezze della vite e delle flange con il cono a 30°, precarico ottimale P_am·K_f/(K_v + K_f).</li></ul>
+          <ul data-l="en"><li>d_m = 0.9·d, A_res = π(0.8·d)²/4, β = 30°, D_m = (D_c + d)/2.</li><li>Bolt and flange stiffness with the 30° cone, optimal preload P_am·K_f/(K_v + K_f).</li></ul>
+          <p class="lim" data-l="it">Fatica della vite ed effetti termici non inclusi.</p>
+          <p class="lim" data-l="en">Bolt fatigue and thermal effects are not included.</p>
+        </article>
+
+        <article class="mod" id="strutture">
+          <h3><span data-l="it">Strutture (FEM)</span><span data-l="en">Structures (FEM)</span></h3>
+          <p class="src"><span data-l="it">Metodo degli spostamenti · 26 casi</span><span data-l="en">Direct stiffness method · 26 cases</span></p>
+          <p data-l="it">Travi, telai e tralicci piani: elementi di Eulero-Bernoulli a 3 gradi di libertà per nodo, cerniere interne per condensazione statica, carichi distribuiti.</p>
+          <p data-l="en">Plane beams, frames and trusses: Euler-Bernoulli elements with 3 degrees of freedom per node, internal hinges by static condensation, distributed loads.</p>
+          <div class="eq" data-tex="\mathbf{K}\,\mathbf{u} = \mathbf{F} \qquad \sigma = \dfrac{|N|}{A} + \dfrac{|M|}{W} \qquad \sigma_{cr} = \dfrac{\pi^2 E\, I_{min}}{(\beta L)^2 A}"></div>
+          <ul data-l="it"><li>La sezione più leggera in sei famiglie (tondo, tubo, rettangolo, quadro cavo, IPE, HEA) con resistenza, Eulero e freccia.</li><li>Confronto con il notebook di ottimizzazione del peso di una torre radio.</li></ul>
+          <ul data-l="en"><li>The lightest section in six families (round, tube, rectangle, hollow square, IPE, HEA) with strength, Euler buckling and deflection.</li><li>Comparison with a radio tower weight optimisation notebook.</li></ul>
+          <p class="lim" data-l="it">Taglio non verificato, peso proprio trascurato, nessuna combinazione di carico dell'Eurocodice.</p>
+          <p class="lim" data-l="en">Shear not checked, self-weight neglected, no Eurocode load combinations.</p>
+        </article>
+
+        <article class="mod" id="accoppiamenti">
+          <h3><span data-l="it">Accoppiamenti ISO</span><span data-l="en">ISO fits</span></h3>
+          <p class="src">ISO 286-2</p>
+          <p data-l="it">Scostamenti di foro e albero, giochi e interferenze, lavorazione e rugosità indicate, quota da disegno. Anche al contrario: dal gioco voluto all'accoppiamento.</p>
+          <p data-l="en">Hole and shaft deviations, clearances and interferences, suggested machining and roughness, drawing callout. Also the other way round: from the wanted clearance to the fit.</p>
+          <div class="eq" data-tex="g_{max} = ES - ei \qquad g_{min} = EI - es"></div>
+          <p class="lim" data-l="it">Non calcola la pressione di un accoppiamento forzato (Lamé).</p>
+          <p class="lim" data-l="en">It does not calculate the pressure of an interference fit (Lamé).</p>
+        </article>
+
+        <article class="mod" id="cinghie">
+          <h3><span data-l="it">Cinghie sincrone</span><span data-l="en">Timing belts</span></h3>
+          <p class="src">ISO 5296 · DIN 7721</p>
+          <p data-l="it">Diametri primitivi, lunghezza della cinghia arrotondata ai denti, interasse esatto, denti in presa, forza tangenziale e larghezza.</p>
+          <p data-l="en">Pitch diameters, belt length rounded to whole teeth, exact centre distance, teeth in mesh, tangential force and width.</p>
+          <div class="eq" data-tex="L_0 = 2C + \dfrac{\pi}{2}(d_1 + d_2) + \dfrac{(d_2 - d_1)^2}{4C} \qquad F_t = \dfrac{P\,c_0}{v}"></div>
+          <p class="lim" data-l="it">La larghezza usa una forza ammissibile media per profilo: va confermata sul catalogo del produttore.</p>
+          <p class="lim" data-l="en">The width uses an average allowable force per profile: confirm it in the manufacturer's catalog.</p>
+        </article>
+
+        <article class="mod" id="materiali">
+          <h3><span data-l="it">Materiali degli alberi</span><span data-l="en">Shaft materials</span></h3>
+          <p class="src">EN 10083-2 · EN 10083-3</p>
+          <p data-l="it">Acciai da bonifica C40, C45, C55, 41Cr4, 34CrMo4, 42CrMo4, 39NiCrMo3 e 34CrNiMo6 nello stato +QT, per fascia di diametro (fino a 16, 16–40, 40–100 mm).</p>
+          <p data-l="en">Quenched and tempered steels C40, C45, C55, 41Cr4, 34CrMo4, 42CrMo4, 39NiCrMo3 and 34CrNiMo6 in the +QT condition, by diameter range (up to 16, 16–40, 40–100 mm).</p>
+          <div class="eq" data-tex="\sigma_R = R_{m,min} \qquad \sigma_s = R_{e,min} \qquad \sigma_{LF} \approx 0{,}5\,R_{m,min}"></div>
+          <p class="lim" data-l="it">σLF è una stima: se il tema d'esame o il fornitore danno il valore, va usato quello.</p>
+          <p class="lim" data-l="en">σLF is an estimate: if the problem or the supplier gives the value, use that one.</p>
+        </article>
+
+        <article class="mod" id="collegamenti">
+          <h3><span data-l="it">Moduli collegati</span><span data-l="en">Linked modules</span></h3>
+          <p class="src"><span data-l="it">Relazione della trasmissione completa</span><span data-l="en">Complete transmission report</span></p>
+          <p data-l="it">I risultati passano da un modulo all'altro con un clic (cinghia → ruote → albero → accoppiamento e bulloni, strutture → bulloni) e la relazione della trasmissione controlla che velocità, potenze e diametri tornino tra gli stadi.</p>
+          <p data-l="en">Results move from one module to the next with a click (belt → gears → shaft → fit and bolts, structures → bolts) and the transmission report checks that speeds, powers and diameters match between stages.</p>
+          <div class="eq" data-tex="n_2 = n_1\,\tau \qquad M = \dfrac{P}{\omega}"></div>
+          <p class="lim" data-l="it">I rendimenti sono trascurati: la potenza è costante lungo la catena.</p>
+          <p class="lim" data-l="en">Efficiencies are neglected: power is constant along the chain.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="limiti">
+    <div class="wrap">
+      <h2><span data-l="it">Dove si ferma</span><span data-l="en">Where it stops</span></h2>
+      <ul class="limits" data-l="it">
+        <li>È un <b>dimensionamento di massima</b>: dà le prime quote per il CAD e un ordine di grandezza dei coefficienti di sicurezza.</li>
+        <li>Il progetto esecutivo va verificato con le norme (ISO 6336, DIN 743, VDI 2230, Eurocodice 3), con i cataloghi dei produttori o con un'analisi FEM completa.</li>
+        <li>I diagrammi del corso sono digitalizzati: dove la lettura a mano differisce di qualche centesimo, la differenza è dichiarata nei casi di prova.</li>
+        <li>I calcoli girano nel browser: i dati non lasciano il computer, e i link condivisi contengono solo i valori inseriti.</li>
+      </ul>
+      <ul class="limits" data-l="en">
+        <li>This is <b>preliminary sizing</b>: it gives the first dimensions for CAD and the order of magnitude of the safety factors.</li>
+        <li>The final design must be checked with the standards (ISO 6336, DIN 743, VDI 2230, Eurocode 3), the manufacturers' catalogs or a full FEM analysis.</li>
+        <li>The course charts are digitised: where the hand reading differs by a few hundredths, the difference is stated in the test cases.</li>
+        <li>The calculations run in the browser: the data never leave your computer, and shared links only contain the values entered.</li>
+      </ul>
+      <p class="muted" style="margin-top:24px">
+        <span data-l="it">I casi di prova sono pubblici: </span><span data-l="en">The test cases are public: </span>
+        <a href="https://github.com/Luigi-Frassi/torsio-engineering/blob/main/tests/validation.test.js" target="_blank" rel="noopener">tests/validation.test.js</a>.
+        <span data-l="it">Hai trovato un risultato che non torna?</span><span data-l="en">Found a result that does not match?</span>
+        <a href="https://github.com/Luigi-Frassi/torsio-engineering/issues/new" target="_blank" rel="noopener"><span data-l="it">Segnalalo</span><span data-l="en">Report it</span></a>.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap closing">
+      <h2 style="margin:0"><span data-l="it">Prova il metodo su una trasmissione completa.</span><span data-l="en">Try the method on a complete drive.</span></h2>
+      <a class="btn go" href="app.html?demo=transmission" data-app="demo"><span data-l="it">Apri la demo</span><span data-l="en">Open the demo</span></a>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <footer>
+      <span><span data-l="it">Torsio Engineering · progetto di Luigi Frassi</span><span data-l="en">Torsio Engineering · a project by Luigi Frassi</span></span>
+      <span><a href="https://github.com/Luigi-Frassi/torsio-engineering" target="_blank" rel="noopener"><span data-l="it">Codice sorgente</span><span data-l="en">Source code</span></a></span>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      var lang = 'it';
+      function draw() {
+        if (!window.katex) return;
+        document.querySelectorAll('[data-tex]').forEach(function (el) {
+          var tex = el.getAttribute('data-tex');
+          if (lang === 'en') tex = tex.replace(/0\{,\}5/g, '0.5');
+          try { window.katex.render(tex, el, { displayMode: true, throwOnError: false }); } catch (e) { el.textContent = tex; }
+        });
+      }
+      function setLang(l) {
+        lang = l === 'en' ? 'en' : 'it';
+        document.documentElement.lang = lang;
+        document.title = lang === 'en' ? 'Method and validation — Torsio Engineering' : 'Metodo e validazione — Torsio Engineering';
+        document.querySelectorAll('.lang button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-lang') === lang)); });
+        document.querySelectorAll('[data-app]').forEach(function (a) { a.href = (a.getAttribute('data-app') === 'demo' ? 'app.html?demo=transmission&' : 'app.html?') + 'lang=' + lang; });
+        draw();
+        try { localStorage.setItem('torsioLang', lang); } catch (e) { /* private mode */ }
+      }
+      document.querySelectorAll('.lang button').forEach(function (b) { b.addEventListener('click', function () { setLang(b.getAttribute('data-lang')); }); });
+      var saved = null;
+      try { saved = localStorage.getItem('torsioLang'); } catch (e) { /* private mode */ }
+      var q = new URLSearchParams(location.search).get('lang');
+      setLang(q || saved || ((navigator.language || 'it').slice(0, 2) === 'it' ? 'it' : 'en'));
+      var ks = document.createElement('script');
+      ks.src = 'vendor/katex/katex.min.js'; ks.onload = draw; document.head.appendChild(ks);
+    })();
+  </script>
+  <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+  <script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>
