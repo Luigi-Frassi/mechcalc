@@ -12,7 +12,7 @@
 [![Privacy](https://img.shields.io/badge/Privacy-Cookie--free%20analytics-10B981.svg)](#-privacy)
 [![Deployed on Vercel](https://img.shields.io/badge/Deploy-Vercel-black.svg?logo=vercel)]()
 
-[**Home**](https://mechcalc-nu.vercel.app/) • [**Open the calculator**](https://mechcalc-nu.vercel.app/app.html) • [**Report an Issue**](https://github.com/Luigi-Frassi/mechcalc/issues)
+[**Home**](https://torsio-engineering.vercel.app/) • [**Open the calculator**](https://torsio-engineering.vercel.app/app.html) • [**Report an Issue**](https://github.com/Luigi-Frassi/torsio-engineering/issues)
 
 </div>
 
@@ -89,7 +89,7 @@ Load fully calculated engineering cases with a single click:
 Every calculation is kept in the page address (module, inputs, modes, language, units, selected optimizer row), so the URL can be bookmarked or sent as it is. The **Share** button copies it (on phones it opens the system share sheet). Only values that differ from the defaults are written, e.g.:
 
 ```
-https://mechcalc-nu.vercel.app/app.html?m=fits&nominalDiameter=30&fitType=H7%2Fk6
+https://torsio-engineering.vercel.app/app.html?m=fits&nominalDiameter=30&fitType=H7%2Fk6
 ```
 
 Old links to the root (`/?m=...`) are forwarded to the calculator. The home page links can also open a demo: `app.html?demo=transmission`.
@@ -99,7 +99,7 @@ Old links to the root (`/?m=...`) are forwarded to the calculator. The home page
 ## 🛠️ Architecture & Tech Stack
 
 ```text
-mechcalc/
+torsio-engineering/
 ├── index.html                # Home page (static, no framework)
 ├── app.html                  # Calculator: UI shell, demo presets, translations
 ├── modules/
@@ -168,10 +168,10 @@ No dependencies, package managers, or build steps required:
 
 ```bash
 # Clone the repository
-git clone https://github.com/Luigi-Frassi/mechcalc.git
+git clone https://github.com/Luigi-Frassi/torsio-engineering.git
 
 # Enter project directory
-cd mechcalc
+cd torsio-engineering
 
 # Run using Python 3 built-in server
 python3 -m http.server 8000
