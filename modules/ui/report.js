@@ -192,11 +192,26 @@ function reportCSS() {
   footer.rep { margin-top: 18px; padding-top: 6px; border-top: 1px solid #cbd5e1; font-size: 8.5pt; color: #64748b; }
   footer.rep a { color: #2563eb; word-break: break-all; }
   ul { margin: 4px 0 8px 18px; padding: 0; }
+  .toc { border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 12px; margin: 6px 0 12px; font-size: 9.8pt; background: #f8fafc; }
+  .toc ol { margin: 4px 0 0 18px; padding: 0; }
+  h2.ch { font-size: 14pt; margin: 4px 0 2px; padding: 6px 0 4px; border-bottom: 2px solid #0f172a; break-after: avoid; }
+  h2.ch .n { display: inline-block; min-width: 24px; color: #fff; background: #2563eb; border-radius: 4px; text-align: center; margin-right: 8px; padding: 0 6px; }
+  .chsub { margin: 2px 0 6px; color: #475569; font-size: 10pt; }
+  section.chapter { break-before: page; padding-top: 4px; }
+  @media screen { section.chapter { margin-top: 26px; border-top: 6px solid #f1f5f9; padding-top: 14px; } }
+  .chnote { border-top: 1px dashed #cbd5e1; padding-top: 4px; margin-top: 10px; }
+  table.chk td { border: 0; border-bottom: 1px solid #e2e8f0; }
+  table.chk td:first-child { width: 22px; text-align: center; font-weight: 700; }
+  table.chk td.ok { color: #047857; } table.chk td.ko { color: #b45309; } table.chk td.na { color: #94a3b8; }
   @media print { body { background: #fff; } .toolbar { display: none; } .page { padding: 0; max-width: none; } a { color: inherit; } }
   `;
 }
 
+// When a combined report is being assembled, the module builders hand their parts here instead of a full page
+let reportCollect = null;
+
 function reportShell(title, subtitle, body, R, disclaimer = null) {
+  if (reportCollect) { reportCollect.push({ title, subtitle, body, disclaimer: disclaimer || R.disclaimer }); return '__part__'; }
   const today = new Date().toLocaleDateString(currentLang === 'it' ? 'it-IT' : 'en-GB');
   let link = '';
   try { link = typeof shareUrl === 'function' ? shareUrl() : window.location.href; } catch (e) { link = window.location.href; }
@@ -229,6 +244,7 @@ function reportOpen(html, w = null) {
 // ---------------------------------------------------------------------------
 // Shafts report
 // ---------------------------------------------------------------------------
+let reportLastShaft = null;   // diameter of the last shaft report (used by the transmission summary)
 function buildShaftReportHtml() {
   const R = REPORT_TXT[currentLang] || REPORT_TXT.en;
   const t = translations[currentLang];
@@ -418,6 +434,7 @@ function buildShaftReportHtml() {
   body += H(R.s9) + '<ul>' + R.hyp.map(h => `<li>${reportTexify(h)}</li>`).join('') + '</ul>';
 
   calculateShafts();   // restore the app view (the report redrew some charts)
+  reportLastShaft = d ? { d, D, mode, ok: !!res && res.Xfatigue >= Xreq - 1e-9 && res.Xyield >= Xreq - 1e-9 } : null;
   return reportShell(R.shaftTitle, mode === 'check' ? `${R.s6c} · d = ${N(d, 1)} mm` : (d ? `d = ${N(d, 0)} mm` : ''), body, R);
 }
 

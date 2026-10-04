@@ -90,9 +90,20 @@
         <p class="text-sm text-slate-400 leading-snug" id="moduleSubtitle">H7 Hole-Basis System. Interactive matrix, reverse lookup, and unit conversion.</p>
       </div>
       <div class="flex items-center gap-2 md:gap-3 shrink-0 pt-0.5">
-        <button type="button" id="reportBtn" onclick="openReport()" class="flex items-center gap-1.5 bg-blue-600/90 hover:bg-blue-500 px-2.5 py-1.5 rounded-lg border border-blue-500 text-xs font-semibold text-white transition-colors" data-i18n-title="reportTitle" title="Calculation report (PDF)">
-          <span aria-hidden="true">📄</span><span class="hidden sm:inline" data-i18n="reportBtn">Report</span>
-        </button>
+        <div class="relative">
+          <button type="button" id="reportBtn" onclick="toggleReportMenu(event)" class="flex items-center gap-1.5 bg-blue-600/90 hover:bg-blue-500 px-2.5 py-1.5 rounded-lg border border-blue-500 text-xs font-semibold text-white transition-colors" data-i18n-title="reportTitle" title="Calculation report (PDF)">
+            <span aria-hidden="true">📄</span><span class="hidden sm:inline" data-i18n="reportBtn">Report</span><span aria-hidden="true" class="text-[9px] opacity-80">▼</span>
+          </button>
+          <div id="reportMenu" class="hidden absolute right-0 top-full mt-2 z-50 w-64 bg-slate-950 border border-slate-700 rounded-xl shadow-2xl p-2 text-xs text-slate-200">
+            <button type="button" id="reportMenuThis" onclick="document.getElementById('reportMenu').classList.add('hidden'); openReport()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-800 font-semibold">Report of this module</button>
+            <div class="border-t border-slate-800 my-1.5"></div>
+            <div class="px-3 pt-1 font-semibold text-white" id="reportMenuTxTitle">Complete transmission report</div>
+            <div class="px-3 pb-1 text-[11px] text-slate-400" id="reportMenuPick">Modules to include</div>
+            <div id="reportMenuMods" class="px-3 py-1"></div>
+            <div id="reportMenuMsg" class="px-3 text-[11px] text-amber-400"></div>
+            <button type="button" id="reportMenuGo" onclick="openTransmissionReport()" class="mt-1.5 w-full px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold">Generate report</button>
+          </div>
+        </div>
         <button type="button" class="js-share-btn flex items-center gap-1.5 bg-slate-800/80 hover:bg-slate-700 px-2.5 py-1.5 rounded-lg border border-slate-700 text-xs font-semibold text-slate-300 hover:text-white transition-colors" data-i18n-title="shareTitle" title="Copy a link to this calculation">
           <span aria-hidden="true">🔗</span><span class="hidden sm:inline" data-i18n="shareBtn">Share</span>
         </button>
@@ -128,6 +139,10 @@
         <button id="demoFitBtn" onclick="loadDemoPreset('bearingFit')" 
           class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium transition-all flex items-center gap-1.5">
           <span>🎯</span> <span data-i18n="demoBearing">Cuscinetto Ø30 (H7/k6)</span>
+        </button>
+        <button id="demoTxBtn" onclick="loadDemoPreset('transmission')"
+          class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium transition-all flex items-center gap-1.5">
+          <span>🏭</span> <span data-i18n="demoTx">Complete drive (7.5 kW)</span>
         </button>
         <button id="demoShaftBtn" onclick="loadDemoPreset('shaftExam')" 
           class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium transition-all flex items-center gap-1.5">
@@ -2147,6 +2162,7 @@
         shaftSafeLine: "with X",
         shaftWorkPoint: "section",
         demoShaft: "Reducer Shaft (Ø65, exam)",
+        demoTx: "Complete drive (7.5 kW)",
         shaftBeamSupportsErr: "Bearing 2 must be to the right of bearing 1.",
         shaftBeamRes: "R = {r} kN",
         shaftBeamAxial: "axial {a} kN",
@@ -2575,6 +2591,7 @@
         shaftSafeLine: "con X",
         shaftWorkPoint: "sezione",
         demoShaft: "Albero Riduttore (Ø65, esame)",
+        demoTx: "Trasmissione completa (7,5 kW)",
         shaftBeamSupportsErr: "Il cuscinetto 2 deve stare a destra del cuscinetto 1.",
         shaftBeamRes: "R = {r} kN",
         shaftBeamAxial: "assiale {a} kN",
@@ -2728,6 +2745,7 @@
 
     function switchModule(mod) {
       activeModule = mod;
+      if (typeof reportVisited !== 'undefined') reportVisited.add(mod);
       const repBtn = document.getElementById('reportBtn');
       if (repBtn) repBtn.classList.remove('hidden');
       const bFits = document.getElementById('navBtnFits');
@@ -3172,6 +3190,8 @@
       if (btnSpur) btnSpur.className = (activeKey === 'spur5kw') ? activeClass : inactiveClass;
       if (btnFit) btnFit.className = (activeKey === 'bearingFit') ? activeClass : inactiveClass;
       if (btnShaft) btnShaft.className = (activeKey === 'shaftExam') ? activeClass : inactiveClass;
+      const btnTx = document.getElementById('demoTxBtn');
+      if (btnTx) btnTx.className = (activeKey === 'transmission') ? activeClass : inactiveClass;
     }
 
     // A demo preset stays highlighted only until the user changes the loaded configuration.
@@ -3274,6 +3294,64 @@
 
         if (typeof calculateFits === 'function') calculateFits();
 
+      } else if (presetKey === 'transmission') {
+        // Complete drive, every module linked to the previous one:
+        // motor 7.5 kW 1450 rpm -> HTD 8M belt 28/56 (725 rpm) -> spur pair tau = 1/4 -> pinion (input) shaft -> fit of the gear seat.
+        const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+        const P = 7.5, nMotor = 1450, z1b = 28, z2b = 56, nShaft = nMotor * z1b / z2b;
+        // 1. belt
+        switchModule('belts'); setRatioMethod('teeth');
+        set('beltProfile', '8'); set('pulleyZ1', z1b); set('pulleyZ2', z2b); set('desiredCenter', 450);
+        set('motorPower', P); set('driverSpeed', nMotor); set('serviceFactor', '1.5');
+        setBeltSubMode('power');
+        // 2. gears: the pinion turns with the driven pulley
+        switchModule('gears'); setGearOpMode('design');
+        set('gearToothType', 'spur');
+        const lp = document.querySelector('input[name="gearLoadMode"][value="power"]'); if (lp) lp.checked = true;
+        document.getElementById('colGearPower')?.classList.remove('hidden'); document.getElementById('colGearTorque')?.classList.add('hidden');
+        set('gearPower', P); set('gearSpeed', nShaft);
+        const gt = document.querySelector('input[name="gearGeomMode"][value="tau"]'); if (gt) gt.checked = true;
+        document.getElementById('colGearTargetTau')?.classList.remove('hidden'); document.getElementById('colPinionZ1')?.classList.remove('hidden');
+        document.getElementById('colTargetCenter')?.classList.add('hidden'); document.getElementById('colTargetZ2')?.classList.add('hidden');
+        for (const id of ['toggleAutoZ', 'toggleLockM', 'toggleLockL']) { const c = document.getElementById(id); if (c) c.checked = false; }
+        ['colTauTol', 'colLockedM', 'colLockedL'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
+        set('gearZ1', 20); set('gearTargetTau', 0.25); set('gearXr1', 0); set('gearKeInput', 35); set('gearSigmaH', 900);
+        calculateGears();
+        const dp1 = lastGearState && lastGearState.r ? Math.round(lastGearState.r.dp1 * 10) / 10 : 60;
+        // 3. pinion shaft: driven pulley overhung at x = 20 (torque in + belt pull), bearings at 60 and 220, pinion at 140
+        switchModule('shafts');
+        const Mt = P * 1000 / (2 * Math.PI * nShaft / 60);
+        const dpPulley = z2b * 8 / Math.PI;
+        const pull = Math.round(1.2 * 2 * Mt * 1000 / dpPulley / 10) * 10;   // shaft load of a timing belt ≈ 1.2 Ft
+        set('shaftTorqueInput', 'power'); set('shaftPower', P); set('shaftSpeed', nShaft);
+        set('shaftLength', 240); set('shaftXA', 60); set('shaftXB', 220); set('shaftAxialBearing', 'A'); set('shaftTheta', 20);
+        set('shaftBearingLife', 1000); set('shaftBearingType', 'ball'); set('shaftBearingCA', 0); set('shaftBearingCB', 0); set('shaftRotation', 'ccw');
+        const els = [
+          { type: 'coupling', x: 20, torque: 'in' },
+          { type: 'force', x: 20, Fv: 0, Fh: pull, Fa: 0 },
+          { type: 'gear', x: 140, d: dp1, helix: 0, torque: 'out', mesh: 90 },
+          { type: 'none' }];
+        els.forEach((e, i) => {
+          const p = 'shaftEl' + (i + 1);
+          set(p + 'Type', e.type); set(p + 'Share', 100);
+          if (e.x !== undefined) set(p + 'X', e.x);
+          if (e.torque) set(p + 'Torque', e.torque);
+          if (e.type === 'force') { set(p + 'Fv', e.Fv); set(p + 'Fh', e.Fh); set(p + 'Fa', e.Fa); }
+          if (e.type === 'gear') { set(p + 'D', e.d); set(p + 'Helix', e.helix); set(p + 'DirMode', 'mesh'); set(p + 'Angle', e.mesh); }
+        });
+        for (let i = 1; i <= 4; i++) { ['X', 'D', 'DD', 'R'].forEach(f => set('shaftRs' + i + f, 0)); set('shaftRs' + i + 'Key', '0'); }
+        set('shaftBendCycle', 'rotating'); set('shaftTorsionCycle', 'static');
+        set('shaftSigmaR', 900); set('shaftSigmaS', 700); set('shaftSigmaLF', 450); set('shaftLife', 'infinite');
+        set('shaftNotchType', 'shoulder'); set('shaftDd', 1.2); set('shaftR', 1.5);
+        set('shaftFinish', 'd'); set('shaftX', 2);
+        setShaftMode('beam'); shaftGoToCritical(); shaftUseSection();
+        // 4. fit of the hub on the designed section
+        let dShaft = 30;
+        try { const si = readShaftInputs(); const des = shaftDesign(si.inp, si.Xreq); if (des.ok) dShaft = des.d; } catch (e) { /* keep default */ }
+        switchModule('fits'); setMode('direct');
+        set('nominalDiameter', dShaft); set('fitType', 'H7/k6'); calculateFits();
+        switchModule('shafts');
+        updateDemoButtonsState('transmission');
       } else if (presetKey === 'shaftExam') {
         // Intermediate shaft of a spur-gear reducer (exam of 11 April 2003): 30 kW at 200 rpm,
         // bearings A (x = 0) and C (x = 240), gear B Ø210 at x = 67.5, overhung pinion D Ø105 at x = 305.
@@ -3314,6 +3392,7 @@
   <script src="modules/core/shafts-core.js"></script>
   <script src="modules/ui/shafts-ui.js"></script>
   <script src="modules/ui/report.js"></script>
+  <script src="modules/ui/report-transmission.js"></script>
   <script src="modules/ui/share.js"></script>
 
   <script>
