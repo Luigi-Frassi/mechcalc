@@ -54,6 +54,7 @@ function readShareState() {
     s.s3 = (typeof selectedAlternativeModule !== 'undefined' && selectedAlternativeModule) || 'strict';
   } else if (activeModule === 'shafts') {
     s.smode = typeof currentShaftMode !== 'undefined' ? currentShaftMode : 'design';
+    s.spf = typeof shaftProfileEncode === 'function' ? shaftProfileEncode() : '';   // shaft profile for CAD, only when edited by hand
   } else if (activeModule === 'frames') {
     s.fs = typeof frEncodeModel === 'function' ? frEncodeModel() : '';   // the whole structure in one parameter
   }
@@ -152,6 +153,7 @@ function applyShareState(q) {
     const smode = q.get('smode');
     if (smode === 'beam' || smode === 'design' || smode === 'check') currentShaftMode = smode;
     if (typeof setShaftMode === 'function') setShaftMode(currentShaftMode);
+    if (q.get('spf') && typeof shaftProfileDecode === 'function') shaftProfileDecode(q.get('spf'));
   }
 
   switchModule(m);   // shows the module and recalculates

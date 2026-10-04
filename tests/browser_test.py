@@ -403,6 +403,44 @@ with sync_playwright() as p:
     tf = rf.evaluate("document.body.textContent")
     keys = ['Struttura piana', 'Metodo di calcolo', 'Confronto delle famiglie', 'Esempio di verifica', 'FSD continuo', 'Tubo tondo']
     check('  relazione strutture: metodo, confronto, esempio di verifica, notebook', all(k in tf for k in keys) and rf.evaluate("document.querySelectorAll('.katex .mfrac').length > 10"), str([k for k in keys if k not in tf]))
+
+    # progetto: dati, salvataggio e riapertura del file con tutti i moduli; relazione con cartiglio; DXF di ogni modulo
+    pp = new_page(); pp.goto(BASE + '?demo=transmission&lang=it'); settle(pp)
+    pp.click('#projectBtn')
+    for k, v in [('company', 'Officine Rossi srl'), ('project', 'Riduttore R7'), ('code', 'C-2026-014'), ('client', 'Acme Spa'), ('drawnBy', 'L. Frassi')]:
+        pp.fill('#prj_' + k, v)
+    pp.fill('#prj_revDesc', 'Prima emissione'); pp.click('#prjNewRev')
+    check('progetto: nuova revisione 0 → 1 con lo storico', pp.evaluate("projectMeta.rev === '1' && projectMeta.revisions.length === 1 && projectMeta.revisions[0].desc === 'Prima emissione'"))
+    with pp.expect_download() as dl:
+        pp.click('#prjSave')
+    path = dl.value.path(); import json as _json; data = _json.load(open(path))
+    check('  file di progetto: nome con commessa e revisione, stato di tutti i moduli', dl.value.suggested_filename == 'C-2026-014_Riduttore-R7_rev1.torsio.json' and set(data['modules']) >= {'fits', 'belts', 'gears', 'shafts', 'frames'} and data['modules']['belts']['motorPower'] == '7.5', dl.value.suggested_filename)
+    pq2 = new_page(); pq2.goto(BASE + '?lang=it'); settle(pq2)
+    pq2.click('#projectBtn'); pq2.set_input_files('#prjFile', path); pq2.wait_for_timeout(600)
+    st = pq2.evaluate("[document.getElementById('motorPower').value, document.getElementById('gearSpeed').value, document.getElementById('nominalDiameter').value, projectMeta.company, activeModule]")
+    check('  riaprendo il file tornano input di tutti i moduli e dati del progetto', st[0] == '7.5' and st[1] == '725' and st[2] == '35' and st[3] == 'Officine Rossi srl' and st[4] == 'shafts', str(st))
+    pq2.keyboard.press('Escape')
+    pq2.click('#reportBtn')
+    with ctx.expect_page() as rpp:
+        pq2.click('#reportMenuThis')
+    rq = rpp.value; rq.wait_for_load_state(); rq.wait_for_function("document.querySelector('.page') !== null")
+    tq = rq.evaluate("document.body.textContent")
+    check('  relazione: intestazione e cartiglio con azienda, commessa, cliente, revisioni e firme', all(k in tq for k in ['Officine Rossi srl', 'C-2026-014', 'Acme Spa', 'Prima emissione', 'Redatto', 'Approvato']) and rq.evaluate("document.querySelectorAll('.cart .sig').length") == 3)
+    # DXF
+    check('  bottone DXF nascosto negli accoppiamenti, visibile negli alberi', pq2.evaluate("switchModule('fits'); const h = document.getElementById('dxfBtn').classList.contains('hidden'); switchModule('shafts'); h && !document.getElementById('dxfBtn').classList.contains('hidden')"))
+    with pq2.expect_download() as dd:
+        pq2.click('#dxfBtn')
+    dtxt = open(dd.value.path(), encoding='latin-1', newline='').read()
+    check('DXF albero: R12 valido con cartiglio, commessa, cave UNI 6604 e quote', dtxt.startswith('0\r\nSECTION') and 'AC1009' in dtxt and dtxt.rstrip().endswith('EOF') and 'C-2026-014' in dtxt and 'UNI 6604' in dtxt and 'QUOTE' in dtxt and dd.value.suggested_filename.endswith('_albero.dxf'), dd.value.suggested_filename)
+    others = pq2.evaluate("['frames', 'gears', 'belts'].map(m => { if (m === 'frames') loadDemoPreset('frames'); const t = exportDxf(m); return !!t && t.includes('CARTIGLIO') && t.trim().endsWith('EOF'); })")
+    check('  DXF di strutture, ruote e cinghie', all(others), str(others))
+    # profilo dell'albero modificato a mano: resta nel link condivisibile
+    pq3 = new_page(); pq3.goto(BASE + '?demo=shaftExam&lang=it'); settle(pq3)
+    nseg = pq3.evaluate("shaftProfile.segs.length")
+    pq3.fill('#shaftProfileTbl tr[data-i="1"] input[data-f="d"]', '52'); pq3.dispatch_event('#shaftProfileTbl tr[data-i="1"] input[data-f="d"]', 'change'); settle(pq3)
+    url3 = pq3.evaluate("shareUrl()")
+    pq4 = new_page(); pq4.goto(url3); settle(pq4)
+    check('  profilo dell\'albero modificato a mano: resta nel link e nel DXF', 'spf=' in url3 and pq4.evaluate("!shaftProfile.auto && shaftProfile.segs[1].d === 52 && shaftProfile.segs.length") == nseg and '%%c52' in pq4.evaluate("exportDxf('shafts')"), url3[-60:])
     check('  quota e coppia "nessuna" nel selettore', pg3.evaluate("[...document.getElementById('shaftEl1Torque').options].some(o => o.value === 'none')"))
 
     check('  progetto: scheda carico massimo nascosta', pg.evaluate("document.getElementById('shaftMaxCard').classList.contains('hidden')"))

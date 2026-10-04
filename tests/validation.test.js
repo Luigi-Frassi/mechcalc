@@ -16,7 +16,7 @@ const vm = require('vm');
 
 const ctx = { Math, console };
 vm.createContext(ctx);
-for (const f of ['core/gears-core.js', 'core/fits-core.js', 'core/belts-core.js', 'core/shafts-core.js', 'core/frames-core.js']) {
+for (const f of ['core/gears-core.js', 'core/fits-core.js', 'core/belts-core.js', 'core/shafts-core.js', 'core/frames-core.js', 'core/dxf-core.js']) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'modules', f), 'utf8'), ctx, { filename: f });
 }
 const { computeGearWmax, computeGearDesign, getHelicalFactors, getLewisFactor } =
@@ -883,6 +883,31 @@ for (const [a, z1, z2, phi, g1, g2, psi] of [
   const mat = { E: 70000, rho: 2770, sigmaS: 255, X: 1.5, Xb: 2, beta: 1, deflMax: 0 };
   const tube = F.frameSize(tower, 'tube', mat);
   abs('Torre radio, tubi a catalogo: tutte le aste verificate (resistenza e Eulero)', tube.ok && tube.ev.rows.every(r => r.chk.Xs >= 1.5 - 1e-9 && r.chk.Xb >= 2 - 1e-9) ? 1 : 0, 1, 0);
+}
+
+
+// ---------------------------------------------------------------------------
+// DXF: linguette UNI 6604, profilo proposto dell'albero, struttura del file R12
+// ---------------------------------------------------------------------------
+{
+  const X = vm.runInContext('({ dxfKeyFor, shaftProfileProposal, DxfWriter, dxfFitSheet })', ctx);
+  const k35 = X.dxfKeyFor(35), k60 = X.dxfKeyFor(60);
+  abs('UNI 6604: linguetta per Ø35 → b = 10, t1 = 5', k35.b * 100 + k35.t1, 1005, 0);
+  abs('UNI 6604: linguetta per Ø60 → b = 18, t1 = 7', k60.b * 100 + k60.t1, 1807, 0);
+  const pr = X.shaftProfileProposal({ L: 320, xA: 0, xB: 240, d: 65, D: 76, r: 2,
+    features: [{ x: 0, kind: 'bearing' }, { x: 240, kind: 'bearing' }, { x: 67.5, kind: 'gear' }, { x: 305, kind: 'gear' }] });
+  const contiguous = pr.segs.every((sg, i) => i === 0 || Math.abs(sg.x0 - pr.segs[i - 1].x1) < 1e-9) && pr.segs[0].x0 === 0 && pr.segs[pr.segs.length - 1].x1 === 320;
+  abs('profilo albero: tratti contigui da 0 a L', contiguous ? 1 : 0, 1, 0);
+  const at = x => pr.segs.find(sg => x >= sg.x0 && x <= sg.x1).d;
+  abs('profilo albero: sede del cuscinetto al foro di progetto (Ø65)', at(240), 65, 0);
+  abs('profilo albero: sede della ruota tra i cuscinetti al Ø dello spallamento (76)', at(67.5), 76, 0);
+  abs('profilo albero: cave sulle sedi delle ruote', pr.segs.filter(sg => sg.key).length, 2, 0);
+  const w = new X.DxfWriter(); w.line(0, 0, 10, 0, 'A').arc(0, 0, 5, 0, 90, 'A').text(0, 0, 2.5, 'Ø35 ±0,1 σ');
+  const txt = w.toString();
+  abs('DXF: intestazione AC1009, EOF e testo con codici %%c %%p \\U+', (txt.includes('AC1009') && txt.trim().endsWith('EOF') && txt.includes('%%c35 %%p0,1 \\U+03C3')) ? 1 : 0, 1, 0);
+  const s1 = X.dxfFitSheet(320, 120), s2 = X.dxfFitSheet(20000, 22000);
+  abs('DXF: albero 320 mm su A3 in scala 1:1', s1.fmt === 'A3' && s1.s === 1 ? 1 : 0, 1, 0);
+  abs('DXF: torre di 20 m in scala di riduzione su A3 o A4', s2.s >= 100 ? 1 : 0, 1, 0);
 }
 
 let failed = 0;

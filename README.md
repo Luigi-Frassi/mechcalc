@@ -115,7 +115,8 @@ torsio-engineering/
 │   │   ├── belts-core.js     # Synchronous timing belt sizing logic
 │   │   ├── gears-core.js     # Hertz/Lewis synthesis, tooth optimizer, W_max rating
 │   │   ├── shafts-core.js    # Shaft fatigue design: Kt, q, b1, b2, Goodman, bearing bores
-│   │   └── frames-core.js    # 2D frame/truss FEM, section catalogs, FSD sizing with buckling
+│   │   ├── frames-core.js    # 2D frame/truss FEM, section catalogs, FSD sizing with buckling
+│   │   └── dxf-core.js       # DXF R12 writer, title block, shaft profile proposal, UNI 6604 keys
 │   └── ui/                   # Read inputs, call the core, render results and SVG
 │       ├── fits-ui.js
 │       ├── belts-ui.js
@@ -123,6 +124,8 @@ torsio-engineering/
 │       ├── shafts-ui.js
 │       ├── frames-ui.js      # Structures editor (SVG drawing, tables, results)
 │       ├── report-frames.js  # Calculation report of the Structures module
+│       ├── project.js        # Project data, project files, title block data
+│       ├── dxf-ui.js         # DXF export of every module, shaft profile editor
 │       ├── report.js         # Calculation reports of each module (A4, KaTeX)
 │       ├── report-transmission.js  # Complete transmission report: power flow + chapters
 │       └── share.js          # Shareable links: state <-> URL
@@ -140,6 +143,16 @@ Each `ui/*.js` file depends on the matching `core/*.js` file, so `app.html` load
 * **Rendering**: Inline Mathematical SVG
 
 ---
+
+## 🗂️ Projects and CAD export
+
+* **Project data** (📁 *Project*): company, project, job number, client, drawn / checked / approved by, revision with history, logo (PNG/JPG/SVG; without one the Torsio mark is used). They are remembered in the browser and printed in the header and in the **ISO 7200 style title block** of every report (with signature boxes and the revision table) and every DXF.
+* **Project file** (`.torsio.json`): the inputs of all five modules plus the project data, saved and reopened in one click; the file name carries job number, project and revision.
+* **DXF export** (📐, AutoCAD R12 ASCII, opens in any CAD; mm, model space 1:1, layers with linetypes, title block scaled around the drawing on A4/A3, scale chosen automatically):
+  * **Shafts**: the whole shaft profile, proposed from the calculation — bearing seats at the designed bore, gear seats at the shoulder diameter, collars between seats, UNI 6604 keyways on gear and coupling seats — editable in a table under the shaft module (the profile is kept in links and project files). Fillets at every step, end chamfers, diameters and chain dimensions, keyway top views with $b \times t_1 \times l$, element labels.
+  * **Structures**: member axes with section names, nodes, hinges, supports, loads, overall dimensions, and every chosen section outline at real size.
+  * **Gears**: tip, pitch and root circles of the pair at the centre distance. **Belts**: pitch circles and the belt on the pitch line at the exact centre distance.
+  * Checked with [ezdxf](https://github.com/mozman/ezdxf) (audit: no errors).
 
 ## 📄 Calculation Reports
 

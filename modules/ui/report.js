@@ -192,6 +192,18 @@ function reportCSS() {
   footer.rep { margin-top: 18px; padding-top: 6px; border-top: 1px solid #cbd5e1; font-size: 8.5pt; color: #64748b; }
   footer.rep a { color: #2e5640; word-break: break-all; }
   ul { margin: 4px 0 8px 18px; padding: 0; }
+  .rhead { display: grid; grid-template-columns: 54px auto 1fr; gap: 6px 12px; align-items: center; margin-bottom: 8px; }
+  .rlogo img, .rlogo svg { width: 54px; height: 40px; object-fit: contain; display: block; }
+  .rco { font-weight: 700; font-size: 11pt; } .rco .rsub { font-size: 8.5pt; font-weight: 600; color: #2e5640; letter-spacing: .04em; }
+  table.rmeta { width: auto; margin: 0 0 0 auto; font-size: 8.8pt; } table.rmeta th { background: #f8fafc; font-weight: 500; color: #475569; } table.rmeta td { min-width: 80px; }
+  .cart { margin-top: 18px; break-inside: avoid; }
+  .cart table { border: 1.6px solid #0f172a; font-size: 8.8pt; margin: 0; }
+  .cart td { border: 1px solid #0f172a; padding: 3px 6px; vertical-align: top; }
+  .cart small { display: block; font-size: 7pt; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
+  .cart .ctitle { font-size: 11pt; font-weight: 700; }
+  .cart .clogo { width: 23%; text-align: center; font-weight: 700; font-size: 9pt; } .cart .clogo img, .cart .clogo svg { max-width: 100%; height: 34px; object-fit: contain; display: block; margin: 0 auto 2px; }
+  .cart .sig { height: 46px; position: relative; } .cart .sig i { position: absolute; right: 6px; bottom: 3px; font-size: 7pt; color: #94a3b8; }
+  .cart table.revs { margin-top: 4px; border-width: 1px; } .cart table.revs th { font-size: 7.5pt; background: #f8fafc; } .cart table.revs td { padding: 2px 6px; }
   .toc { border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 12px; margin: 6px 0 12px; font-size: 9.8pt; background: #f8fafc; }
   .toc ol { margin: 4px 0 0 18px; padding: 0; }
   h2.ch { font-size: 14pt; margin: 4px 0 2px; padding: 6px 0 4px; border-bottom: 2px solid #0f172a; break-after: avoid; }
@@ -203,29 +215,51 @@ function reportCSS() {
   table.chk td { border: 0; border-bottom: 1px solid #e2e8f0; }
   table.chk td:first-child { width: 22px; text-align: center; font-weight: 700; }
   table.chk td.ok { color: #047857; } table.chk td.ko { color: #b45309; } table.chk td.na { color: #94a3b8; }
-  @media print { body { background: #fff; } .toolbar { display: none; } .page { padding: 0; max-width: none; } a { color: inherit; } }
+  @media print { [contenteditable] { background: none; padding: 0; } body { background: #fff; } .toolbar { display: none; } .page { padding: 0; max-width: none; } a { color: inherit; } }
   `;
 }
 
 // When a combined report is being assembled, the module builders hand their parts here instead of a full page
 let reportCollect = null;
 
+// Report header and title block from the project data (project.js); every field stays editable before printing
+const REPORT_MARK_SVG = '<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="11" fill="none" stroke="#2e5640" stroke-width="5"/><rect x="13" y="2" width="6" height="7" fill="#e8b321"/></svg>';
+
+function reportTitleBlock(title, R) {
+  const P = typeof projectTitleData === 'function' ? projectTitleData(title) : { rev: '0', date: new Date().toLocaleDateString(), revisions: [] };
+  const tb = (typeof prjT === 'function' ? prjT() : { tb: {} }).tb;
+  const ed = (v, ph = '—') => `<span contenteditable="true" title="${R.clickToEdit}">${reportEsc(v || ph)}</span>`;
+  const logo = P.logo ? `<img src="${P.logo}" alt="">` : REPORT_MARK_SVG;
+  const company = P.company || 'Torsio Engineering';
+  const head = `<div class="rhead"><div class="rlogo">${logo}</div><div class="rco">${ed(company)}<div class="rsub">${R.docTitle}</div></div>
+    <table class="rmeta"><tr><th>${tb.project || R.project}</th><td>${ed(P.project)}</td><th>${tb.code || 'Commessa'}</th><td>${ed(P.code)}</td></tr>
+    <tr><th>${tb.client || 'Cliente'}</th><td>${ed(P.client)}</td><th>${tb.rev || 'Rev.'}</th><td>${ed(P.rev)} · ${P.date}</td></tr></table></div>`;
+  const revs = (P.revisions || []).concat([{ rev: P.rev, date: P.date, desc: typeof projectMeta !== 'undefined' && projectMeta.revDesc ? projectMeta.revDesc : '', by: P.drawnBy }]);
+  const cart = `<div class="cart"><table>
+    <tr><td rowspan="2" class="clogo">${logo}<div>${reportEsc(company)}</div></td><td colspan="3" class="ctitle"><small>${tb.title || 'Titolo'}</small>${reportEsc(title)}</td></tr>
+    <tr><td><small>${tb.project || R.project}</small>${ed(P.project)}</td><td><small>${tb.code || ''}</small>${ed(P.code)}</td><td><small>${tb.client || ''}</small>${ed(P.client)}</td></tr>
+    <tr><td><small>${tb.rev || 'Rev.'} · ${tb.date || R.date}</small>${ed(P.rev)} · ${P.date}</td><td class="sig"><small>${tb.drawn || ''}</small>${ed(P.drawnBy)}<i>${tb.signature || ''}</i></td>
+      <td class="sig"><small>${tb.checked || ''}</small>${ed(P.checkedBy)}<i>${tb.signature || ''}</i></td><td class="sig"><small>${tb.approved || ''}</small>${ed(P.approvedBy)}<i>${tb.signature || ''}</i></td></tr></table>
+    ${revs.length > 1 ? `<table class="revs"><thead><tr><th>${tb.rev}</th><th>${tb.date}</th><th>${tb.desc || ''}</th><th>${tb.drawn}</th></tr></thead><tbody>${revs.map(r => `<tr><td>${reportEsc(r.rev)}</td><td>${reportEsc(r.date)}</td><td>${reportEsc(r.desc)}</td><td>${reportEsc(r.by)}</td></tr>`).join('')}</tbody></table>` : ''}</div>`;
+  return { head, cart };
+}
+
 function reportShell(title, subtitle, body, R, disclaimer = null) {
   if (reportCollect) { reportCollect.push({ title, subtitle, body, disclaimer: disclaimer || R.disclaimer }); return '__part__'; }
-  const today = new Date().toLocaleDateString(currentLang === 'it' ? 'it-IT' : 'en-GB');
   let link = '';
   try { link = typeof shareUrl === 'function' ? shareUrl() : window.location.href; } catch (e) { link = window.location.href; }
+  const tbk = reportTitleBlock(title, R);
+  const fname = typeof prjFileName === 'function' ? prjFileName('.html') : 'relazione-torsio.html';
   return `<!doctype html><html lang="${currentLang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${reportEsc(R.docTitle)} — ${reportEsc(subtitle)}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap"><link rel="stylesheet" href="${new URL('vendor/katex/katex.min.css', window.location.href).href}"><style>${reportCSS()}</style></head><body>
 <div class="toolbar"><button onclick="window.print()">🖨 ${R.printBtn}</button>
-<button class="sec" onclick="(function(){var h='<!doctype html>'+document.documentElement.outerHTML;var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([h],{type:'text/html'}));a.download='relazione-torsio.html';a.click();})()">⬇ ${R.htmlBtn}</button>
+<button class="sec" onclick="(function(){var h='<!doctype html>'+document.documentElement.outerHTML;var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([h],{type:'text/html'}));a.download=${JSON.stringify(fname).replace(/"/g, '&quot;')};a.click();})()">⬇ ${R.htmlBtn}</button>
 <span>${R.printHint}</span></div>
 <div class="page">
-<header class="rep"><div class="brand"><svg width="16" height="16" viewBox="0 0 32 32" aria-hidden="true" style="vertical-align:-3px;margin-right:6px"><circle cx="16" cy="16" r="11" fill="none" stroke="#2e5640" stroke-width="5"/><rect x="13" y="2" width="6" height="7" fill="#e8b321"/></svg>Torsio Engineering · ${R.docTitle}</div><h1>${reportEsc(title)}</h1><h2>${reportEsc(subtitle)}</h2>
-<div class="meta"><div><b>${R.project}:</b><span contenteditable="true" title="${R.clickToEdit}">—</span></div>
-<div><b>${R.author}:</b><span contenteditable="true" title="${R.clickToEdit}">—</span></div><div><b>${R.date}:</b>${today}</div></div></header>
+<header class="rep">${tbk.head}<h1>${reportEsc(title)}</h1><h2>${reportEsc(subtitle)}</h2></header>
 ${body}
+${tbk.cart}
 <footer class="rep"><p>${disclaimer || R.disclaimer}</p><p>${R.generated} · <a href="${reportEsc(link)}">${R.reopen} ↗</a> <span class="small">(${reportEsc(link.split('?')[0])})</span></p></footer>
 </div></body></html>`;
 }
