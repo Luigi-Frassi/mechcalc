@@ -155,6 +155,13 @@ Each `ui/*.js` file depends on the matching `core/*.js` file, so `app.html` load
 
 ---
 
+## 🔗 Linked modules
+
+A **Continue with these results** bar at the bottom of each module carries its results into the next one:
+timing belt → gears (driven speed and power), gears → pinion or wheel shaft (power, speed, pitch diameter, helix),
+shaft → ISO fit (diameter) and → bolted flange coupling (torque), frames → bolts at each support (shear |Rx|, uplift −Ry).
+The target fields are filled in and highlighted, and a banner says where the data came from and what still has to be checked.
+
 ## 🗂️ Projects and CAD export
 
 * **Project data** (📁 *Project*): company, project, job number, client, drawn / checked / approved by, revision with history, logo (PNG/JPG/SVG; without one the Torsio mark is used). They are remembered in the browser and printed in the header and in the **ISO 7200 style title block** of every report (with signature boxes and the revision table) and every DXF.

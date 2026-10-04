@@ -4,6 +4,7 @@
 // the Goodman diagram and the dimensioned sketch of the section.
 // ============================================================================
 
+let lastShaftSection = null;     // last section of steps 2/3 ({ mode, d, D }), handed to the fits module by links.js
 let currentShaftMode = 'beam';   // 'beam' (1D beam & loads) | 'design' (find d) | 'check' (d known)
 
 function setShaftMode(mode) {
@@ -162,6 +163,7 @@ function calculateShafts() {
     res = shaftCheck({ ...inp, notch }, d);
   }
 
+  lastShaftSection = { mode, d, D: shoulder ? D : null };
   if (shoulder && inp.notch.r > 5) warnings.push(shaftText(t, 'shaftWarnQr', { r: shaftFmt(inp.notch.r, 1), q: shaftFmt(res.qB, 3) }));
   if (shoulder && res.rdOutOfRange) warnings.push(shaftText(t, 'shaftWarnRd', { rd: shaftFmt(res.rd, 3) }));
   if (shoulder && D && (D / d > 2.0 || D / d < 1.09)) warnings.push(shaftText(t, 'shaftWarnDd', { Dd: shaftFmt(D / d, 2) }));
