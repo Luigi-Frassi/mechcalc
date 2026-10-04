@@ -99,7 +99,7 @@ function frCondense(k, f0, rel) {
   return { k: kc, f0: fc, r, inv };
 }
 
-function frT(c, s) {   // global -> local transformation (6x6)
+function frRot(c, s) {   // global -> local transformation (6x6)
   const T = frMatZeros(6);
   for (const o of [0, 3]) { T[o][o] = c; T[o][o + 1] = s; T[o + 1][o] = -s; T[o + 1][o + 1] = c; T[o + 2][o + 2] = 1; }
   return T;
@@ -131,7 +131,7 @@ function frameAnalyze(model, props) {
     if (m.relStart) rel.push(2);
     if (m.relEnd) rel.push(5);
     const cd = frCondense(k, f0, rel);
-    const T = frT(g.c, g.s);
+    const T = frRot(g.c, g.s);
     // global: Kg = Tᵀ k T, fg = Tᵀ f0
     const kg = frMatZeros(6), fg = new Float64Array(6);
     for (let a = 0; a < 6; a++) for (let b = 0; b < 6; b++) {

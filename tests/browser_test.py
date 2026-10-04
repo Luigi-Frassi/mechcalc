@@ -373,6 +373,35 @@ with sync_playwright() as p:
     ph2.click('.lang button[data-lang=it]')
     hrefs = ph2.evaluate("[...document.querySelectorAll('[data-href]')].map(a => a.getAttribute('href'))")
     check('  home: titolo, link al calcolatore e alla demo con la lingua', 'Torsio' in ph2.title() and 'app.html?lang=it' in hrefs and 'app.html?demo=transmission&lang=it' in hrefs, str(hrefs))
+
+    # strutture (FEM): disegno con il mouse, vincoli e carichi con un clic, dimensionamento, link e relazione
+    pf = new_page(); pf.goto(BASE + '?m=frames&lang=it'); settle(pf)
+    pf.click('#frClear'); settle(pf)
+    def scr(x, y):
+        return pf.evaluate(f"(() => {{ document.getElementById('frCanvas').scrollIntoView({{block: 'center'}}); const p = frToScreen({{x:{x}, y:{y}}}), r = document.getElementById('frCanvas').getBoundingClientRect(); return [r.left + p.X * r.width / {900}, r.top + p.Y * r.height / {460}]; }})()")
+    a = scr(0, 0); b = scr(4000, 0)
+    pf.mouse.move(*a); pf.mouse.down(); pf.mouse.move((a[0] + b[0]) / 2, a[1], steps=4); pf.mouse.move(*b, steps=4); pf.mouse.up(); settle(pf)
+    check('strutture: trascinando si crea un\'asta da 4 m tra due nodi', pf.evaluate("frModel.members.length === 1 && frModel.nodes.length === 2 && frModel.nodes[1].x === 4000"), pf.evaluate("JSON.stringify(frModel.nodes)"))
+    pf.click('#frTools button[data-tool=support]'); a = scr(0, 0); b = scr(4000, 0); pf.mouse.click(*a); pf.mouse.click(*b); pf.mouse.click(*b); settle(pf)
+    check('  vincoli con un clic: cerniera, poi carrello al secondo clic', pf.evaluate("frModel.supports.map(s => s.type).join(',')") == 'pin,rollerX', pf.evaluate("frModel.supports.map(s => s.type).join(',')"))
+    pf.click('#frTools button[data-tool=dload]'); a = scr(0, 0); b = scr(4000, 0); pf.mouse.click((a[0] + b[0]) / 2, a[1]); settle(pf)
+    best = pf.evaluate("frResults.best + ' ' + frResults.byFamily[frResults.best].secs[0].name")
+    check('  carico distribuito sull\'asta e sezione più leggera (IPE con q = 10 kN/m, L = 4 m)', best.startswith('IPE'), best)
+    m = pf.evaluate("frameMemberSummary(frResults.byFamily.IPE.ev.an.members[0], frModel).Mabs / 1e6")
+    check('  M max = qL²/8 = 20 kN·m', abs(m - 20) < 1e-6, str(m))
+    url = pf.evaluate("shareUrl()")
+    pf2 = new_page(); pf2.goto(url); settle(pf2)
+    check('  il link condivisibile riapre la stessa struttura', pf2.evaluate("frModel.members.length === 1 && frModel.dloads.length === 1 && frModel.supports.length === 2 && frResults.best") == best.split(' ')[0], url[-80:])
+    pf3 = new_page(); pf3.goto(BASE + '?demo=frames&lang=it'); settle(pf3)
+    tw = pf3.evaluate("[frModel.members.length, frResults.best, Math.round(frResults.notebook.W), frResults.byFamily.IPE.ok]")
+    check('  demo torre radio (notebook): 20 aste, tubo il più leggero, IPE non basta (Eulero)', tw[0] == 20 and tw[1] == 'tube' and tw[3] is False, str(tw))
+    pf3.click('#reportBtn')
+    with ctx.expect_page() as rpf:
+        pf3.click('#reportMenuThis')
+    rf = rpf.value; rf.wait_for_load_state(); rf.wait_for_function("document.querySelector('.page') !== null")
+    tf = rf.evaluate("document.body.textContent")
+    keys = ['Struttura piana', 'Metodo di calcolo', 'Confronto delle famiglie', 'Esempio di verifica', 'FSD continuo', 'Tubo tondo']
+    check('  relazione strutture: metodo, confronto, esempio di verifica, notebook', all(k in tf for k in keys) and rf.evaluate("document.querySelectorAll('.katex .mfrac').length > 10"), str([k for k in keys if k not in tf]))
     check('  quota e coppia "nessuna" nel selettore', pg3.evaluate("[...document.getElementById('shaftEl1Torque').options].some(o => o.value === 'none')"))
 
     check('  progetto: scheda carico massimo nascosta', pg.evaluate("document.getElementById('shaftMaxCard').classList.contains('hidden')"))

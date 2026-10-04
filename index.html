@@ -10,7 +10,7 @@
     // Old shared links pointed at the root (/?m=shafts&...): send them to the calculator
     (function () {
       var q = window.location.search;
-      if (/[?&]m=(fits|belts|gears|shafts)\b/.test(q)) window.location.replace('app.html' + q + window.location.hash);
+      if (/[?&]m=(fits|belts|gears|shafts|frames)\b/.test(q)) window.location.replace('app.html' + q + window.location.hash);
     })();
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -115,6 +115,11 @@
     .facts p { margin: 0; color: var(--ink-2); font-size: 15.5px; max-width: 30ch; }
     .limits { margin-top: 44px; max-width: var(--measure); padding-left: 16px; border-left: 3px solid var(--signal); color: var(--ink-2); font-size: 15.5px; }
 
+    .fem { margin-top: 48px; display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 32px; align-items: center; padding: 24px; background: var(--sheet); border: 1px solid var(--line); border-radius: 6px; }
+    .fem h3 { font-size: 21px; font-stretch: 105%; margin: 0 0 8px; }
+    .fem p { margin: 0 0 12px; color: var(--ink-2); font-size: 15.5px; max-width: 60ch; }
+    .fem a { font-weight: 600; font-size: 15px; }
+    .fem svg { width: 100%; height: auto; }
     .closing { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px; }
     footer { border-top: 1px solid var(--line); padding: 28px 0 40px; font-size: 14px; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
 
@@ -125,6 +130,8 @@
       .chain .shaftline { display: none; }
       .report { grid-template-columns: 1fr; gap: 36px; }
       .facts { grid-template-columns: 1fr; gap: 28px; }
+      .fem { grid-template-columns: 1fr; }
+      .fem svg { max-width: 240px; }
       .nav .links { display: none; }
     }
     @media (max-width: 520px) {
@@ -294,6 +301,21 @@
           <a href="app.html?m=fits" data-href="fits" data-t="open4">Scegli l'accoppiamento</a>
         </li>
       </ol>
+      <div class="fem">
+        <div>
+          <h3 data-t="femH">E per tutto il resto: strutture a elementi finiti</h3>
+          <p data-t="femP">Travi, telai e tralicci piani: disegni le aste sulla griglia, metti vincoli e carichi con un clic e ottieni reazioni, diagrammi N, T, M e deformata. Poi Torsio sceglie la sezione più leggera in sei famiglie (tondo, tubo, rettangolare, scatolato, IPE, HEA) verificando resistenza, instabilità di Eulero e freccia.</p>
+          <a href="app.html?m=frames" data-href="frames" data-t="femA">Apri il modulo Strutture</a> · <a href="app.html?demo=frames" data-href="femDemo" data-t="femDemo">prova la torre radio</a>
+        </div>
+        <svg viewBox="0 0 220 165" aria-hidden="true">
+          <g stroke="#1c2120" stroke-width="2.4" stroke-linecap="round" fill="none">
+            <path d="M30 130 L60 30 L90 130 L120 30 L150 130 L180 30 L210 130"/><path d="M60 30 L180 30"/><path d="M30 130 L210 130"/>
+          </g>
+          <g stroke="#2e5a42" stroke-width="1.6" fill="#2e5a42" fill-opacity=".14"><path d="M30 130 Q120 168 210 130 Z"/></g>
+          <g fill="#e8b321" stroke="#1c2120" stroke-width="1"><path d="M30 130 l-8 13 h16 z"/><path d="M210 130 l-8 13 h16 z"/></g>
+          <g stroke="#b8860b" stroke-width="1.6"><path d="M120 6 v18"/><path d="M115 18 l5 7 l5 -7" fill="#b8860b"/></g>
+        </svg>
+      </div>
     </div>
   </section>
 
@@ -331,7 +353,7 @@
       <h2 data-t="metH">Il metodo del corso, controllato sui temi d'esame</h2>
       <p class="intro" data-t="metP">I calcoli seguono la Costruzione di Macchine: coefficienti dai diagrammi del corso, Goodman per la fatica, Hertz e Lewis per le ruote, ISO 286 per le tolleranze. Ogni modifica passa da una suite di prove con risultati svolti a mano.</p>
       <div class="facts">
-        <div><div class="n">316</div><p data-t="f1">casi di prova automatici, ripetuti a ogni modifica del codice</p></div>
+        <div><div class="n">340</div><p data-t="f1">casi di prova automatici, ripetuti a ogni modifica del codice</p></div>
         <div><div class="n">11</div><p data-t="f2">temi d'esame sugli alberi rifatti per intero, dalle reazioni al diametro</p></div>
         <div><div class="n">4</div><p data-t="f3">moduli collegati in una sola relazione, in italiano o in inglese</p></div>
       </div>
@@ -378,6 +400,7 @@
         metH: 'The course method, checked against exam problems', metP: 'The calculations follow the Machine Design course: coefficients from the course charts, Goodman for fatigue, Hertz and Lewis for gears, ISO 286 for tolerances. Every change runs through a test suite of hand-worked results.',
         f1: 'automatic test cases, run at every code change', f2: 'shaft exam problems redone in full, from the reactions to the diameter', f3: 'modules linked in a single report, in Italian or English',
         limits: 'This is preliminary sizing: it gives the first dimensions for CAD. The final design must be checked with the standards (ISO 6336, DIN 743), the manufacturers’ catalogs or an FEM analysis.',
+        femH: 'And for everything else: finite element structures', femP: 'Plane beams, frames and trusses: draw the members on the grid, add supports and loads with a click and get reactions, N, V, M diagrams and the deformed shape. Then Torsio picks the lightest section in six families (round, tube, rectangle, hollow square, IPE, HEA), checking strength, Euler buckling and deflection.', femA: 'Open the Structures module', femDemo: 'try the radio tower',
         endH: 'Start from the example drive and change the numbers.', foot: 'Torsio Engineering · a project by Luigi Frassi', code: 'Source code', issue: 'Report a problem',
         crit: 'Critical section E', critX: 'X fatigue 2.16 · yield 4.51', key: 'key', tbTitle: 'Pinion shaft', tbMat: '39NiCrMo3 Q+T', tbLife: 'Infinite life · X ≥ 2', tbScale: 'Dimensions in mm', tbSheet: 'Sheet 1 of 1', pull: 'belt pull 1660 N', ft: 'Ft 4390 N · Fr 1598 N'
       }
@@ -386,7 +409,7 @@
     document.querySelectorAll('[data-t]').forEach(function (el) { IT[el.getAttribute('data-t')] = el.textContent; });
     document.querySelectorAll('[data-t-svg]').forEach(function (el) { IT[el.getAttribute('data-t-svg')] = el.textContent; });
     document.querySelectorAll('[data-t-html]').forEach(function (el) { IT[el.getAttribute('data-t-html')] = el.innerHTML; });
-    var HREF = { app: 'app.html', demo: 'app.html?demo=transmission', belts: 'app.html?m=belts', gears: 'app.html?m=gears', shafts: 'app.html?m=shafts', fits: 'app.html?m=fits' };
+    var HREF = { frames: 'app.html?m=frames', femDemo: 'app.html?demo=frames', app: 'app.html', demo: 'app.html?demo=transmission', belts: 'app.html?m=belts', gears: 'app.html?m=gears', shafts: 'app.html?m=shafts', fits: 'app.html?m=fits' };
     var goodman = {
       it: '\\dfrac{1}{X} = \\dfrac{\\sigma_{a,eq}}{b_1\\, b_2\\, \\sigma_N} + \\dfrac{\\sigma_{m,eq}}{\\sigma_R} = \\dfrac{143{,}44}{0{,}811 \\cdot 0{,}875 \\cdot 450} + \\dfrac{11{,}73}{900} \\;\\Rightarrow\\; X = 2{,}163',
       en: '\\dfrac{1}{X} = \\dfrac{\\sigma_{a,eq}}{b_1\\, b_2\\, \\sigma_N} + \\dfrac{\\sigma_{m,eq}}{\\sigma_R} = \\dfrac{143.44}{0.811 \\cdot 0.875 \\cdot 450} + \\dfrac{11.73}{900} \\;\\Rightarrow\\; X = 2.163'
