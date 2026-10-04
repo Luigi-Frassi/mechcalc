@@ -441,6 +441,33 @@ with sync_playwright() as p:
     url3 = pq3.evaluate("shareUrl()")
     pq4 = new_page(); pq4.goto(url3); settle(pq4)
     check('  profilo dell\'albero modificato a mano: resta nel link e nel DXF', 'spf=' in url3 and pq4.evaluate("!shaftProfile.auto && shaftProfile.segs[1].d === 52 && shaftProfile.segs.length") == nseg and '%%c52' in pq4.evaluate("exportDxf('shafts')"), url3[-60:])
+
+    # collegamenti bullonati: esame del 2/2/2021, verifica da coppia (16 × M14 a 105 N·m), vite di manovra, link e relazione
+    pb = new_page(); pb.goto(BASE + '?demo=boltsExam&lang=it'); settle(pb)
+    b = pb.evaluate("[lastBoltState.m, Math.round(lastBoltState.r.Ms / 1000), Math.round(lastBoltState.ex.Mtmax / 1e3), lastBoltState.r.nMax]")
+    check('bulloni (2/2/2021): 10 × M30 12.9, Ms ≈ 1769 N·m, con 110 kN di compressione Mt = 32 847 N·m, 14 viti al massimo', b[0] == 10 and b[1] == 1769 and abs(b[2] - 32847) <= 2 and b[3] == 14, str(b))
+    pb.click('#btOpts tr[data-size="M36"]'); settle(pb)
+    check('  scelta di un\'altra misura dalla tabella (M36 → 7 viti)', pb.evaluate("lastBoltState.size.name === 'M36' && lastBoltState.m === 7"))
+    pb.click('#btMode_torque'); settle(pb)
+    for k, v in [('btMs', '105'), ('btM', '16'), ('btDc', '250'), ('btCls', '8.8'), ('btSize', 'M14'), ('btPe', '0')]:
+        pb.evaluate(f"document.getElementById('{k}').value = '{v}'")
+    pb.evaluate("calculateBolts()")
+    mt = pb.evaluate("lastBoltState.r.Mtmax / 1e6")
+    check('  verifica da coppia: 16 × M14 8.8 a 105 N·m su Ø250 → Mt max ≈ 7,6 kN·m', abs(mt - 7.618) < 0.01, str(mt))
+    urlb = pb.evaluate("shareUrl()")
+    pb2 = new_page(); pb2.goto(urlb); settle(pb2)
+    check('  il link riapre la verifica da coppia con gli stessi dati', pb2.evaluate("currentBoltMode === 'torque' && Math.abs(lastBoltState.r.Mtmax / 1e6 - 7.618) < 0.01"), urlb[-80:])
+    pb2.click('#btMode_screw'); settle(pb2)
+    sc = pb2.evaluate("[Math.round(lastBoltState.r.Ms / 1000), lastBoltState.r.selfLocking]")
+    check('  vite di manovra della morsa (Ø25 × 5, f = 0,08, 80 kN): Ms ≈ 141 N·m, autobloccante', sc[0] == 141 and sc[1] is True, str(sc))
+    pb.click('#btMode_design'); pb.evaluate("loadDemoPreset('boltsExam')"); settle(pb)
+    pb.click('#reportBtn')
+    with ctx.expect_page() as rpb:
+        pb.click('#reportMenuThis')
+    rb = rpb.value; rb.wait_for_load_state(); rb.wait_for_function("document.querySelector('.page') !== null")
+    tb = rb.evaluate("document.body.textContent")
+    keys = ['Collegamento bullonato', 'Numero di viti', 'Coppia di serraggio', 'Carico esterno assiale', 'Confronto delle misure', '10 × M30 12.9']
+    check('  relazione bulloni: precarico, numero di viti, coppia, carico esterno, diagramma, formule', all(k in tb for k in keys) and rb.evaluate("document.querySelectorAll('.katex .mfrac').length > 10 && document.querySelectorAll('svg').length >= 1"), str([k for k in keys if k not in tb]))
     check('  quota e coppia "nessuna" nel selettore', pg3.evaluate("[...document.getElementById('shaftEl1Torque').options].some(o => o.value === 'none')"))
 
     check('  progetto: scheda carico massimo nascosta', pg.evaluate("document.getElementById('shaftMaxCard').classList.contains('hidden')"))

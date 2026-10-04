@@ -76,6 +76,14 @@ Draw the structure on a snapped grid (drag to create a member, click to cycle th
 * **Sizing in six families** — solid round, round tube (EN 10219), solid rectangle, square hollow section, IPE, HEA (properties from the nominal geometry with fillets, within 0.3 % of the catalogs): discrete *fully stressed design*, i.e. the notebook's FSD on catalog sections, with $\sigma = |N|/A + |M|/W \le \sigma_s/X$, **Euler buckling** $N_{cr} = \pi^2 E I_{min}/(\beta L)^2$ and an optional deflection limit; one section per member or one for all. The families are compared by mass, with a dimensioned drawing of each chosen section.
 * **Notebook comparison**: for pure trusses the continuous FSD of the notebook runs too, without and with buckling (solid round, $|\sigma| \le 0.8\,\sigma_{cr}$ as in the notebook's gradient method). Radio tower: FSD without buckling 285 kg (9 compressed bars with $\sigma > \sigma_{cr}$); FSD with buckling 1471 kg, every bar verified — close to the 1454 kg of the notebook's gradient method, which leaves 7 bars slightly beyond the 0.8 margin; with catalog tubes and Euler about 525 kg, while IPE sections cannot carry the compressed legs at all.
 
+### 6. Bolted joints (method of the *Elementi Costruttivi delle Macchine* notes)
+* **Friction joint design**: tangential force, or torque on a bolt circle ($F = M_t/(D/2)$, at most $\pi D/D_c$ bolts); $T = F/(m_{bolts}\,m_{int})$, preload $N = T\,X/f$; number of bolts from $N/A_{res} = \sigma_s/X$ with $A_{res} = \pi (0.8d)^2/4$ (rounded down only when $X$ drops by ≤ 0.5 %, as in the hand solutions); comparison of every size of the class.
+* **Tightening torque**: $M_s = N\,\frac{d_m}{2}\,\frac{\cos\beta\sin\alpha + f\cos\alpha}{\cos\beta\cos\alpha - f\sin\alpha} + \frac{N}{2}\,D_m f$, $d_m = 0.9d$, $\tan\alpha = p/(\pi d_m)$, $D_m = (D_c + d)/2$; von Mises with the tightening torsion for information.
+* **Check from a given torque**: preload, transmissible force and torque.
+* **External axial load**: $K_v = E\,(\pi d^2/4)/h$, $K_f = E\,A_{eq}/h$ (30° cone), $\Delta F_v$, $\Delta F_f$, bolt load, residual clamping force, joint opening, new transmissible torque, optimal preload $P_{am}K_f/(K_v+K_f)$, tightening diagram.
+* **Power screws** (vise, jack): square / trapezoidal / ISO thread, torque, efficiency, self-locking, stresses.
+* Strength classes 4.6 … 12.9, ISO coarse threads M4–M64 with the head across-flats $D_c$ of the notes' tables.
+
 ---
 
 ## ⚡ 1-Click Demo Presets
@@ -116,7 +124,8 @@ torsio-engineering/
 │   │   ├── gears-core.js     # Hertz/Lewis synthesis, tooth optimizer, W_max rating
 │   │   ├── shafts-core.js    # Shaft fatigue design: Kt, q, b1, b2, Goodman, bearing bores
 │   │   ├── frames-core.js    # 2D frame/truss FEM, section catalogs, FSD sizing with buckling
-│   │   └── dxf-core.js       # DXF R12 writer, title block, shaft profile proposal, UNI 6604 keys
+│   │   ├── dxf-core.js       # DXF R12 writer, title block, shaft profile proposal, UNI 6604 keys
+│   │   └── bolts-core.js     # Bolted joints: friction joints, tightening torque, external load, power screws
 │   └── ui/                   # Read inputs, call the core, render results and SVG
 │       ├── fits-ui.js
 │       ├── belts-ui.js
@@ -126,6 +135,8 @@ torsio-engineering/
 │       ├── report-frames.js  # Calculation report of the Structures module
 │       ├── project.js        # Project data, project files, title block data
 │       ├── dxf-ui.js         # DXF export of every module, shaft profile editor
+│       ├── bolts-ui.js       # Bolted joints module (three tabs, tightening diagram)
+│       ├── report-bolts.js   # Calculation report of the bolted joints
 │       ├── report.js         # Calculation reports of each module (A4, KaTeX)
 │       ├── report-transmission.js  # Complete transmission report: power flow + chapters
 │       └── share.js          # Shareable links: state <-> URL
@@ -179,6 +190,7 @@ The gear module is checked against worked exam problems of the course *Costruzio
 | Structures (FEM): closed-form beams (simply supported, fixed-fixed, propped cantilever, continuous, cantilever, Gerber), portal equilibrium | 10 | exact |
 | Structures: radio tower of Luigi's notebook — initial stress 132.62 MPa, FSD weight 284.96 kg in 27 iterations; FSD with buckling vs. the notebook's gradient result | 7 | 0.01 % (1.2 % vs. the gradient) |
 | Structures: IPE 200 / IPE 300 / HEA 200 properties vs. catalog | 8 | 0.3 % |
+| Bolted joints: exams of 24/2/2005 (HE120 splice) and 2/2/2021 (flanged coupling, with compression), flanges 16 × M14 at 105 N·m, tank cover, vise of 2/2/2015 | 30 | 0.2 % (2 % where the hand solution rounds the thread factor) |
 
 The factor deviations are reading errors of the hand solutions (e.g. $y$ = 0.32 read for $z$ = 18, where the chart gives 0.341; $K_t$ = 2.5 read where the course formula gives 2.41). For the shoulder $K_t$ the tool uses the course formula $B\,(r/d)^a$; checked against the digitized course chart it stays within ±3 %, while values read by eye in the hand solutions differ by up to +14 %. Every other gap in the shaft exams is a hand slip (documented in the test notes). The official shaft solution writes $X$ = 1.91 for the fatigue check, but that value leaves out the torsion term of the Goodman line: with it, the same coefficients give $X$ = 1.82 (still above the required 1.75). Run the suite (no dependencies) with:
 

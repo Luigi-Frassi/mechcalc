@@ -16,7 +16,7 @@ const vm = require('vm');
 
 const ctx = { Math, console };
 vm.createContext(ctx);
-for (const f of ['core/gears-core.js', 'core/fits-core.js', 'core/belts-core.js', 'core/shafts-core.js', 'core/frames-core.js', 'core/dxf-core.js']) {
+for (const f of ['core/gears-core.js', 'core/fits-core.js', 'core/belts-core.js', 'core/shafts-core.js', 'core/frames-core.js', 'core/dxf-core.js', 'core/bolts-core.js']) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'modules', f), 'utf8'), ctx, { filename: f });
 }
 const { computeGearWmax, computeGearDesign, getHelicalFactors, getLewisFactor } =
@@ -908,6 +908,59 @@ for (const [a, z1, z2, phi, g1, g2, psi] of [
   const s1 = X.dxfFitSheet(320, 120), s2 = X.dxfFitSheet(20000, 22000);
   abs('DXF: albero 320 mm su A3 in scala 1:1', s1.fmt === 'A3' && s1.s === 1 ? 1 : 0, 1, 0);
   abs('DXF: torre di 20 m in scala di riduzione su A3 o A4', s2.s >= 100 ? 1 : 0, 1, 0);
+}
+
+
+// ---------------------------------------------------------------------------
+// Collegamenti bullonati: metodo degli appunti di Elementi Costruttivi, esercizi svolti a mano
+// ---------------------------------------------------------------------------
+{
+  const B = vm.runInContext('({ boltSize, boltGeom, boltFrictionDesign, boltFromTorque, boltExternal, powerScrew, boltTorque })', ctx);
+  // 24/2/2005 es. 2: coprigiunti di un HE120 (W = 106 cm³, σs = 240 MPa) che ripristinano la resistenza a flessione,
+  // F = Mf/h sulla piattabanda, f = 0,2, X = 1,5, viti M24 classe 12.9
+  const F05 = 240 * 106e3 / 114;
+  rel('2005-02-24  forza sulla piattabanda F = σs·W/h [N]', F05, 223158, 1e-5);
+  const j05 = B.boltFrictionDesign({ F: F05, mInt: 1, f: 0.2, X: 1.5, size: B.boltSize('M24'), cls: '12.9', fThread: 0.15, mChosen: 8 });
+  rel('2005-02-24  precarico totale N = F·X/f [N]', j05.Ntot, 1673685, 1e-5);
+  rel('2005-02-24  numero di viti M24 12.9 per lato', j05.mReq, 8.028, 1e-3);
+  rel('2005-02-24  angolo d\'elica α [°]', j05.g.alpha * 180 / Math.PI, 2.53, 0.01, 'la soluzione scrive 2,5°');
+  rel('2005-02-24  coppia di filettatura M1 [N·m]', j05.M1 / 1000, 505, 0.025, 'a mano 0,19/0,86 arrotondati');
+  const M2hand = j05.N / 2 * (36 + 0.8 * 24) / 2 * 0.15;    // la soluzione usa (Dc + d_noc)/2 al posto di Dm = (Dc + d)/2 del formulario
+  rel('2005-02-24  coppia sottotesta M2 con (Dc + d_noc)/2 come a mano [N·m]', M2hand / 1000, 433, 1e-3);
+  // 2/2/2021 es. 2: giunto a flange, Mt = 32 kN·m su corona Ø210, f = 0,14 (filetti e flange), X = 1,5
+  const j21 = B.boltFrictionDesign({ Mt: 32e6, Dcircle: 210, mInt: 1, f: 0.14, X: 1.5, size: B.boltSize('M30'), cls: '12.9', fThread: 0.14, mChosen: 10 });
+  rel('2021-02-02  forza tangenziale sulla corona F = Mt/R [N]', j21.Ft, 304762, 1e-5);
+  rel('2021-02-02  numero di viti M30 12.9', j21.mReq, 10.02, 1e-3);
+  abs('2021-02-02  numero massimo di viti π·D/Dc', j21.nMax, 14, 0);
+  rel('2021-02-02  precarico per vite con 10 viti [N]', j21.N, 326531, 1e-5);
+  rel('2021-02-02  coppia di filettatura M1 [N·m]', j21.M1 / 1000, 899, 0.002);
+  rel('2021-02-02  coppia sottotesta M2 [N·m]', j21.M2 / 1000, 868.6, 0.002);
+  rel('2021-02-02  coppia di serraggio Ms [N·m]', j21.Ms / 1000, 1768, 0.002);
+  const e21 = B.boltExternal({ N: j21.N, Pe: -110000 / 10, h: 65, size: B.boltSize('M30'), E: 200000, cls: '12.9', X: 1.5, f: 0.14, m: 10, Dcircle: 210 });
+  rel('2021-02-02  rigidezza della vite Kv [N/m]', e21.Kv * 1000, 2.175e9, 0.002);
+  rel('2021-02-02  rigidezza delle flange Kf [N/m]', e21.Kf * 1000, 7.9e9, 0.01);
+  rel('2021-02-02  scarico della vite ΔFv con 110 kN di compressione [N]', -e21.dFv, 2375, 0.01, 'a mano Kf arrotondato');
+  rel('2021-02-02  momento trasmissibile con la compressione [N·m]', e21.Mtmax / 1000, 32845, 0.001);
+  // flange con 16 viti M14 8.8 serrate a 105 N·m, f = 0,14, X = 1,5, corona Ø250 (raggio 0,125 m)
+  const t14 = B.boltFromTorque({ Ms: 105e3, m: 16, f: 0.14, X: 1.5, size: B.boltSize('M14'), cls: '8.8', fThread: 0.14, Dcircle: 250 });
+  rel('flange 16 × M14, 105 N·m: precarico per vite [N]', t14.N, 41208, 0.012, 'a mano fattore di filetto 0,21 invece di 0,214');
+  rel('flange 16 × M14: forza tangenziale per vite T = N·f/X [N]', t14.Tbolt, 3846, 0.012, 'idem');
+  rel('flange 16 × M14: momento torcente massimo [N·m]', t14.Mtmax / 1000, 7692, 0.012, 'idem');
+  const e14 = B.boltExternal({ N: t14.N, Pe: 110000 / 16, h: 65, size: B.boltSize('M14'), E: 200000, cls: '8.8', X: 1.5, f: 0.14, m: 16, Dcircle: 250 });
+  rel('flange 16 × M14: Aeq delle flange [m²]', e14.Aeq * 1e-6, 1.088e-3, 0.003);
+  rel('flange 16 × M14: Kv [N/m]', e14.Kv * 1000, 0.47e9, 0.01);
+  rel('flange 16 × M14: Kf [N/m]', e14.Kf * 1000, 3.34e9, 0.003);
+  // coperchio del serbatoio: 16 viti M18 classe 10.8 (σs = 800 MPa), X = 1,5, Ø600: carico ammissibile e pressione massima
+  const e18 = B.boltExternal({ N: 0, Pe: 0, h: 90, size: B.boltSize('M18'), E: 200000, cls: '10.8', X: 1.5 });
+  rel('coperchio: carico ammissibile per vite Pam = σs·A_res/X [N]', e18.Pam, 86858, 1e-4);
+  rel('coperchio: pressione massima p = 16·Pam/(π·D²/4) [MPa]', 16 * e18.Pam / (Math.PI * 600 ** 2 / 4), 4.9, 0.01);
+  abs('coperchio: precarico ottimale = Pam·Kf/(Kv+Kf) < Pam', e18.Popt < e18.Pam && Math.abs(e18.Popt - e18.Pam * e18.Kf / (e18.Kv + e18.Kf)) < 1e-6 ? 1 : 0, 1, 0);
+  // morsa del 2/2/2015: vite Ø25 a filetto rettangolare, passo 5, altezza 2, f = 0,08, forza 80 MPa × 25 × 40 mm
+  const v15 = B.powerScrew({ d: 25, p: 5, hT: 2, f: 0.08, beta: 0, N: 80 * 25 * 40 });
+  rel('2015-02-02  morsa: diametro medio dm = d − h/2 [mm]', v15.dm, 24, 1e-9);
+  rel('2015-02-02  morsa: angolo d\'elica α [°]', v15.alpha * 180 / Math.PI, 3.8, 0.005);
+  rel('morsa: con β = 0 il fattore di filetto è tan(α + φ)', v15.k1, Math.tan(v15.alpha + Math.atan(0.08)), 1e-12);
+  abs('morsa: vite autobloccante (α = 3,8° < φ = 4,6°)', v15.selfLocking ? 1 : 0, 1, 0);
 }
 
 let failed = 0;
