@@ -67,7 +67,7 @@
 
     /* module cards */
     .mods { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
-    .mod { background: var(--sheet); border: 1px solid var(--line); border-radius: 6px; padding: 22px 24px; }
+    .mod { min-width: 0; background: var(--sheet); border: 1px solid var(--line); border-radius: 6px; padding: 22px 24px; }
     .mod h3 { margin: 0 0 4px; }
     .mod .src { font-size: 13.5px; color: var(--green); font-weight: 600; margin: 0 0 12px; }
     .mod p, .mod li { font-size: 15.5px; }
@@ -88,7 +88,7 @@
     footer { border-top: 1px solid var(--line); padding: 28px 0 40px; font-size: 14px; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
 
     @media (max-width: 900px) {
-      .mods { grid-template-columns: 1fr; }
+      .mods { grid-template-columns: minmax(0, 1fr); }
       .steps { grid-template-columns: 1fr; gap: 20px; }
       .nav .links { display: none; }
     }

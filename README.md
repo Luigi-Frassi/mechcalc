@@ -162,6 +162,11 @@ timing belt → gears (driven speed and power), gears → pinion or wheel shaft 
 shaft → ISO fit (diameter) and → bolted flange coupling (torque), frames → bolts at each support (shear |Rx|, uplift −Ry).
 The target fields are filled in and highlighted, and a banner says where the data came from and what still has to be checked.
 
+## 📚 Method and validation page
+
+`metodo.html` (IT/EN) states, module by module, the method, the key formulas, the sources, how many automatic cases check it and where it stops.
+Shafts can start from a table of quenched and tempered steels (EN 10083-2/-3, +QT, by diameter range: σR = Rm min, σs = Re min, σLF ≈ 0.5·Rm min as an estimate).
+
 ## 🗂️ Projects and CAD export
 
 * **Project data** (📁 *Project*): company, project, job number, client, drawn / checked / approved by, revision with history, logo (PNG/JPG/SVG; without one the Torsio mark is used). They are remembered in the browser and printed in the header and in the **ISO 7200 style title block** of every report (with signature boxes and the revision table) and every DXF.
