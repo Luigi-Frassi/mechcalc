@@ -31,7 +31,7 @@ const PRJ_TXT = {
 
 const PRJ_FIELDS = ['company', 'project', 'code', 'client', 'drawnBy', 'checkedBy', 'approvedBy', 'rev', 'revDesc'];
 const PRJ_STORE = 'torsioProject';
-const PRJ_MODULES = ['fits', 'belts', 'gears', 'shafts', 'frames'];
+const PRJ_MODULES = ['fits', 'belts', 'gears', 'shafts', 'frames', 'bolts'];
 
 function prjEmpty() { return { company: '', project: '', code: '', client: '', drawnBy: '', checkedBy: '', approvedBy: '', rev: '0', revDesc: '', revisions: [], logo: null }; }
 let projectMeta = prjEmpty();

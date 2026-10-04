@@ -28,7 +28,7 @@
       try {
         var u = new URL(event.url);
         var m = u.searchParams.get('m');
-        u.search = (m === 'fits' || m === 'belts' || m === 'gears' || m === 'shafts' || m === 'frames') ? '?m=' + m : '';
+        u.search = (m === 'fits' || m === 'belts' || m === 'gears' || m === 'shafts' || m === 'frames' || m === 'bolts') ? '?m=' + m : '';
         u.hash = '';
         event.url = u.toString();
         return event;
@@ -70,6 +70,10 @@
           <span data-i18n="navFrames">Structures (FEM)</span>
           <span id="dotFrames" class="w-2 h-2 rounded-full bg-transparent"></span>
         </button>
+        <button id="navBtnBolts" class="w-full text-left px-3 py-2 rounded-lg text-slate-400 hover:text-white font-medium text-sm flex items-center justify-between transition-colors">
+          <span data-i18n="navBolts">Bolted Joints</span>
+          <span id="dotBolts" class="w-2 h-2 rounded-full bg-transparent"></span>
+        </button>
       </nav>
     </div>
     <div class="text-xs text-slate-500 border-t border-slate-800 pt-4 space-y-3">
@@ -86,7 +90,7 @@
       <a href="./" class="flex items-center gap-2"><img src="vendor/brand/torsio-mark.svg" alt="" class="w-6 h-6"><span class="text-base font-extrabold tracking-tight text-white" style="font-stretch:115%">Torsio <span class="font-medium text-slate-400" style="font-stretch:100%">Engineering</span></span></a>
       <span class="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded">v0.9</span>
     </div>
-    <div class="grid grid-cols-5 gap-1.5">
+    <div class="grid grid-cols-6 gap-1">
       <button id="navBtnFitsMobile" class="text-center py-2 px-1.5 rounded-lg bg-blue-600 text-white font-medium text-xs transition-colors truncate">
         <span data-i18n="navFits">Tolerances</span>
       </button>
@@ -101,6 +105,9 @@
       </button>
       <button id="navBtnFramesMobile" class="text-center py-2 px-1.5 rounded-lg bg-slate-800/80 text-slate-300 font-medium text-xs transition-colors truncate">
         <span data-i18n="navFramesShort">FEM</span>
+      </button>
+      <button id="navBtnBoltsMobile" class="text-center py-2 px-1.5 rounded-lg bg-slate-800/80 text-slate-300 font-medium text-xs transition-colors truncate">
+        <span data-i18n="navBoltsShort">Bolts</span>
       </button>
     </div>
   </div>
@@ -177,6 +184,10 @@
         <button id="demoFramesBtn" onclick="loadDemoPreset('frames')"
           class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium transition-all flex items-center gap-1.5">
           <span>📡</span> <span data-i18n="demoFrames">Radio tower (FEM)</span>
+        </button>
+        <button id="demoBoltsBtn" onclick="loadDemoPreset('boltsExam')"
+          class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium transition-all flex items-center gap-1.5">
+          <span>🔧</span> <span data-i18n="demoBolts">Flanged coupling (bolts)</span>
         </button>
         <button id="demoShaftBtn" onclick="loadDemoPreset('shaftExam')" 
           class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium transition-all flex items-center gap-1.5">
@@ -1882,6 +1893,9 @@
     <!-- ==================== MODULE 5: STRUCTURES (2D FEM, frames and trusses) ==================== -->
     <div id="moduleFramesSection" class="hidden"></div>
 
+    <!-- ==================== MODULE 6: BOLTED JOINTS (method of the Machine Elements notes) ==================== -->
+    <div id="moduleBoltsSection" class="hidden"></div>
+
     <!-- Technical Footer -->
     <footer class="pt-6 border-t border-slate-800 text-xs text-slate-500 space-y-1">
       <p class="font-medium text-slate-400" data-i18n="disclaimerTitle">Technical note and disclaimer:</p>
@@ -1911,6 +1925,11 @@
         navGears: "Gears & Reducers",
         navShafts: "Shafts & Keys",
         navFrames: "Structures (FEM)",
+        navBolts: "Bolted Joints",
+        navBoltsShort: "Bolts",
+        pageTitleBolts: "Bolted joints",
+        pageSubtitleBolts: "Friction joints and flanges: number of bolts, preload and tightening torque, external axial load with the tightening diagram, power screws.",
+        demoBolts: "Flanged coupling (bolts)",
         projectBtn: "Project",
         projectTitle: "Project data, save and open",
         dxfTitle: "Download the drawing for CAD (DXF)",
@@ -2348,6 +2367,11 @@
         navGears: "Ruote Dentate",
         navShafts: "Alberi & Linguette",
         navFrames: "Strutture (FEM)",
+        navBolts: "Collegamenti Bullonati",
+        navBoltsShort: "Bulloni",
+        pageTitleBolts: "Collegamenti bullonati",
+        pageSubtitleBolts: "Giunzioni ad attrito e flange: numero di viti, precarico e coppia di serraggio, carico esterno con il diagramma di serraggio, viti di manovra.",
+        demoBolts: "Giunto a flange (bulloni)",
         projectBtn: "Progetto",
         projectTitle: "Dati del progetto, salva e apri",
         dxfTitle: "Scarica il disegno per il CAD (DXF)",
@@ -2808,42 +2832,46 @@
       const bGears = document.getElementById('navBtnGears');
       const bShafts = document.getElementById('navBtnShafts');
       const bFrames = document.getElementById('navBtnFrames');
+      const bBolts = document.getElementById('navBtnBolts');
 
       const bFitsM = document.getElementById('navBtnFitsMobile');
       const bBeltsM = document.getElementById('navBtnBeltsMobile');
       const bGearsM = document.getElementById('navBtnGearsMobile');
       const bShaftsM = document.getElementById('navBtnShaftsMobile');
       const bFramesM = document.getElementById('navBtnFramesMobile');
+      const bBoltsM = document.getElementById('navBtnBoltsMobile');
 
       const dFits = document.getElementById('dotFits');
       const dBelts = document.getElementById('dotBelts');
       const dGears = document.getElementById('dotGears');
       const dShafts = document.getElementById('dotShafts');
       const dFrames = document.getElementById('dotFrames');
+      const dBolts = document.getElementById('dotBolts');
 
       const sFits = document.getElementById('moduleFitsSection');
       const sBelts = document.getElementById('moduleBeltsSection');
       const sGears = document.getElementById('moduleGearsSection');
       const sShafts = document.getElementById('moduleShaftsSection');
       const sFrames = document.getElementById('moduleFramesSection');
+      const sBolts = document.getElementById('moduleBoltsSection');
 
       const titleEl = document.getElementById('moduleTitle');
       const subEl = document.getElementById('moduleSubtitle');
       const t = translations[currentLang];
 
-      [bFits, bBelts, bGears, bShafts, bFrames].forEach(b => {
+      [bFits, bBelts, bGears, bShafts, bFrames, bBolts].forEach(b => {
         if (b) b.className = "w-full text-left px-3 py-2 rounded-lg text-slate-400 hover:text-white font-medium text-sm flex items-center justify-between transition-colors";
       });
-      [bFitsM, bBeltsM, bGearsM, bShaftsM, bFramesM].forEach(b => {
+      [bFitsM, bBeltsM, bGearsM, bShaftsM, bFramesM, bBoltsM].forEach(b => {
         if (b) b.className = "text-center py-2 px-1.5 rounded-lg bg-slate-800/80 text-slate-300 font-medium text-xs transition-colors truncate";
       });
-      [dFits, dBelts, dGears, dShafts, dFrames].forEach(d => { if (d) d.className = "w-2 h-2 rounded-full bg-transparent"; });
-      [sFits, sBelts, sGears, sShafts, sFrames].forEach(s => { if (s) s.classList.add('hidden'); });
+      [dFits, dBelts, dGears, dShafts, dFrames, dBolts].forEach(d => { if (d) d.className = "w-2 h-2 rounded-full bg-transparent"; });
+      [sFits, sBelts, sGears, sShafts, sFrames, sBolts].forEach(s => { if (s) s.classList.add('hidden'); });
 
       const unitBox = document.getElementById('unitToggleContainer');
       const gearBadge = document.getElementById('gearUnitBadge');
 
-      if (mod === 'gears' || mod === 'shafts' || mod === 'frames') {   // metric-only modules
+      if (mod === 'gears' || mod === 'shafts' || mod === 'frames' || mod === 'bolts') {   // metric-only modules
         if (unitBox) unitBox.classList.add('hidden');
         if (gearBadge) gearBadge.classList.remove('hidden');
       } else {
@@ -2891,6 +2919,14 @@
         titleEl.innerText = t.pageTitleFrames;
         subEl.innerText = t.pageSubtitleFrames;
         if (typeof calculateFrames === 'function') calculateFrames();
+      } else if (mod === 'bolts') {
+        bBolts.className = "w-full text-left px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-sm flex items-center justify-between transition-colors";
+        bBoltsM.className = "text-center py-2 px-1.5 rounded-lg bg-blue-600 text-white font-medium text-xs transition-colors truncate";
+        dBolts.className = "w-2 h-2 rounded-full bg-blue-300";
+        sBolts.classList.remove('hidden');
+        titleEl.innerText = t.pageTitleBolts;
+        subEl.innerText = t.pageSubtitleBolts;
+        if (typeof calculateBolts === 'function') calculateBolts();
       }
     }
 
@@ -3013,6 +3049,8 @@
         if (typeof calculateShafts === 'function') calculateShafts();
       } else if (activeModule === 'frames') {
         if (typeof calculateFrames === 'function') calculateFrames();
+      } else if (activeModule === 'bolts') {
+        if (typeof calculateBolts === 'function') calculateBolts();
       }
     }
 
@@ -3054,6 +3092,9 @@
       } else if (activeModule === 'frames') {
         document.getElementById('moduleTitle').innerText = t.pageTitleFrames;
         document.getElementById('moduleSubtitle').innerText = t.pageSubtitleFrames;
+      } else if (activeModule === 'bolts') {
+        document.getElementById('moduleTitle').innerText = t.pageTitleBolts;
+        document.getElementById('moduleSubtitle').innerText = t.pageSubtitleBolts;
       } else {
         document.getElementById('moduleTitle').innerText = t.pageTitleGears;
         document.getElementById('moduleSubtitle').innerText = t.pageSubtitleGears;
@@ -3072,6 +3113,8 @@
         if (typeof calculateShafts === 'function') calculateShafts();
       } else if (activeModule === 'frames') {
         if (typeof calculateFrames === 'function') calculateFrames();
+      } else if (activeModule === 'bolts') {
+        if (typeof calculateBolts === 'function') calculateBolts();
       }
     }
 
@@ -3086,6 +3129,8 @@
     document.getElementById('navBtnShaftsMobile').addEventListener('click', () => switchModule('shafts'));
     document.getElementById('navBtnFrames').addEventListener('click', () => switchModule('frames'));
     document.getElementById('navBtnFramesMobile').addEventListener('click', () => switchModule('frames'));
+    document.getElementById('navBtnBolts').addEventListener('click', () => switchModule('bolts'));
+    document.getElementById('navBtnBoltsMobile').addEventListener('click', () => switchModule('bolts'));
 
     // Shafts: mode tabs and every input recalculate (visibility is handled inside calculateShafts)
     document.getElementById('shaftModeBeam').addEventListener('click', () => setShaftMode('beam'));
@@ -3268,6 +3313,8 @@
       if (btnShaft) btnShaft.className = (activeKey === 'shaftExam') ? activeClass : inactiveClass;
       const btnFr = document.getElementById('demoFramesBtn');
       if (btnFr) btnFr.className = (activeKey === 'frames') ? activeClass : inactiveClass;
+      const btnBt = document.getElementById('demoBoltsBtn');
+      if (btnBt) btnBt.className = (activeKey === 'boltsExam') ? activeClass : inactiveClass;
       const btnTx = document.getElementById('demoTxBtn');
       if (btnTx) btnTx.className = (activeKey === 'transmission') ? activeClass : inactiveClass;
     }
@@ -3376,6 +3423,14 @@
         // Luigi's radio tower (notebook "Ottimizzazione peso"): aluminium truss, wind 4 × 60 kN
         switchModule('frames');
         frLoadPreset('tower');
+      } else if (presetKey === 'boltsExam') {
+        // Exam of 2 February 2021: rigid flanged coupling, Mt = 32 kN·m on a Ø210 bolt circle, f = 0.14, X = 1.5,
+        // M30 class 12.9 (10 bolts), then a compressive load of 110 kN on flanges 65 mm thick
+        switchModule('bolts');
+        const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+        set('btLoad', 'torque'); set('btMt', 32); set('btDc', 210); set('btMint', 1); set('btF0', 0.14); set('btX', 1.5);
+        set('btCls', '12.9'); set('btSize', 'M30'); set('btFt', 0.14); set('btM', 0); set('btPe', -110); set('btH', 65); set('btE', 200);
+        setBoltMode('design');
       } else if (presetKey === 'transmission') {
         // Complete drive, every module linked to the previous one:
         // motor 7.5 kW 1450 rpm -> HTD 8M belt 28/56 (725 rpm) -> spur pair tau = 1/4 -> pinion (input) shaft -> fit of the gear seat.
@@ -3475,9 +3530,12 @@
   <script src="modules/ui/shafts-ui.js"></script>
   <script src="modules/core/frames-core.js"></script>
   <script src="modules/ui/frames-ui.js"></script>
+  <script src="modules/core/bolts-core.js"></script>
+  <script src="modules/ui/bolts-ui.js"></script>
   <script src="modules/ui/report.js"></script>
   <script src="modules/ui/report-transmission.js"></script>
   <script src="modules/ui/report-frames.js"></script>
+  <script src="modules/ui/report-bolts.js"></script>
   <script src="modules/ui/share.js"></script>
   <script src="modules/ui/project.js"></script>
   <script src="modules/core/dxf-core.js"></script>
@@ -3493,6 +3551,7 @@
     try { if (typeof calculateGears === 'function') calculateGears(); } catch(e) { console.error(e); }
     try { if (typeof calculateShafts === 'function') calculateShafts(); } catch(e) { console.error(e); }
     try { if (typeof calculateFrames === 'function') calculateFrames(); } catch(e) { console.error(e); }
+    try { if (typeof calculateBolts === 'function') calculateBolts(); } catch(e) { console.error(e); }
     try { if (typeof initProjects === 'function') initProjects(); } catch(e) { console.error(e); }
     try { if (typeof initDxf === 'function') initDxf(); } catch(e) { console.error(e); }
     try { if (typeof initShareLinks === 'function') initShareLinks(); } catch(e) { console.error(e); }
