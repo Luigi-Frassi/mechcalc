@@ -168,7 +168,7 @@ function copyShareLink(btn) {
   // phones: native share sheet; desktop: clipboard
   const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
   if (coarse && navigator.share) {
-    navigator.share({ title: 'MechCalc', url }).catch(() => {});
+    navigator.share({ title: 'Torsio Engineering', url }).catch(() => {});
     return;
   }
   if (navigator.clipboard && window.isSecureContext) {
@@ -205,6 +205,13 @@ function initShareLinks() {
   try {
     const q = new URLSearchParams(window.location.search);
     if (q.has('m')) applyShareState(q);
+    else {
+      // links from the home page: ?lang=it, ?demo=transmission
+      const lang = q.get('lang');
+      if (lang === 'it' || lang === 'en') updateLanguage(lang);
+      const demo = q.get('demo');
+      if (demo && typeof loadDemoPreset === 'function' && ['transmission', 'shaftExam', 'helical50kw', 'spur5kw', 'bearingFit'].includes(demo)) loadDemoPreset(demo);
+    }
   } catch (e) { console.error(e); }
 
   shareSyncEnabled = true;

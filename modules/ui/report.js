@@ -10,7 +10,7 @@ const REPORT_TXT = {
     docTitle: 'Relazione di calcolo', shaftTitle: 'Albero di trasmissione — dimensionamento di massima',
     project: 'Progetto', author: 'Autore', date: 'Data', clickToEdit: 'clicca per modificare',
     printBtn: 'Stampa / Salva PDF', htmlBtn: 'Scarica HTML', printHint: 'Nel dialogo di stampa scegli “Salva come PDF”. I campi in giallo si possono modificare prima di stampare.',
-    reopen: 'Riapri questo calcolo', generated: 'Generata con MechCalc',
+    reopen: 'Riapri questo calcolo', generated: 'Generata con Torsio Engineering',
     disclaimer: 'Dimensionamento di massima con il metodo del corso di Costruzione di Macchine (Goodman, coefficienti da diagrammi). I valori servono come prime quote per il CAD: la verifica finale va fatta con le norme (es. DIN 743 / ISO 6336), i cataloghi dei produttori o un\'analisi FEM.',
     s1: 'Dati di progetto', s2: 'Schema dell\'albero e carichi', s3: 'Reazioni vincolari e cuscinetti', s4: 'Diagrammi delle sollecitazioni',
     s5: 'Sezione critica', s6: 'Progetto della sezione', s6c: 'Verifica della sezione', s7: 'Vita a fatica e carico massimo', s8: 'Quote per il CAD', s9: 'Ipotesi e note',
@@ -44,7 +44,7 @@ const REPORT_TXT = {
     docTitle: 'Calculation report', shaftTitle: 'Transmission shaft — preliminary sizing',
     project: 'Project', author: 'Author', date: 'Date', clickToEdit: 'click to edit',
     printBtn: 'Print / Save as PDF', htmlBtn: 'Download HTML', printHint: 'In the print dialog choose “Save as PDF”. The yellow fields can be edited before printing.',
-    reopen: 'Reopen this calculation', generated: 'Generated with MechCalc',
+    reopen: 'Reopen this calculation', generated: 'Generated with Torsio Engineering',
     disclaimer: 'Preliminary sizing with the method of the Machine Design course (Goodman line, coefficients from charts). The values are first dimensions for CAD: the final check must follow the standards (e.g. DIN 743 / ISO 6336), the manufacturers\' catalogs or an FEM analysis.',
     s1: 'Design data', s2: 'Shaft layout and loads', s3: 'Support reactions and bearings', s4: 'Internal action diagrams',
     s5: 'Critical section', s6: 'Section design', s6c: 'Section check', s7: 'Fatigue life and maximum load', s8: 'Dimensions for CAD', s9: 'Assumptions and notes',
@@ -152,29 +152,29 @@ function reportCSS() {
   return `
   @page { size: A4; margin: 16mm 14mm 18mm 14mm; }
   * { box-sizing: border-box; }
-  body { font-family: "Inter", "Helvetica Neue", Arial, sans-serif; color: #0f172a; font-size: 10.5pt; line-height: 1.45; margin: 0; background: #f1f5f9; }
+  body { font-family: "Archivo", "Helvetica Neue", Arial, sans-serif; color: #0f172a; font-size: 10.5pt; line-height: 1.45; margin: 0; background: #f1f5f9; }
   .page { max-width: 190mm; margin: 0 auto; background: #fff; padding: 14mm 12mm; }
   .toolbar { position: sticky; top: 0; z-index: 5; background: #0f172a; color: #e2e8f0; padding: 10px 16px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 13px; }
-  .toolbar button { background: #2563eb; color: #fff; border: 0; border-radius: 6px; padding: 7px 14px; font-weight: 600; cursor: pointer; font-size: 13px; }
+  .toolbar button { background: #2e5640; color: #fff; border: 0; border-radius: 6px; padding: 7px 14px; font-weight: 600; cursor: pointer; font-size: 13px; }
   .toolbar button.sec { background: #334155; }
   .toolbar span { color: #94a3b8; }
   header.rep { border-bottom: 2px solid #0f172a; padding-bottom: 8px; margin-bottom: 14px; }
-  header.rep .brand { font-size: 9pt; letter-spacing: .08em; text-transform: uppercase; color: #2563eb; font-weight: 700; }
+  header.rep .brand { font-size: 9pt; letter-spacing: .08em; text-transform: uppercase; color: #2e5640; font-weight: 700; }
   header.rep h1 { font-size: 17pt; margin: 2px 0 2px; }
   header.rep h2 { font-size: 11pt; margin: 0 0 8px; color: #475569; font-weight: 500; }
   .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 16px; font-size: 9.5pt; }
   .meta b { color: #475569; font-weight: 600; margin-right: 4px; }
   [contenteditable] { background: #fef9c3; padding: 0 3px; border-radius: 2px; outline: none; }
   h3 { font-size: 12pt; margin: 18px 0 6px; padding-bottom: 3px; border-bottom: 1px solid #cbd5e1; break-after: avoid; }
-  h3 .n { color: #2563eb; margin-right: 6px; }
+  h3 .n { color: #2e5640; margin-right: 6px; }
   h4 { font-size: 10.5pt; margin: 10px 0 4px; color: #334155; break-after: avoid; }
   table { border-collapse: collapse; width: 100%; margin: 4px 0 8px; font-size: 9.5pt; break-inside: avoid; }
   th, td { border: 1px solid #cbd5e1; padding: 3px 6px; text-align: left; vertical-align: top; }
   thead th { background: #f1f5f9; font-weight: 600; }
   table.kv th { width: 42%; background: #f8fafc; font-weight: 500; color: #334155; }
   tr.hl td { background: #fff1f2; font-weight: 600; }
-  .f { font-family: "JetBrains Mono", Consolas, monospace; font-size: 9.3pt; background: #f8fafc; border-left: 3px solid #2563eb; padding: 5px 8px; margin: 4px 0; white-space: pre-wrap; break-inside: avoid; }
-  .eq { border-left: 3px solid #2563eb; background: #f8fafc; padding: 2px 12px; margin: 4px 0 8px; break-inside: avoid; }
+  .f { font-family: "JetBrains Mono", Consolas, monospace; font-size: 9.3pt; background: #f8fafc; border-left: 3px solid #2e5640; padding: 5px 8px; margin: 4px 0; white-space: pre-wrap; break-inside: avoid; }
+  .eq { border-left: 3px solid #2e5640; background: #f8fafc; padding: 2px 12px; margin: 4px 0 8px; break-inside: avoid; }
   .eq .katex-display { text-align: left; margin: 6px 0; }
   .eq .katex-display > .katex { text-align: left; }
   .katex { font-size: 1.08em; }
@@ -190,12 +190,12 @@ function reportCSS() {
   .gv .rep-svg { width: 100%; }
   .small { font-size: 8.8pt; color: #475569; }
   footer.rep { margin-top: 18px; padding-top: 6px; border-top: 1px solid #cbd5e1; font-size: 8.5pt; color: #64748b; }
-  footer.rep a { color: #2563eb; word-break: break-all; }
+  footer.rep a { color: #2e5640; word-break: break-all; }
   ul { margin: 4px 0 8px 18px; padding: 0; }
   .toc { border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 12px; margin: 6px 0 12px; font-size: 9.8pt; background: #f8fafc; }
   .toc ol { margin: 4px 0 0 18px; padding: 0; }
   h2.ch { font-size: 14pt; margin: 4px 0 2px; padding: 6px 0 4px; border-bottom: 2px solid #0f172a; break-after: avoid; }
-  h2.ch .n { display: inline-block; min-width: 24px; color: #fff; background: #2563eb; border-radius: 4px; text-align: center; margin-right: 8px; padding: 0 6px; }
+  h2.ch .n { display: inline-block; min-width: 24px; color: #fff; background: #2e5640; border-radius: 4px; text-align: center; margin-right: 8px; padding: 0 6px; }
   .chsub { margin: 2px 0 6px; color: #475569; font-size: 10pt; }
   section.chapter { break-before: page; padding-top: 4px; }
   @media screen { section.chapter { margin-top: 26px; border-top: 6px solid #f1f5f9; padding-top: 14px; } }
@@ -217,12 +217,12 @@ function reportShell(title, subtitle, body, R, disclaimer = null) {
   try { link = typeof shareUrl === 'function' ? shareUrl() : window.location.href; } catch (e) { link = window.location.href; }
   return `<!doctype html><html lang="${currentLang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${reportEsc(R.docTitle)} — ${reportEsc(subtitle)}</title>
-<link rel="stylesheet" href="${new URL('vendor/katex/katex.min.css', window.location.href).href}"><style>${reportCSS()}</style></head><body>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap"><link rel="stylesheet" href="${new URL('vendor/katex/katex.min.css', window.location.href).href}"><style>${reportCSS()}</style></head><body>
 <div class="toolbar"><button onclick="window.print()">🖨 ${R.printBtn}</button>
-<button class="sec" onclick="(function(){var h='<!doctype html>'+document.documentElement.outerHTML;var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([h],{type:'text/html'}));a.download='relazione-mechcalc.html';a.click();})()">⬇ ${R.htmlBtn}</button>
+<button class="sec" onclick="(function(){var h='<!doctype html>'+document.documentElement.outerHTML;var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([h],{type:'text/html'}));a.download='relazione-torsio.html';a.click();})()">⬇ ${R.htmlBtn}</button>
 <span>${R.printHint}</span></div>
 <div class="page">
-<header class="rep"><div class="brand">MechCalc · ${R.docTitle}</div><h1>${reportEsc(title)}</h1><h2>${reportEsc(subtitle)}</h2>
+<header class="rep"><div class="brand"><svg width="16" height="16" viewBox="0 0 32 32" aria-hidden="true" style="vertical-align:-3px;margin-right:6px"><circle cx="16" cy="16" r="11" fill="none" stroke="#2e5640" stroke-width="5"/><rect x="13" y="2" width="6" height="7" fill="#e8b321"/></svg>Torsio Engineering · ${R.docTitle}</div><h1>${reportEsc(title)}</h1><h2>${reportEsc(subtitle)}</h2>
 <div class="meta"><div><b>${R.project}:</b><span contenteditable="true" title="${R.clickToEdit}">—</span></div>
 <div><b>${R.author}:</b><span contenteditable="true" title="${R.clickToEdit}">—</span></div><div><b>${R.date}:</b>${today}</div></div></header>
 ${body}
@@ -236,7 +236,7 @@ function reportOpen(html, w = null) {
   // popup blocked: download the report instead
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
-  a.download = 'relazione-mechcalc.html';
+  a.download = 'relazione-torsio.html';
   document.body.appendChild(a); a.click(); a.remove();
   return false;
 }

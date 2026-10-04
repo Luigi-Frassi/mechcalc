@@ -13,7 +13,8 @@ class Quiet(handler.func):
     def log_message(self, *a): pass
 srv = http.server.ThreadingHTTPServer(('127.0.0.1', 0), functools.partial(Quiet, directory=REPO))
 threading.Thread(target=srv.serve_forever, daemon=True).start()
-BASE = f'http://127.0.0.1:{srv.server_address[1]}/'
+HOME = f'http://127.0.0.1:{srv.server_address[1]}/'
+BASE = HOME + 'app.html'   # the calculator; the root is the home page
 
 SNAP_JS = """() => {
   const vis = el => !!(el.offsetParent || el.getClientRects().length);
@@ -41,7 +42,7 @@ with sync_playwright() as p:
     TW_STUB = "document.head.insertAdjacentHTML('beforeend','<style>.hidden{display:none}@media(min-width:768px){.md\\\\:flex{display:flex}.md\\\\:hidden{display:none}}@media(min-width:640px){.sm\\\\:inline{display:inline}}</style>')"
     def router(r):
         u = r.request.url
-        if u.startswith(BASE): return r.continue_()
+        if u.startswith(HOME): return r.continue_()
         if 'cdn.tailwindcss.com' in u: return r.fulfill(status=200, content_type='application/javascript', body=TW_STUB)  # emulate Tailwind's .hidden
         return r.abort()
     ctx.route('**/*', router)   # offline: no CDN
@@ -167,7 +168,7 @@ with sync_playwright() as p:
     check('modulo sconosciuto: pagina normale', pg.evaluate(SNAP_JS)['sec'] == 'moduleFitsSection')
 
     # --- 10. share button copies the URL (desktop)
-    ctx.grant_permissions(['clipboard-read', 'clipboard-write'], origin=BASE.rstrip('/'))
+    ctx.grant_permissions(['clipboard-read', 'clipboard-write'], origin=HOME.rstrip('/'))
     pg = new_page(); pg.goto(BASE); settle(pg)
     pg.click('#navBtnBelts'); set_val(pg, 'pulleyZ1', '31'); settle(pg)
     pg.click('.js-share-btn'); pg.wait_for_timeout(200)
@@ -326,8 +327,10 @@ with sync_playwright() as p:
     # relazione di calcolo: il bottone apre una pagina con i capitoli, i numeri del progetto e i diagrammi
     pg6 = new_page(); pg6.goto(BASE + '?m=shafts&lang=it'); settle(pg6)
     pg6.evaluate("loadDemoPreset('shaftExam')"); settle(pg6)
+    pg6.click('#reportBtn')
+    check('  il bottone Relazione apre il menu (modulo / trasmissione)', pg6.evaluate("!document.getElementById('reportMenu').classList.contains('hidden')"))
     with ctx.expect_page() as rp:
-        pg6.click('#reportBtn')
+        pg6.click('#reportMenuThis')
     rep = rp.value; rep.wait_for_load_state(); rep.wait_for_function("document.querySelector('.page') !== null")
     body = rep.evaluate("document.body.textContent")
     svgs = rep.evaluate("document.querySelectorAll('svg').length")
@@ -340,11 +343,36 @@ with sync_playwright() as p:
                     ('?m=belts&lang=it&bmode=power', ['Larghezza della cinghia', 'Interasse effettivo', 'Designazione']),
                     ('?m=fits&lang=it&nominalDiameter=30&fitType=H7%2Fk6', ['Scostamenti e dimensioni limite', 'Ø30 H7/k6', '+0,015'])]:
         pq = new_page(); pq.goto(BASE + q); settle(pq)
+        pq.click('#reportBtn')
         with ctx.expect_page() as rp2:
-            pq.click('#reportBtn')
+            pq.click('#reportMenuThis')
         rr = rp2.value; rr.wait_for_load_state(); rr.wait_for_function("document.querySelector('.page') !== null")
         tx = rr.evaluate("document.body.textContent")
         check('  relazione ' + q.split('&')[0][3:] + ': ' + ', '.join(keys), all(k in tx for k in keys), str([k for k in keys if k not in tx]))
+
+    # relazione della trasmissione completa: preset collegato, capitoli, controlli di coerenza
+    pt = new_page(); pt.goto(BASE + '?demo=transmission&lang=it'); settle(pt)
+    st = pt.evaluate("[document.getElementById('shaftSpeed').value, document.getElementById('gearSpeed').value, document.getElementById('nominalDiameter').value, document.getElementById('shaftEl3D').value]")
+    check('trasmissione: il preset collega cinghia (725 rpm), ruote, albero e accoppiamento', st[0] == '725' and st[1] == '725' and st[2] == '35' and st[3] == '45', str(st))
+    pt.click('#reportBtn')
+    check('  menu: moduli visitati preselezionati', pt.evaluate("[...document.querySelectorAll('#reportMenuMods input:checked')].length") == 4)
+    with ctx.expect_page() as rpt:
+        pt.click('#reportMenuGo')
+    rt = rpt.value; rt.wait_for_load_state(); rt.wait_for_function("document.querySelector('.page') !== null")
+    tt = rt.evaluate("document.body.textContent")
+    keys = ['Trasmissione completa', 'Coerenza tra i moduli', 'uscita della cinghia 725 rpm, pignone 725 rpm', 'albero-pignone', '4.6', 'Retta di Goodman', 'Ø35 H7/k6', 'Torsio Engineering']
+    check('  relazione trasmissione: schema, coerenza, pignone di pezzo, capitoli numerati', all(k in tt for k in keys), str([k for k in keys if k not in tt]))
+    check('  relazione trasmissione: 5 capitoli e formule impaginate', rt.evaluate("document.querySelectorAll('h2.ch').length") == 5 and rt.evaluate("document.querySelectorAll('.katex .mfrac').length > 10"))
+    pt.evaluate("switchModule('gears')"); pt.click('#reportBtn')
+    pt.evaluate("document.querySelectorAll('#reportMenuMods input').forEach(i => i.checked = false)"); pt.click('#reportMenuGo')
+    check('  nessun modulo scelto: messaggio, nessuna relazione', 'almeno un modulo' in pt.evaluate("document.getElementById('reportMenuMsg').textContent"))
+    # home page: link vecchi reindirizzati al calcolatore, link della home con lingua
+    ph = new_page(); ph.goto(HOME + '?m=fits&nominalDiameter=30&fitType=H7%2Fk6'); ph.wait_for_url('**/app.html?*'); settle(ph)
+    check('home: i vecchi link /?m=... aprono il calcolatore con i loro dati', ph.evaluate("document.getElementById('nominalDiameter').value") == '30', ph.url)
+    ph2 = new_page(); ph2.goto(HOME); settle(ph2)
+    ph2.click('.lang button[data-lang=it]')
+    hrefs = ph2.evaluate("[...document.querySelectorAll('[data-href]')].map(a => a.getAttribute('href'))")
+    check('  home: titolo, link al calcolatore e alla demo con la lingua', 'Torsio' in ph2.title() and 'app.html?lang=it' in hrefs and 'app.html?demo=transmission&lang=it' in hrefs, str(hrefs))
     check('  quota e coppia "nessuna" nel selettore', pg3.evaluate("[...document.getElementById('shaftEl1Torque').options].some(o => o.value === 'none')"))
 
     check('  progetto: scheda carico massimo nascosta', pg.evaluate("document.getElementById('shaftMaxCard').classList.contains('hidden')"))

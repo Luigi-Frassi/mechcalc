@@ -1,6 +1,6 @@
 <div align="center">
 
-# ⚙️ MechCalc
+# Torsio Engineering
 
 **Quick preliminary sizing of mechanical transmissions and fits: from the requirements to the first dimensions for your CAD.**
 
@@ -12,7 +12,7 @@
 [![Privacy](https://img.shields.io/badge/Privacy-Cookie--free%20analytics-10B981.svg)](#-privacy)
 [![Deployed on Vercel](https://img.shields.io/badge/Deploy-Vercel-black.svg?logo=vercel)]()
 
-[**Explore the Web App**](https://mechcalc-nu.vercel.app/) • [**Report an Issue**](https://github.com/Luigi-Frassi/mechcalc/issues)
+[**Home**](https://mechcalc-nu.vercel.app/) • [**Open the calculator**](https://mechcalc-nu.vercel.app/app.html) • [**Report an Issue**](https://github.com/Luigi-Frassi/mechcalc/issues)
 
 </div>
 
@@ -20,7 +20,7 @@
 
 ## 📌 Overview
 
-**MechCalc** is an open-source web application for **preliminary sizing** (*dimensionamento di massima*). It is meant for whoever has to design a gear pair, a belt drive or a shaft-hub fit from scratch and does not know where to start: enter the requirements (power, speed, ratio, center distance, diameter) and get first-attempt dimensions — module and number of teeth, face width, pitch diameters, belt length, tolerance limits — ready to be drawn in CAD and then refined.
+**Torsio Engineering** (formerly MechCalc) is an open-source web application for **preliminary sizing** (*dimensionamento di massima*). It is meant for whoever has to design a gear pair, a belt drive or a shaft-hub fit from scratch and does not know where to start: enter the requirements (power, speed, ratio, center distance, diameter) and get first-attempt dimensions — module and number of teeth, face width, pitch diameters, belt length, tolerance limits — ready to be drawn in CAD and then refined.
 
 It automates the repetitive, iterative hand calculations of machine design, shows the geometry with live SVG sketches and includes 1-click demo presets.
 
@@ -89,8 +89,10 @@ Load fully calculated engineering cases with a single click:
 Every calculation is kept in the page address (module, inputs, modes, language, units, selected optimizer row), so the URL can be bookmarked or sent as it is. The **Share** button copies it (on phones it opens the system share sheet). Only values that differ from the defaults are written, e.g.:
 
 ```
-https://mechcalc-nu.vercel.app/?m=fits&nominalDiameter=30&fitType=H7%2Fk6
+https://mechcalc-nu.vercel.app/app.html?m=fits&nominalDiameter=30&fitType=H7%2Fk6
 ```
+
+Old links to the root (`/?m=...`) are forwarded to the calculator. The home page links can also open a demo: `app.html?demo=transmission`.
 
 ---
 
@@ -98,7 +100,8 @@ https://mechcalc-nu.vercel.app/?m=fits&nominalDiameter=30&fitType=H7%2Fk6
 
 ```text
 mechcalc/
-├── index.html                # Core UI shell, demo presets, and translations
+├── index.html                # Home page (static, no framework)
+├── app.html                  # Calculator: UI shell, demo presets, translations
 ├── modules/
 │   ├── core/                 # Analytical engines: pure functions, no DOM access
 │   │   ├── fits-core.js      # ISO 286 tolerance tables, fit analysis, reverse lookup
@@ -110,14 +113,17 @@ mechcalc/
 │       ├── belts-ui.js
 │       ├── gears-ui.js
 │       ├── shafts-ui.js
+│       ├── report.js         # Calculation reports of each module (A4, KaTeX)
+│       ├── report-transmission.js  # Complete transmission report: power flow + chapters
 │       └── share.js          # Shareable links: state <-> URL
+├── vendor/                   # KaTeX (MIT) and the brand mark
 ├── tests/
 │   ├── validation.test.js    # Core vs. worked exam problems (node, no dependencies)
 │   └── browser_test.py       # Share links & form behaviour in headless Chromium (Playwright)
 └── README.md                 # Documentation
 ```
 
-Each `ui/*.js` file depends on the matching `core/*.js` file, so `index.html` loads the core first.
+Each `ui/*.js` file depends on the matching `core/*.js` file, so `app.html` loads the core first.
 
 * **Frontend**: Pure Vanilla JavaScript (ES6+, classic `<script>` files, no bundler) & HTML5
 * **Styling**: Tailwind CSS
@@ -127,7 +133,9 @@ Each `ui/*.js` file depends on the matching `core/*.js` file, so `index.html` lo
 
 ## 📄 Calculation Reports
 
-The **Report** button opens a printable A4 calculation report of the active module, saved as PDF from the browser's print dialog. Every report has the design data, the procedure with the formulas and the substituted values, the results with VERIFIED / NOT VERIFIED, the diagrams, the dimensions for CAD (or the drawing callouts), the assumptions and a link that reopens the calculation. **Gears**: Hertz design of module and face width (or the power capacity of an existing pair), Lewis check, helical factors, optimizer table, tip and root diameters. **Belts**: pulleys, pitch length and exact centre distance, teeth in mesh, width, ordering designation. **Fits**: deviations, limit sizes, clearances, machining and roughness, comparison of the H7 fits, drawing callouts. **Shafts**: design data, shaft layout and gear forces with the force previews, reactions and bearings, V / H / resultant / torque diagrams, critical and real sections, the section design or check with every formula and substituted value, Goodman diagram and sketch, life and maximum load, the dimensions to take into CAD, assumptions, and a link that reopens the same calculation. It is generated entirely in the browser; formulas are typeset (real fractions, roots, subscripts) with [KaTeX](https://katex.org) (MIT), bundled in `vendor/katex` and loaded only when a report is opened.
+**Complete transmission report**: the Report menu can also join several modules in one document. Chapter 1 shows the power flow (motor → belt → gears → shaft → fits) with speed, power and torque of each stage and checks the modules against each other: belt output speed vs. pinion speed, power along the chain, which gear the shaft carries, whether the gear rim under the teeth is thick enough to be keyed on the shaft (≥ 2.5·m, otherwise the pinion is made integral with the shaft), and whether the fit diameter matches the shaft. Then one chapter per module, numbered 2.1, 2.2, … The **Complete drive (7.5 kW)** demo builds a linked example: motor 7.5 kW at 1450 rpm, HTD 8M belt 28/56, spur pair τ = 1/4 and the pinion shaft.
+
+The **Report of this module** entry opens a printable A4 calculation report of the active module, saved as PDF from the browser's print dialog. Every report has the design data, the procedure with the formulas and the substituted values, the results with VERIFIED / NOT VERIFIED, the diagrams, the dimensions for CAD (or the drawing callouts), the assumptions and a link that reopens the calculation. **Gears**: Hertz design of module and face width (or the power capacity of an existing pair), Lewis check, helical factors, optimizer table, tip and root diameters. **Belts**: pulleys, pitch length and exact centre distance, teeth in mesh, width, ordering designation. **Fits**: deviations, limit sizes, clearances, machining and roughness, comparison of the H7 fits, drawing callouts. **Shafts**: design data, shaft layout and gear forces with the force previews, reactions and bearings, V / H / resultant / torque diagrams, critical and real sections, the section design or check with every formula and substituted value, Goodman diagram and sketch, life and maximum load, the dimensions to take into CAD, assumptions, and a link that reopens the same calculation. It is generated entirely in the browser; formulas are typeset (real fractions, roots, subscripts) with [KaTeX](https://katex.org) (MIT), bundled in `vendor/katex` and loaded only when a report is opened.
 
 ## ✅ Validation
 
