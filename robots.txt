@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://torsio-engineering.vercel.app/sitemap.xml

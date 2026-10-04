@@ -12,7 +12,7 @@ const SHARE_FIELDS = {
     'gearLockedMVal', 'gearLockedLVal', 'gearZ1', 'gearZ2', 'gearTargetCenter', 'gearXr1', 'gearKeInput', 'gearSigmaH',
     'gwToothType', 'gwModule', 'gwFaceWidth', 'gwZ1', 'gwZ2', 'gwSpeed', 'gwAlpha', 'gwXr1', 'gwKe', 'gwSigmaH', 'gwSigmaL'],
   shafts: ['shaftMf', 'shaftBendCycle', 'shaftTorqueInput', 'shaftPower', 'shaftSpeed', 'shaftMt', 'shaftTorsionCycle', 'shaftAxial',
-    'shaftSecTorque', 'shaftSigmaR', 'shaftSigmaS', 'shaftSigmaLF', 'shaftLife', 'shaftCycles', 'shaftNotchType', 'shaftDcheck', 'shaftDd', 'shaftDDcheck',
+    'shaftSecTorque', 'shaftMaterial', 'shaftSigmaR', 'shaftSigmaS', 'shaftSigmaLF', 'shaftLife', 'shaftCycles', 'shaftNotchType', 'shaftDcheck', 'shaftDd', 'shaftDDcheck',
     'shaftR', 'shaftKeyType', 'shaftKeyCond', 'shaftKeyKe', 'shaftKeyKeT', 'shaftKe', 'shaftKeT', 'shaftFinish', 'shaftX', 'shaftPh1Mf', 'shaftPh1Mt', 'shaftPh1N', 'shaftPh2Mf', 'shaftPh2Mt', 'shaftPh2N', 'shaftDamageRule',
     'shaftLength', 'shaftXA', 'shaftXB', 'shaftAxialBearing', 'shaftTheta', 'shaftBearingLife', 'shaftBearingType', 'shaftBearingCA', 'shaftBearingCB', 'shaftRotation', 'shaftSecX',
     ...[1, 2, 3, 4].flatMap(i => ['X', 'D', 'DD', 'R', 'Key'].map(f => 'shaftRs' + i + f)),

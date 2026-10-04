@@ -4,13 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Torsio Engineering — dimensionamento di massima di organi di macchine</title>
-  <meta name="description" content="Alberi, ruote dentate, cinghie sincrone e accoppiamenti ISO: dimensionamento di massima con i metodi della Costruzione di Macchine e relazione di calcolo con tutte le formule.">
+  <meta name="description" content="Alberi, ruote dentate, cinghie sincrone, accoppiamenti ISO, strutture FEM e collegamenti bullonati: dimensionamento di massima con i metodi della Costruzione di Macchine, relazione di calcolo con tutte le formule e disegno DXF.">
+  <link rel="canonical" href="https://torsio-engineering.vercel.app/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Torsio Engineering">
+  <meta property="og:title" content="Torsio Engineering — dimensionamento di massima di organi di macchine">
+  <meta property="og:description" content="Alberi, ruote dentate, cinghie sincrone, accoppiamenti ISO, strutture FEM e collegamenti bullonati: dimensionamento di massima con i metodi della Costruzione di Macchine, relazione di calcolo con tutte le formule e disegno DXF.">
+  <meta property="og:url" content="https://torsio-engineering.vercel.app/">
+  <meta property="og:image" content="https://torsio-engineering.vercel.app/vendor/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="vendor/brand/torsio-mark.svg" type="image/svg+xml">
   <script>
     // Old shared links pointed at the root (/?m=shafts&...): send them to the calculator
     (function () {
       var q = window.location.search;
-      if (/[?&]m=(fits|belts|gears|shafts|frames)\b/.test(q)) window.location.replace('app.html' + q + window.location.hash);
+      if (/[?&]m=(fits|belts|gears|shafts|frames|bolts)\b/.test(q)) window.location.replace('app.html' + q + window.location.hash);
     })();
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -153,7 +163,7 @@
         <span class="links">
           <a href="#moduli" data-t="navMods">Moduli</a>
           <a href="#relazione" data-t="navRep">Relazione</a>
-          <a href="#metodo" data-t="navMethod">Metodo</a>
+          <a href="metodo.html" data-t="navMethod">Metodo</a>
         </span>
         <span class="lang" role="group" aria-label="Lingua"><button type="button" data-lang="it" aria-pressed="true">IT</button><button type="button" data-lang="en" aria-pressed="false">EN</button></span>
         <a class="btn go small" href="app.html" data-href="app" data-t="openApp">Apri il calcolatore</a>
@@ -355,10 +365,11 @@
       <h2 data-t="metH">Il metodo del corso, controllato sui temi d'esame</h2>
       <p class="intro" data-t="metP">I calcoli seguono la Costruzione di Macchine: coefficienti dai diagrammi del corso, Goodman per la fatica, Hertz e Lewis per le ruote, ISO 286 per le tolleranze. Ogni modifica passa da una suite di prove con risultati svolti a mano.</p>
       <div class="facts">
-        <div><div class="n">381</div><p data-t="f1">casi di prova automatici, ripetuti a ogni modifica del codice</p></div>
-        <div><div class="n">11</div><p data-t="f2">temi d'esame sugli alberi rifatti per intero, dalle reazioni al diametro</p></div>
+        <div><div class="n">387</div><p data-t="f1">casi di prova automatici, ripetuti a ogni modifica del codice</p></div>
+        <div><div class="n">13</div><p data-t="f2">temi d'esame sugli alberi rifatti per intero, dalle reazioni al diametro</p></div>
         <div><div class="n">4</div><p data-t="f3">moduli collegati in una sola relazione, in italiano o in inglese</p></div>
       </div>
+      <p style="margin-top:36px"><a href="metodo.html" data-t="metLink" style="font-weight:700">Metodo e validazione, modulo per modulo →</a></p>
       <p class="limits" data-t="limits">È un dimensionamento di massima: dà le prime quote per il CAD. Il progetto esecutivo va verificato con le norme (ISO 6336, DIN 743), con i cataloghi dei produttori o con un'analisi FEM.</p>
     </div>
   </section>
@@ -400,6 +411,7 @@
         c1: 'Belt output 725 rpm, pinion 725 rpm', c2: 'Power on the shaft 7.50 kW, upstream stage 7.50 kW', c3: 'Rim under the teeth 2.2 mm < 2.5·m: pinion integral with the shaft',
         pGood: 'Goodman line', pRes: 'd = <b>35 mm</b> · D = 42 mm · r = 1.5 mm<br>X fatigue <b>2.16</b> <span class="ok">VERIFIED</span> (X ≥ 2)',
         metH: 'The course method, checked against exam problems', metP: 'The calculations follow the Machine Design course: coefficients from the course charts, Goodman for fatigue, Hertz and Lewis for gears, ISO 286 for tolerances. Every change runs through a test suite of hand-worked results.',
+        metLink: 'Method and validation, module by module →',
         f1: 'automatic test cases, run at every code change', f2: 'shaft exam problems redone in full, from the reactions to the diameter', f3: 'modules linked in a single report, in Italian or English',
         limits: 'This is preliminary sizing: it gives the first dimensions for CAD. The final design must be checked with the standards (ISO 6336, DIN 743), the manufacturers’ catalogs or an FEM analysis.',
         boltP: 'And for the joints: friction and flanged bolted joints, tightening torque, external load with the tightening diagram, power screws.', boltA: 'Try the flanged coupling',
@@ -441,6 +453,7 @@
     var ks = document.createElement('script');
     ks.src = 'vendor/katex/katex.min.js'; ks.onload = drawFormula; document.head.appendChild(ks);
   </script>
-  <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
+  <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+  <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

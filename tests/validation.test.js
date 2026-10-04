@@ -16,7 +16,7 @@ const vm = require('vm');
 
 const ctx = { Math, console };
 vm.createContext(ctx);
-for (const f of ['core/gears-core.js', 'core/fits-core.js', 'core/belts-core.js', 'core/shafts-core.js', 'core/frames-core.js', 'core/dxf-core.js', 'core/bolts-core.js']) {
+for (const f of ['core/gears-core.js', 'core/fits-core.js', 'core/belts-core.js', 'core/shafts-core.js', 'core/frames-core.js', 'core/dxf-core.js', 'core/bolts-core.js', 'core/materials-core.js']) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'modules', f), 'utf8'), ctx, { filename: f });
 }
 const { computeGearWmax, computeGearDesign, getHelicalFactors, getLewisFactor } =
@@ -910,6 +910,20 @@ for (const [a, z1, z2, phi, g1, g2, psi] of [
   abs('DXF: torre di 20 m in scala di riduzione su A3 o A4', s2.s >= 100 ? 1 : 0, 1, 0);
 }
 
+
+// ---------------------------------------------------------------------------
+// Materiali degli alberi: EN 10083-2/-3, stato +QT (Re min, Rm min per fascia di diametro)
+// ---------------------------------------------------------------------------
+{
+  const { shaftSteel, shaftSteelRangeFor } = vm.runInContext('({ shaftSteel, shaftSteelRangeFor })', ctx);
+  const a = shaftSteel('39NiCrMo3|40'), b = shaftSteel('42CrMo4|16'), c = shaftSteel('C40|100');
+  abs('EN 10083-3 39NiCrMo3 +QT 16<d≤40: Rm min [MPa]', a.sigmaR, 930, 0);
+  abs('EN 10083-3 39NiCrMo3 +QT 16<d≤40: Re min [MPa]', a.sigmaS, 735, 0);
+  abs('EN 10083-3 39NiCrMo3 +QT: σLF ≈ 0,5·Rm [MPa]', a.sigmaLF, 465, 0);
+  abs('EN 10083-3 42CrMo4 +QT d≤16: Rm / Re', b.sigmaR * 10000 + b.sigmaS, 1100 * 10000 + 900, 0);
+  abs('EN 10083-2 C40 +QT 40<d≤100: Rm / Re', c.sigmaR * 10000 + c.sigmaS, 600 * 10000 + 350, 0);
+  abs('fascia di diametro: d = 35 → 16<d≤40, d = 16 → d≤16', shaftSteelRangeFor(35) * 1000 + shaftSteelRangeFor(16), 40 * 1000 + 16, 0);
+}
 
 // ---------------------------------------------------------------------------
 // Collegamenti bullonati: metodo degli appunti di Elementi Costruttivi, esercizi svolti a mano
