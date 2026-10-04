@@ -16,7 +16,8 @@ const SHARE_FIELDS = {
     'shaftR', 'shaftKeyType', 'shaftKeyCond', 'shaftKeyKe', 'shaftKeyKeT', 'shaftKe', 'shaftKeT', 'shaftFinish', 'shaftX', 'shaftPh1Mf', 'shaftPh1Mt', 'shaftPh1N', 'shaftPh2Mf', 'shaftPh2Mt', 'shaftPh2N', 'shaftDamageRule',
     'shaftLength', 'shaftXA', 'shaftXB', 'shaftAxialBearing', 'shaftTheta', 'shaftBearingLife', 'shaftBearingType', 'shaftBearingCA', 'shaftBearingCB', 'shaftRotation', 'shaftSecX',
     ...[1, 2, 3, 4].flatMap(i => ['X', 'D', 'DD', 'R', 'Key'].map(f => 'shaftRs' + i + f)),
-    ...[1, 2, 3, 4].flatMap(i => ['Type', 'X', 'D', 'Helix', 'Torque', 'Share', 'DirMode', 'Angle', 'FtDir', 'FrDir', 'FaDir', 'Fv', 'Fh', 'Fa', 'E'].map(f => 'shaftEl' + i + f))]
+    ...[1, 2, 3, 4].flatMap(i => ['Type', 'X', 'D', 'Helix', 'Torque', 'Share', 'DirMode', 'Angle', 'FtDir', 'FrDir', 'FaDir', 'Fv', 'Fh', 'Fa', 'E'].map(f => 'shaftEl' + i + f))],
+  frames: ['frMat', 'frE', 'frSy', 'frRho', 'frX', 'frXb', 'frBeta', 'frDefl', 'frMode']
 };
 // Inputs whose value depends on the unit system: always written when the unit is not metric
 const SHARE_UNIT_FIELDS = ['nominalDiameter', 'reverseTargetVal', 'desiredCenter'];
@@ -53,6 +54,8 @@ function readShareState() {
     s.s3 = (typeof selectedAlternativeModule !== 'undefined' && selectedAlternativeModule) || 'strict';
   } else if (activeModule === 'shafts') {
     s.smode = typeof currentShaftMode !== 'undefined' ? currentShaftMode : 'design';
+  } else if (activeModule === 'frames') {
+    s.fs = typeof frEncodeModel === 'function' ? frEncodeModel() : '';   // the whole structure in one parameter
   }
   return s;
 }
@@ -92,7 +95,7 @@ function syncShareUrl() {
 // Apply a state read from the URL. Unknown keys and invalid values are ignored.
 function applyShareState(q) {
   const m = q.get('m');
-  if (!['fits', 'belts', 'gears', 'shafts'].includes(m)) return false;
+  if (!['fits', 'belts', 'gears', 'shafts', 'frames'].includes(m)) return false;
 
   const lang = q.get('lang');
   if (lang === 'it' || lang === 'en') updateLanguage(lang);
@@ -143,6 +146,8 @@ function applyShareState(q) {
     if (Number.isInteger(combo) && combo >= 0 && combo < 8) selectedComboIdx = combo;
     const gop = q.get('gop');
     if (gop === 'design' || gop === 'wmax') setGearOpMode(gop);
+  } else if (m === 'frames') {
+    if (q.get('fs') && typeof frDecodeModel === 'function') frDecodeModel(q.get('fs'));
   } else if (m === 'shafts') {
     const smode = q.get('smode');
     if (smode === 'beam' || smode === 'design' || smode === 'check') currentShaftMode = smode;
@@ -210,7 +215,7 @@ function initShareLinks() {
       const lang = q.get('lang');
       if (lang === 'it' || lang === 'en') updateLanguage(lang);
       const demo = q.get('demo');
-      if (demo && typeof loadDemoPreset === 'function' && ['transmission', 'shaftExam', 'helical50kw', 'spur5kw', 'bearingFit'].includes(demo)) loadDemoPreset(demo);
+      if (demo && typeof loadDemoPreset === 'function' && ['transmission', 'shaftExam', 'helical50kw', 'spur5kw', 'bearingFit', 'frames'].includes(demo)) loadDemoPreset(demo);
     }
   } catch (e) { console.error(e); }
 

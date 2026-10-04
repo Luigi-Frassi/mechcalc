@@ -69,6 +69,13 @@ The three steps of the classic method, in three tabs:
 * **Coefficients from the course charts**: $K_t$ of shouldered shafts ($B\,(r/d)^a$, bending / torsion / axial), notch sensitivity $q$ (the charts follow Neuber's formula exactly), size factor $b_1$, surface factor $b_2$ (9 finishes), effective factors for keyways (from the table or given by the problem), and **shoulder + keyway in the same section** (factors multiplied); finite life through the Wöhler line between $10^3$ and $10^6$ cycles.
 * **Output**: the dimensions for CAD ($d$, $D$, $r$), every coefficient and stress, a Goodman diagram with the working point.
 
+### 5. Structures: 2D finite elements for beams, frames and trusses
+Draw the structure on a snapped grid (drag to create a member, click to cycle the support of a node, to add a force or a distributed load, to put a hinge at a member end); the tables below hold the exact coordinates and loads.
+* **Solver**: plane frame elements (Euler-Bernoulli, 3 dof per node), assembly $K = \sum T^{\mathsf T} k\, T$, fixed-end forces for uniform loads (vertical or perpendicular to the member), **internal hinges by static condensation** of the released rotations. A member hinged at both ends keeps only $EA/L$: it is exactly the truss bar of Luigi's notebook (*Ottimizzazione peso*, torre radio), which this module generalizes.
+* **Output**: reactions, N / V / M diagrams drawn on the structure (moment on the tension side), deformed shape, utilization map.
+* **Sizing in six families** — solid round, round tube (EN 10219), solid rectangle, square hollow section, IPE, HEA (properties from the nominal geometry with fillets, within 0.3 % of the catalogs): discrete *fully stressed design*, i.e. the notebook's FSD on catalog sections, with $\sigma = |N|/A + |M|/W \le \sigma_s/X$, **Euler buckling** $N_{cr} = \pi^2 E I_{min}/(\beta L)^2$ and an optional deflection limit; one section per member or one for all. The families are compared by mass, with a dimensioned drawing of each chosen section.
+* **Notebook comparison**: for pure trusses the continuous FSD of the notebook runs too, without and with buckling (solid round, $|\sigma| \le 0.8\,\sigma_{cr}$ as in the notebook's gradient method). Radio tower: FSD without buckling 285 kg (9 compressed bars with $\sigma > \sigma_{cr}$); FSD with buckling 1471 kg, every bar verified — close to the 1454 kg of the notebook's gradient method, which leaves 7 bars slightly beyond the 0.8 margin; with catalog tubes and Euler about 525 kg, while IPE sections cannot carry the compressed legs at all.
+
 ---
 
 ## ⚡ 1-Click Demo Presets
@@ -107,12 +114,15 @@ torsio-engineering/
 │   │   ├── fits-core.js      # ISO 286 tolerance tables, fit analysis, reverse lookup
 │   │   ├── belts-core.js     # Synchronous timing belt sizing logic
 │   │   ├── gears-core.js     # Hertz/Lewis synthesis, tooth optimizer, W_max rating
-│   │   └── shafts-core.js    # Shaft fatigue design: Kt, q, b1, b2, Goodman, bearing bores
+│   │   ├── shafts-core.js    # Shaft fatigue design: Kt, q, b1, b2, Goodman, bearing bores
+│   │   └── frames-core.js    # 2D frame/truss FEM, section catalogs, FSD sizing with buckling
 │   └── ui/                   # Read inputs, call the core, render results and SVG
 │       ├── fits-ui.js
 │       ├── belts-ui.js
 │       ├── gears-ui.js
 │       ├── shafts-ui.js
+│       ├── frames-ui.js      # Structures editor (SVG drawing, tables, results)
+│       ├── report-frames.js  # Calculation report of the Structures module
 │       ├── report.js         # Calculation reports of each module (A4, KaTeX)
 │       ├── report-transmission.js  # Complete transmission report: power flow + chapters
 │       └── share.js          # Shareable links: state <-> URL
@@ -153,6 +163,9 @@ The gear module is checked against worked exam problems of the course *Costruzio
 | Shafts: $K_t$, $q$, $b_1$, $b_2$ vs. values read by eye from the charts | 7 | 0.09 on $K_t$, 0.015 otherwise |
 | Shafts, exam of 9 December 2002 (hand solution): beam moments, critical section, shoulder + keyway design ($d$ = 61 mm) | 11 | 1.4 % |
 | Shafts, 11 more exams 2004–2023 (hand solutions): beams with overhangs, idler gears and levers, design, maximum torque / power / load, bearings | 198 | 0.5 % with the same coefficients as the hand solution |
+| Structures (FEM): closed-form beams (simply supported, fixed-fixed, propped cantilever, continuous, cantilever, Gerber), portal equilibrium | 10 | exact |
+| Structures: radio tower of Luigi's notebook — initial stress 132.62 MPa, FSD weight 284.96 kg in 27 iterations; FSD with buckling vs. the notebook's gradient result | 7 | 0.01 % (1.2 % vs. the gradient) |
+| Structures: IPE 200 / IPE 300 / HEA 200 properties vs. catalog | 8 | 0.3 % |
 
 The factor deviations are reading errors of the hand solutions (e.g. $y$ = 0.32 read for $z$ = 18, where the chart gives 0.341; $K_t$ = 2.5 read where the course formula gives 2.41). For the shoulder $K_t$ the tool uses the course formula $B\,(r/d)^a$; checked against the digitized course chart it stays within ±3 %, while values read by eye in the hand solutions differ by up to +14 %. Every other gap in the shaft exams is a hand slip (documented in the test notes). The official shaft solution writes $X$ = 1.91 for the fatigue check, but that value leaves out the torsion term of the Goodman line: with it, the same coefficients give $X$ = 1.82 (still above the required 1.75). Run the suite (no dependencies) with:
 

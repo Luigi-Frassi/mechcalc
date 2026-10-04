@@ -28,7 +28,7 @@
       try {
         var u = new URL(event.url);
         var m = u.searchParams.get('m');
-        u.search = (m === 'fits' || m === 'belts' || m === 'gears' || m === 'shafts') ? '?m=' + m : '';
+        u.search = (m === 'fits' || m === 'belts' || m === 'gears' || m === 'shafts' || m === 'frames') ? '?m=' + m : '';
         u.hash = '';
         event.url = u.toString();
         return event;
@@ -66,6 +66,10 @@
           <span data-i18n="navShafts">Shafts & Keys</span>
           <span id="dotShafts" class="w-2 h-2 rounded-full bg-transparent"></span>
         </button>
+        <button id="navBtnFrames" class="w-full text-left px-3 py-2 rounded-lg text-slate-400 hover:text-white font-medium text-sm flex items-center justify-between transition-colors">
+          <span data-i18n="navFrames">Structures (FEM)</span>
+          <span id="dotFrames" class="w-2 h-2 rounded-full bg-transparent"></span>
+        </button>
       </nav>
     </div>
     <div class="text-xs text-slate-500 border-t border-slate-800 pt-4 space-y-3">
@@ -82,7 +86,7 @@
       <a href="./" class="flex items-center gap-2"><img src="vendor/brand/torsio-mark.svg" alt="" class="w-6 h-6"><span class="text-base font-extrabold tracking-tight text-white" style="font-stretch:115%">Torsio <span class="font-medium text-slate-400" style="font-stretch:100%">Engineering</span></span></a>
       <span class="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded">v0.9</span>
     </div>
-    <div class="grid grid-cols-4 gap-1.5">
+    <div class="grid grid-cols-5 gap-1.5">
       <button id="navBtnFitsMobile" class="text-center py-2 px-1.5 rounded-lg bg-blue-600 text-white font-medium text-xs transition-colors truncate">
         <span data-i18n="navFits">Tolerances</span>
       </button>
@@ -95,18 +99,21 @@
       <button id="navBtnShaftsMobile" class="text-center py-2 px-1.5 rounded-lg bg-slate-800/80 text-slate-300 font-medium text-xs transition-colors truncate">
         <span data-i18n="navShafts">Shafts</span>
       </button>
+      <button id="navBtnFramesMobile" class="text-center py-2 px-1.5 rounded-lg bg-slate-800/80 text-slate-300 font-medium text-xs transition-colors truncate">
+        <span data-i18n="navFramesShort">FEM</span>
+      </button>
     </div>
   </div>
 
   <!-- Main Content Area -->
   <main class="flex-1 p-4 md:p-10 max-w-4xl overflow-y-auto">
     <!-- Top Header -->
-    <header class="flex justify-between items-start gap-4 mb-8 min-h-[72px]">
+    <header class="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8 min-h-[72px]">
       <div class="flex-1 pr-2">
         <h1 class="text-2xl font-bold tracking-tight text-white mb-1 leading-tight" id="moduleTitle">ISO Fit & Tolerance Selector</h1>
         <p class="text-sm text-slate-400 leading-snug" id="moduleSubtitle">H7 Hole-Basis System. Interactive matrix, reverse lookup, and unit conversion.</p>
       </div>
-      <div class="flex items-center gap-2 md:gap-3 shrink-0 pt-0.5">
+      <div class="flex flex-wrap items-center gap-2 md:gap-3 shrink-0 pt-0.5">
         <div class="relative">
           <button type="button" id="reportBtn" onclick="toggleReportMenu(event)" class="flex items-center gap-1.5 bg-[#e8b321] hover:bg-[#f0c241] px-2.5 py-1.5 rounded-lg border border-[#e8b321] text-xs font-bold text-slate-950 transition-colors" data-i18n-title="reportTitle" title="Calculation report (PDF)">
             <span aria-hidden="true">📄</span><span class="hidden sm:inline" data-i18n="reportBtn">Report</span><span aria-hidden="true" class="text-[9px] opacity-80">▼</span>
@@ -160,6 +167,10 @@
         <button id="demoTxBtn" onclick="loadDemoPreset('transmission')"
           class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium transition-all flex items-center gap-1.5">
           <span>🏭</span> <span data-i18n="demoTx">Complete drive (7.5 kW)</span>
+        </button>
+        <button id="demoFramesBtn" onclick="loadDemoPreset('frames')"
+          class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium transition-all flex items-center gap-1.5">
+          <span>📡</span> <span data-i18n="demoFrames">Radio tower (FEM)</span>
         </button>
         <button id="demoShaftBtn" onclick="loadDemoPreset('shaftExam')" 
           class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium transition-all flex items-center gap-1.5">
@@ -1862,6 +1873,9 @@
       </div>
     </div>
 
+    <!-- ==================== MODULE 5: STRUCTURES (2D FEM, frames and trusses) ==================== -->
+    <div id="moduleFramesSection" class="hidden"></div>
+
     <!-- Technical Footer -->
     <footer class="pt-6 border-t border-slate-800 text-xs text-slate-500 space-y-1">
       <p class="font-medium text-slate-400" data-i18n="disclaimerTitle">Technical note and disclaimer:</p>
@@ -1890,6 +1904,11 @@
         navBelts: "Synchronous Belts",
         navGears: "Gears & Reducers",
         navShafts: "Shafts & Keys",
+        navFrames: "Structures (FEM)",
+        navFramesShort: "FEM",
+        pageTitleFrames: "Structures: beams, frames and trusses (FEM)",
+        pageSubtitleFrames: "Draw the structure, add supports and loads: 2D finite element analysis, N/V/M diagrams and the lightest section for every family.",
+        demoFrames: "Radio tower (FEM)",
         comingSoon: "Soon",
         pageTitleFits: "ISO Fit & Tolerance Selector",
         pageSubtitleFits: "H7 Hole-Basis System. Interactive matrix, reverse lookup, and unit conversion.",
@@ -2319,6 +2338,11 @@
         navBelts: "Cinghie Dentate",
         navGears: "Ruote Dentate",
         navShafts: "Alberi & Linguette",
+        navFrames: "Strutture (FEM)",
+        navFramesShort: "FEM",
+        pageTitleFrames: "Strutture: travi, telai e tralicci (FEM)",
+        pageSubtitleFrames: "Disegna la struttura, metti vincoli e carichi: analisi a elementi finiti 2D, diagrammi N/T/M e la sezione più leggera per ogni famiglia.",
+        demoFrames: "Torre radio (FEM)",
         comingSoon: "In arrivo",
         pageTitleFits: "Selettore Tolleranze & Lavorazioni ISO",
         pageSubtitleFits: "Sistema Foro Base H7. Tabella comparativa, ricerca inversa e conversione unità.",
@@ -2769,39 +2793,43 @@
       const bBelts = document.getElementById('navBtnBelts');
       const bGears = document.getElementById('navBtnGears');
       const bShafts = document.getElementById('navBtnShafts');
+      const bFrames = document.getElementById('navBtnFrames');
 
       const bFitsM = document.getElementById('navBtnFitsMobile');
       const bBeltsM = document.getElementById('navBtnBeltsMobile');
       const bGearsM = document.getElementById('navBtnGearsMobile');
       const bShaftsM = document.getElementById('navBtnShaftsMobile');
+      const bFramesM = document.getElementById('navBtnFramesMobile');
 
       const dFits = document.getElementById('dotFits');
       const dBelts = document.getElementById('dotBelts');
       const dGears = document.getElementById('dotGears');
       const dShafts = document.getElementById('dotShafts');
+      const dFrames = document.getElementById('dotFrames');
 
       const sFits = document.getElementById('moduleFitsSection');
       const sBelts = document.getElementById('moduleBeltsSection');
       const sGears = document.getElementById('moduleGearsSection');
       const sShafts = document.getElementById('moduleShaftsSection');
+      const sFrames = document.getElementById('moduleFramesSection');
 
       const titleEl = document.getElementById('moduleTitle');
       const subEl = document.getElementById('moduleSubtitle');
       const t = translations[currentLang];
 
-      [bFits, bBelts, bGears, bShafts].forEach(b => {
+      [bFits, bBelts, bGears, bShafts, bFrames].forEach(b => {
         if (b) b.className = "w-full text-left px-3 py-2 rounded-lg text-slate-400 hover:text-white font-medium text-sm flex items-center justify-between transition-colors";
       });
-      [bFitsM, bBeltsM, bGearsM, bShaftsM].forEach(b => {
+      [bFitsM, bBeltsM, bGearsM, bShaftsM, bFramesM].forEach(b => {
         if (b) b.className = "text-center py-2 px-1.5 rounded-lg bg-slate-800/80 text-slate-300 font-medium text-xs transition-colors truncate";
       });
-      [dFits, dBelts, dGears, dShafts].forEach(d => { if (d) d.className = "w-2 h-2 rounded-full bg-transparent"; });
-      [sFits, sBelts, sGears, sShafts].forEach(s => { if (s) s.classList.add('hidden'); });
+      [dFits, dBelts, dGears, dShafts, dFrames].forEach(d => { if (d) d.className = "w-2 h-2 rounded-full bg-transparent"; });
+      [sFits, sBelts, sGears, sShafts, sFrames].forEach(s => { if (s) s.classList.add('hidden'); });
 
       const unitBox = document.getElementById('unitToggleContainer');
       const gearBadge = document.getElementById('gearUnitBadge');
 
-      if (mod === 'gears' || mod === 'shafts') {   // metric-only modules
+      if (mod === 'gears' || mod === 'shafts' || mod === 'frames') {   // metric-only modules
         if (unitBox) unitBox.classList.add('hidden');
         if (gearBadge) gearBadge.classList.remove('hidden');
       } else {
@@ -2841,6 +2869,14 @@
         titleEl.innerText = t.pageTitleShafts;
         subEl.innerText = t.pageSubtitleShafts;
         if (typeof calculateShafts === 'function') calculateShafts();
+      } else if (mod === 'frames') {
+        bFrames.className = "w-full text-left px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-sm flex items-center justify-between transition-colors";
+        bFramesM.className = "text-center py-2 px-1.5 rounded-lg bg-blue-600 text-white font-medium text-xs transition-colors truncate";
+        dFrames.className = "w-2 h-2 rounded-full bg-blue-300";
+        sFrames.classList.remove('hidden');
+        titleEl.innerText = t.pageTitleFrames;
+        subEl.innerText = t.pageSubtitleFrames;
+        if (typeof calculateFrames === 'function') calculateFrames();
       }
     }
 
@@ -2961,6 +2997,8 @@
         if (typeof calculateGears === 'function') calculateGears();
       } else if (activeModule === 'shafts') {
         if (typeof calculateShafts === 'function') calculateShafts();
+      } else if (activeModule === 'frames') {
+        if (typeof calculateFrames === 'function') calculateFrames();
       }
     }
 
@@ -2999,6 +3037,9 @@
       } else if (activeModule === 'shafts') {
         document.getElementById('moduleTitle').innerText = t.pageTitleShafts;
         document.getElementById('moduleSubtitle').innerText = t.pageSubtitleShafts;
+      } else if (activeModule === 'frames') {
+        document.getElementById('moduleTitle').innerText = t.pageTitleFrames;
+        document.getElementById('moduleSubtitle').innerText = t.pageSubtitleFrames;
       } else {
         document.getElementById('moduleTitle').innerText = t.pageTitleGears;
         document.getElementById('moduleSubtitle').innerText = t.pageSubtitleGears;
@@ -3015,6 +3056,8 @@
         if (typeof calculateGears === 'function') calculateGears();
       } else if (activeModule === 'shafts') {
         if (typeof calculateShafts === 'function') calculateShafts();
+      } else if (activeModule === 'frames') {
+        if (typeof calculateFrames === 'function') calculateFrames();
       }
     }
 
@@ -3027,6 +3070,8 @@
     document.getElementById('navBtnGearsMobile').addEventListener('click', () => switchModule('gears'));
     document.getElementById('navBtnShafts').addEventListener('click', () => switchModule('shafts'));
     document.getElementById('navBtnShaftsMobile').addEventListener('click', () => switchModule('shafts'));
+    document.getElementById('navBtnFrames').addEventListener('click', () => switchModule('frames'));
+    document.getElementById('navBtnFramesMobile').addEventListener('click', () => switchModule('frames'));
 
     // Shafts: mode tabs and every input recalculate (visibility is handled inside calculateShafts)
     document.getElementById('shaftModeBeam').addEventListener('click', () => setShaftMode('beam'));
@@ -3207,6 +3252,8 @@
       if (btnSpur) btnSpur.className = (activeKey === 'spur5kw') ? activeClass : inactiveClass;
       if (btnFit) btnFit.className = (activeKey === 'bearingFit') ? activeClass : inactiveClass;
       if (btnShaft) btnShaft.className = (activeKey === 'shaftExam') ? activeClass : inactiveClass;
+      const btnFr = document.getElementById('demoFramesBtn');
+      if (btnFr) btnFr.className = (activeKey === 'frames') ? activeClass : inactiveClass;
       const btnTx = document.getElementById('demoTxBtn');
       if (btnTx) btnTx.className = (activeKey === 'transmission') ? activeClass : inactiveClass;
     }
@@ -3311,6 +3358,10 @@
 
         if (typeof calculateFits === 'function') calculateFits();
 
+      } else if (presetKey === 'frames') {
+        // Luigi's radio tower (notebook "Ottimizzazione peso"): aluminium truss, wind 4 × 60 kN
+        switchModule('frames');
+        frLoadPreset('tower');
       } else if (presetKey === 'transmission') {
         // Complete drive, every module linked to the previous one:
         // motor 7.5 kW 1450 rpm -> HTD 8M belt 28/56 (725 rpm) -> spur pair tau = 1/4 -> pinion (input) shaft -> fit of the gear seat.
@@ -3408,8 +3459,11 @@
   <script src="modules/ui/gears-ui.js"></script>
   <script src="modules/core/shafts-core.js"></script>
   <script src="modules/ui/shafts-ui.js"></script>
+  <script src="modules/core/frames-core.js"></script>
+  <script src="modules/ui/frames-ui.js"></script>
   <script src="modules/ui/report.js"></script>
   <script src="modules/ui/report-transmission.js"></script>
+  <script src="modules/ui/report-frames.js"></script>
   <script src="modules/ui/share.js"></script>
 
   <script>
@@ -3421,6 +3475,7 @@
     try { if (typeof calculateBelts === 'function') calculateBelts(); } catch(e) { console.error(e); }
     try { if (typeof calculateGears === 'function') calculateGears(); } catch(e) { console.error(e); }
     try { if (typeof calculateShafts === 'function') calculateShafts(); } catch(e) { console.error(e); }
+    try { if (typeof calculateFrames === 'function') calculateFrames(); } catch(e) { console.error(e); }
     try { if (typeof initShareLinks === 'function') initShareLinks(); } catch(e) { console.error(e); }
   </script>
 </body>
