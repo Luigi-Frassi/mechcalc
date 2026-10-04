@@ -16,7 +16,7 @@ const vm = require('vm');
 
 const ctx = { Math, console };
 vm.createContext(ctx);
-for (const f of ['core/gears-core.js', 'core/fits-core.js', 'core/belts-core.js', 'core/shafts-core.js']) {
+for (const f of ['core/gears-core.js', 'core/fits-core.js', 'core/belts-core.js', 'core/shafts-core.js', 'core/frames-core.js']) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'modules', f), 'utf8'), ctx, { filename: f });
 }
 const { computeGearWmax, computeGearDesign, getHelicalFactors, getLewisFactor } =
@@ -817,6 +817,67 @@ for (const [a, z1, z2, phi, g1, g2, psi] of [
   // Wöhler: estremi della retta
   rel('Wöhler: σN a 10³ cicli = σR', S.shaftFatigueStrength(1080, 520, 1e3).sigmaN, 1080, 1e-9);
   rel('Wöhler: σN a 10⁶ cicli = σLF', S.shaftFatigueStrength(1080, 520, 1e6 - 1).sigmaN, 520, 1e-4);
+}
+
+
+// ---------------------------------------------------------------------------
+// Strutture (FEM 2D telaio/traliccio): soluzioni chiuse di Scienza delle Costruzioni,
+// torre radio del notebook di Luigi (Ottimizzazione_peso_corretto.ipynb), profilati da catalogo
+// ---------------------------------------------------------------------------
+{
+  const F = vm.runInContext('({ frameAnalyze, frameMemberSummary, frSecI, frSecBox, frameFSDContinuous, frameSize, frameCatalog })', ctx);
+  const E = 210000, I = 1e7, A = 1e4, L = 4000, q = -10, P = { E, A, I };
+  const beam = (supports, extra = {}) => ({ nodes: [{ x: 0, y: 0 }, { x: L, y: 0 }], members: [{ n1: 0, n2: 1 }], supports, loads: [], dloads: [{ member: 0, q, dir: 'gy' }], ...extra });
+  let m = beam([{ node: 0, type: 'pin' }, { node: 1, type: 'rollerX' }]);
+  let an = F.frameAnalyze(m, [P]), s = F.frameMemberSummary(an.members[0], m);
+  rel('FEM trave appoggiata, q: M max = qL²/8 [N·mm]', s.Mabs, 10 * L * L / 8, 1e-9);
+  rel('FEM trave appoggiata, q: freccia = 5qL⁴/384EI [mm]', s.dmax, 5 * 10 * L ** 4 / (384 * E * I), 1e-9);
+  m = beam([{ node: 0, type: 'fixed' }, { node: 1, type: 'fixed' }]);
+  an = F.frameAnalyze(m, [P]); s = F.frameMemberSummary(an.members[0], m);
+  rel('FEM trave incastrata, q: M incastro = qL²/12', an.reactions[0].M, 10 * L * L / 12, 1e-9);
+  rel('FEM trave incastrata, q: freccia = qL⁴/384EI', s.dmax, 10 * L ** 4 / (384 * E * I), 1e-9);
+  m = beam([{ node: 0, type: 'fixed' }, { node: 1, type: 'rollerX' }]);
+  an = F.frameAnalyze(m, [P]);
+  rel('FEM incastro-appoggio, q: reazione appoggio = 3qL/8', an.reactions[1].Ry, 3 * 10 * L / 8, 1e-9);
+  m = { nodes: [0, 1, 2].map(k => ({ x: k * L, y: 0 })), members: [{ n1: 0, n2: 1 }, { n1: 1, n2: 2 }],
+    supports: [{ node: 0, type: 'pin' }, { node: 1, type: 'rollerX' }, { node: 2, type: 'rollerX' }], loads: [], dloads: [{ member: 0, q, dir: 'gy' }, { member: 1, q, dir: 'gy' }] };
+  an = F.frameAnalyze(m, [P, P]);
+  rel('FEM trave continua 2 campate: reazione centrale = 5qL/4', an.reactions[1].Ry, 1.25 * 10 * L, 1e-9);
+  m = { nodes: [{ x: 0, y: 0 }, { x: L, y: 0 }], members: [{ n1: 0, n2: 1 }], supports: [{ node: 0, type: 'fixed' }], loads: [{ node: 1, Fy: -1000 }], dloads: [] };
+  an = F.frameAnalyze(m, [P]);
+  rel('FEM mensola, P in punta: freccia = PL³/3EI', -an.u[4], 1000 * L ** 3 / (3 * E * I), 1e-9);
+  m = { nodes: [{ x: 0, y: 0 }, { x: 2000, y: 0 }, { x: 5000, y: 0 }], members: [{ n1: 0, n2: 1, relEnd: true }, { n1: 1, n2: 2 }],
+    supports: [{ node: 0, type: 'fixed' }, { node: 2, type: 'rollerX' }], loads: [], dloads: [{ member: 1, q: -10, dir: 'gy' }] };
+  an = F.frameAnalyze(m, [P, P]);
+  rel('FEM trave Gerber (cerniera interna): M incastro = R·a', an.reactions[0].M, 15000 * 2000, 1e-9);
+  // portale incastrato con forza orizzontale in sommità, ritti e traverso uguali: M base = 2/7·F·h... verifica di equilibrio globale
+  m = { nodes: [{ x: 0, y: 0 }, { x: 0, y: 3000 }, { x: 4000, y: 3000 }, { x: 4000, y: 0 }], members: [{ n1: 0, n2: 1 }, { n1: 1, n2: 2 }, { n1: 2, n2: 3 }],
+    supports: [{ node: 0, type: 'fixed' }, { node: 3, type: 'fixed' }], loads: [{ node: 1, Fx: 10000 }], dloads: [] };
+  an = F.frameAnalyze(m, [P, P, P]);
+  const R = an.reactions;
+  abs('FEM portale: equilibrio orizzontale ΣRx + F = 0 [N]', R[0].Rx + R[1].Rx + 10000, 0, 1e-6);
+  abs('FEM portale: equilibrio alla rotazione attorno alla base sx [N·mm]', R[0].M + R[1].M + R[1].Ry * 4000 - 10000 * 3000, 0, 1e-3);
+  // torre radio del notebook: alluminio E = 70 GPa, aste incernierate di 40 cm², vento 4 × 60 kN
+  const nodes = [[0, 0], [5, 0], [0.5, 5], [4.5, 5], [1, 10], [4, 10], [1.5, 15], [3.5, 15], [2, 20], [3, 20]].map(([x, y]) => ({ x: x * 1000, y: y * 1000 }));
+  const els = [[0, 2], [2, 3], [2, 4], [4, 5], [4, 6], [6, 7], [6, 8], [8, 9], [1, 3], [3, 5], [5, 7], [7, 9], [0, 3], [2, 5], [4, 7], [6, 9], [2, 1], [4, 3], [6, 5], [8, 7]];
+  const tower = { nodes, members: els.map(([a, b]) => ({ n1: a, n2: b, relStart: true, relEnd: true })), supports: [{ node: 0, type: 'pin' }, { node: 1, type: 'pin' }],
+    loads: [2, 4, 6, 8].map(n => ({ node: n, Fx: 60000 })), dloads: [] };
+  an = F.frameAnalyze(tower, els.map(() => ({ E: 70000, A: 4000, I: 4000 ** 2 / (4 * Math.PI) })));
+  rel('Torre radio (notebook): σ max iniziale con 40 cm² [MPa]', Math.max(...an.members.map(mr => Math.abs(mr.f[0]) / 4000)), 132.62, 1e-4);
+  const fsd = F.frameFSDContinuous(tower, { E: 70000, rho: 2770, sigmaAllow: 170, Amin: 500, Amax: 22600, Ainit: 4000, eta: 0.5, maxIter: 60, tol: 1e-4 });
+  rel('Torre radio (notebook): peso iniziale [kg]', fsd.history[0].W, 1080.08, 1e-5);
+  rel('Torre radio (notebook): peso FSD [kg]', fsd.W, 284.96, 1e-4);
+  abs('Torre radio (notebook): iterazioni FSD', fsd.iterations, 27, 0);
+  rel('Torre radio (notebook): area FSD asta 0 [cm²]', fsd.A[0] / 100, 31.89, 1e-3);
+  // profilati: proprietà dalla geometria nominale (raccordi inclusi) contro i valori di catalogo
+  const ipe200 = F.frSecI('IPE', 'IPE 200', 200, 100, 5.6, 8.5, 12), ipe300 = F.frSecI('IPE', 'IPE 300', 300, 150, 7.1, 10.7, 15), hea200 = F.frSecI('HEA', 'HEA 200', 190, 200, 6.5, 10, 18);
+  rel('IPE 200: A = 28,5 cm²', ipe200.A / 100, 28.5, 0.003); rel('IPE 200: Iy = 1943 cm⁴', ipe200.Iy / 1e4, 1943, 0.003); rel('IPE 200: Iz = 142 cm⁴', ipe200.Iz / 1e4, 142, 0.005);
+  rel('IPE 300: Iy = 8356 cm⁴', ipe300.Iy / 1e4, 8356, 0.003); rel('IPE 300: Wy = 557 cm³', ipe300.Wy / 1e3, 557, 0.003);
+  rel('HEA 200: A = 53,8 cm²', hea200.A / 100, 53.8, 0.003); rel('HEA 200: Iy = 3692 cm⁴', hea200.Iy / 1e4, 3692, 0.003); rel('HEA 200: Iz = 1336 cm⁴', hea200.Iz / 1e4, 1336, 0.003);
+  // dimensionamento a catalogo della torre con l'instabilità: ogni asta verificata
+  const mat = { E: 70000, rho: 2770, sigmaS: 255, X: 1.5, Xb: 2, beta: 1, deflMax: 0 };
+  const tube = F.frameSize(tower, 'tube', mat);
+  abs('Torre radio, tubi a catalogo: tutte le aste verificate (resistenza e Eulero)', tube.ok && tube.ev.rows.every(r => r.chk.Xs >= 1.5 - 1e-9 && r.chk.Xb >= 2 - 1e-9) ? 1 : 0, 1, 0);
 }
 
 let failed = 0;
